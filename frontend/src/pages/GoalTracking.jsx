@@ -1,0 +1,329 @@
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { 
+  TrophyIcon,
+  PlusIcon,
+  ChartBarIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  PauseIcon,
+  PlayIcon
+} from '@heroicons/react/24/outline'
+
+// Mock data for goals
+const mockGoals = [
+  {
+    id: 1,
+    title: 'Grow LinkedIn Following',
+    description: 'Increase LinkedIn followers from 2,500 to 3,000',
+    goal_type: 'follower_growth',
+    target_value: 3000,
+    current_value: 2750,
+    start_date: '2025-07-01',
+    target_date: '2025-10-01',
+    platform: 'linkedin',
+    status: 'active',
+    progress_percentage: 91.7,
+    days_remaining: 71,
+    is_on_track: true,
+    milestones: [
+      { id: 1, description: 'Reached 25% of goal', percentage: 25, achieved_at: '2025-07-15' },
+      { id: 2, description: 'Reached 50% of goal', percentage: 50, achieved_at: '2025-07-28' },
+      { id: 3, description: 'Reached 75% of goal', percentage: 75, achieved_at: '2025-08-12' }
+    ]
+  },
+  {
+    id: 2,
+    title: 'Improve Engagement Rate',
+    description: 'Increase overall engagement rate from 4.2% to 6.0%',
+    goal_type: 'engagement_rate',
+    target_value: 6.0,
+    current_value: 5.1,
+    start_date: '2025-07-01',
+    target_date: '2025-09-01',
+    platform: 'all',
+    status: 'active',
+    progress_percentage: 85,
+    days_remaining: 41,
+    is_on_track: true,
+    milestones: [
+      { id: 1, description: 'Reached 25% of goal', percentage: 25, achieved_at: '2025-07-10' },
+      { id: 2, description: 'Reached 50% of goal', percentage: 50, achieved_at: '2025-07-20' }
+    ]
+  },
+  {
+    id: 3,
+    title: 'Monthly Content Volume',
+    description: 'Publish 60 posts per month (up from 40)',
+    goal_type: 'content_volume',
+    target_value: 60,
+    current_value: 45,
+    start_date: '2025-07-01',
+    target_date: '2025-07-31',
+    platform: 'all',
+    status: 'active',
+    progress_percentage: 75,
+    days_remaining: 9,
+    is_on_track: false,
+    milestones: [
+      { id: 1, description: 'Reached 25% of goal', percentage: 25, achieved_at: '2025-07-08' },
+      { id: 2, description: 'Reached 50% of goal', percentage: 50, achieved_at: '2025-07-15' }
+    ]
+  },
+  {
+    id: 4,
+    title: 'Twitter Growth Campaign',
+    description: 'Gain 1,000 new Twitter followers',
+    goal_type: 'follower_growth',
+    target_value: 6000,
+    current_value: 6000,
+    start_date: '2025-06-01',
+    target_date: '2025-07-15',
+    platform: 'twitter',
+    status: 'completed',
+    progress_percentage: 100,
+    days_remaining: 0,
+    is_on_track: true,
+    milestones: [
+      { id: 1, description: 'Reached 25% of goal', percentage: 25, achieved_at: '2025-06-08' },
+      { id: 2, description: 'Reached 50% of goal', percentage: 50, achieved_at: '2025-06-20' },
+      { id: 3, description: 'Reached 75% of goal', percentage: 75, achieved_at: '2025-07-05' },
+      { id: 4, description: 'Goal completed!', percentage: 100, achieved_at: '2025-07-15' }
+    ]
+  }
+]
+
+const goalTypes = [
+  { value: 'follower_growth', label: 'Follower Growth', icon: ChartBarIcon },
+  { value: 'engagement_rate', label: 'Engagement Rate', icon: TrophyIcon },
+  { value: 'content_volume', label: 'Content Volume', icon: CalendarIcon },
+  { value: 'reach_increase', label: 'Reach Increase', icon: ChartBarIcon }
+]
+
+export default function GoalTracking() {
+  const [selectedStatus, setSelectedStatus] = useState('all')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  
+  const filteredGoals = mockGoals.filter(goal => 
+    selectedStatus === 'all' || goal.status === selectedStatus
+  )
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800'
+      case 'active':
+        return 'bg-blue-100 text-blue-800'
+      case 'paused':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'failed':
+        return 'bg-red-100 text-red-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getStatusIcon = (goal) => {
+    if (goal.status === 'completed') {
+      return <CheckCircleIcon className="h-5 w-5 text-green-600" />
+    }
+    if (!goal.is_on_track && goal.status === 'active') {
+      return <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600" />
+    }
+    return <ChartBarIcon className="h-5 w-5 text-blue-600" />
+  }
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
+
+  // Calculate summary stats
+  const totalGoals = mockGoals.length
+  const activeGoals = mockGoals.filter(g => g.status === 'active').length
+  const completedGoals = mockGoals.filter(g => g.status === 'completed').length
+  const onTrackGoals = mockGoals.filter(g => g.is_on_track && g.status === 'active').length
+  const avgProgress = mockGoals.reduce((sum, g) => sum + g.progress_percentage, 0) / mockGoals.length
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Goal Tracking</h2>
+          <p className="text-sm text-gray-600">
+            Monitor progress toward your social media objectives
+          </p>
+        </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-blue-700 transition-colors"
+        >
+          <PlusIcon className="h-4 w-4" />
+          <span>New Goal</span>
+        </button>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="text-2xl font-bold text-gray-900">{totalGoals}</div>
+          <div className="text-sm text-gray-600">Total Goals</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="text-2xl font-bold text-blue-600">{activeGoals}</div>
+          <div className="text-sm text-gray-600">Active Goals</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="text-2xl font-bold text-green-600">{completedGoals}</div>
+          <div className="text-sm text-gray-600">Completed</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="text-2xl font-bold text-purple-600">{onTrackGoals}</div>
+          <div className="text-sm text-gray-600">On Track</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="text-2xl font-bold text-orange-600">{Math.round(avgProgress)}%</div>
+          <div className="text-sm text-gray-600">Avg Progress</div>
+        </div>
+      </div>
+
+      {/* Filter */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="flex space-x-4">
+          <label className="text-sm font-medium text-gray-700">Filter by status:</label>
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All Goals</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+            <option value="paused">Paused</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Goals List */}
+      <div className="space-y-4">
+        {filteredGoals.map((goal) => (
+          <div key={goal.id} className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start space-x-3">
+                {getStatusIcon(goal)}
+                <div>
+                  <h3 className="font-semibold text-gray-900">{goal.title}</h3>
+                  <p className="text-sm text-gray-600 mt-1">{goal.description}</p>
+                  <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                    <span>Platform: {goal.platform}</span>
+                    <span>Target: {formatDate(goal.target_date)}</span>
+                    {goal.days_remaining > 0 && (
+                      <span>{goal.days_remaining} days remaining</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(goal.status)}`}>
+                {goal.status}
+              </span>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mb-4">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-gray-600">
+                  {goal.current_value.toLocaleString()} / {goal.target_value.toLocaleString()}
+                </span>
+                <span className={`font-medium ${goal.is_on_track ? 'text-green-600' : 'text-yellow-600'}`}>
+                  {Math.round(goal.progress_percentage)}%
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    goal.status === 'completed' 
+                      ? 'bg-green-500' 
+                      : goal.is_on_track 
+                        ? 'bg-blue-500' 
+                        : 'bg-yellow-500'
+                  }`}
+                  style={{ width: `${Math.min(goal.progress_percentage, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Milestones */}
+            {goal.milestones.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Recent Milestones</h4>
+                <div className="space-y-1">
+                  {goal.milestones.slice(-3).map((milestone) => (
+                    <div key={milestone.id} className="flex items-center text-xs text-gray-600">
+                      <CheckCircleIcon className="h-3 w-3 text-green-500 mr-2" />
+                      <span>{milestone.description}</span>
+                      <span className="ml-auto">{formatDate(milestone.achieved_at)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex space-x-2">
+              {goal.status === 'active' && (
+                <>
+                  <button className="text-sm bg-blue-50 text-blue-600 px-3 py-1 rounded-md hover:bg-blue-100 transition-colors">
+                    Update Progress
+                  </button>
+                  <button className="text-sm bg-yellow-50 text-yellow-600 px-3 py-1 rounded-md hover:bg-yellow-100 transition-colors flex items-center space-x-1">
+                    <PauseIcon className="h-3 w-3" />
+                    <span>Pause</span>
+                  </button>
+                </>
+              )}
+              
+              {goal.status === 'paused' && (
+                <button className="text-sm bg-green-50 text-green-600 px-3 py-1 rounded-md hover:bg-green-100 transition-colors flex items-center space-x-1">
+                  <PlayIcon className="h-3 w-3" />
+                  <span>Resume</span>
+                </button>
+              )}
+
+              <button className="text-sm text-gray-600 px-3 py-1 rounded-md hover:bg-gray-50 transition-colors">
+                View Details
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Empty State */}
+      {filteredGoals.length === 0 && (
+        <div className="text-center py-12">
+          <TrophyIcon className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No goals found</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            {selectedStatus === 'all' 
+              ? 'Create your first goal to start tracking progress.'
+              : `No ${selectedStatus} goals found.`
+            }
+          </p>
+          {selectedStatus === 'all' && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Create Goal
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}

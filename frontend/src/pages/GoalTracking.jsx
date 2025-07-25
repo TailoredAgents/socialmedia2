@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEnhancedApi } from '../hooks/useEnhancedApi'
 import { 
   TrophyIcon,
   PlusIcon,
@@ -8,8 +9,12 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   PauseIcon,
-  PlayIcon
+  PlayIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline'
+import CreateGoalModal from '../components/Goals/CreateGoalModal'
+import GoalDetailModal from '../components/Goals/GoalDetailModal'
+import { GoalCompletionChart } from '../components/Charts/ProgressChart'
 
 // Mock data for goals
 const mockGoals = [
@@ -104,10 +109,131 @@ const goalTypes = [
 export default function GoalTracking() {
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [selectedGoal, setSelectedGoal] = useState(null)
+  const [showDetailModal, setShowDetailModal] = useState(false)
   
-  const filteredGoals = mockGoals.filter(goal => 
+  const { api, connectionStatus } = useEnhancedApi()
+  const queryClient = useQueryClient()
+
+  // Fetch goals with React Query
+  const { 
+    data: goals = [], 
+    isLoading: goalsLoading, 
+    error: goalsError, 
+    refetch: refetchGoals 
+  } = useQuery({
+    queryKey: ['goals'],
+    queryFn: api.goals.getAll,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: 2,
+    fallbackData: mockGoals // Use mock data as fallback
+  })
+
+  // Fetch goals dashboard data
+  const { 
+    data: dashboardData, 
+    isLoading: dashboardLoading 
+  } = useQuery({
+    queryKey: ['goals-dashboard'],
+    queryFn: api.goals.getDashboard,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2
+  })
+
+  // Create goal mutation
+  const createGoalMutation = useMutation({
+    mutationFn: api.goals.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+      queryClient.invalidateQueries({ queryKey: ['goals-dashboard'] })
+      setShowCreateModal(false)
+    },
+    onError: (error) => {
+      console.error('Failed to create goal:', error)
+    }
+  })
+
+  // Update goal mutation
+  const updateGoalMutation = useMutation({
+    mutationFn: ({ goalId, goalData }) => api.goals.update(goalId, goalData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+      queryClient.invalidateQueries({ queryKey: ['goals-dashboard'] })
+      setShowDetailModal(false)
+    },
+    onError: (error) => {
+      console.error('Failed to update goal:', error)
+    }
+  })
+
+  // Delete goal mutation
+  const deleteGoalMutation = useMutation({
+    mutationFn: api.goals.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+      queryClient.invalidateQueries({ queryKey: ['goals-dashboard'] })
+      setShowDetailModal(false)
+    },
+    onError: (error) => {
+      console.error('Failed to delete goal:', error)
+    }
+  })
+
+  // Update progress mutation
+  const updateProgressMutation = useMutation({
+    mutationFn: ({ goalId, progressData }) => api.goals.updateProgress(goalId, progressData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+      queryClient.invalidateQueries({ queryKey: ['goals-dashboard'] })
+    },
+    onError: (error) => {
+      console.error('Failed to update progress:', error)
+    }
+  })
+
+  const filteredGoals = goals.filter(goal => 
     selectedStatus === 'all' || goal.status === selectedStatus
   )
+
+  const handleCreateGoal = async (goalData) => {
+    try {
+      await createGoalMutation.mutateAsync(goalData)
+    } catch (error) {
+      console.error('Create goal error:', error)
+    }
+  }
+
+  const handleUpdateGoal = async (updatedGoal) => {
+    try {
+      await updateGoalMutation.mutateAsync({ 
+        goalId: updatedGoal.id, 
+        goalData: updatedGoal 
+      })
+    } catch (error) {
+      console.error('Update goal error:', error)
+    }
+  }
+
+  const handleDeleteGoal = async (goalId) => {
+    try {
+      await deleteGoalMutation.mutateAsync(goalId)
+    } catch (error) {
+      console.error('Delete goal error:', error)
+    }
+  }
+
+  const handleUpdateProgress = async (goalId, progressData) => {
+    try {
+      await updateProgressMutation.mutateAsync({ goalId, progressData })
+    } catch (error) {
+      console.error('Update progress error:', error)
+    }
+  }
+
+  const openGoalDetail = (goal) => {
+    setSelectedGoal(goal)
+    setShowDetailModal(true)
+  }
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -143,11 +269,11 @@ export default function GoalTracking() {
   }
 
   // Calculate summary stats
-  const totalGoals = mockGoals.length
-  const activeGoals = mockGoals.filter(g => g.status === 'active').length
-  const completedGoals = mockGoals.filter(g => g.status === 'completed').length
-  const onTrackGoals = mockGoals.filter(g => g.is_on_track && g.status === 'active').length
-  const avgProgress = mockGoals.reduce((sum, g) => sum + g.progress_percentage, 0) / mockGoals.length
+  const totalGoals = goals.length
+  const activeGoals = goals.filter(g => g.status === 'active').length
+  const completedGoals = goals.filter(g => g.status === 'completed').length
+  const onTrackGoals = goals.filter(g => g.is_on_track && g.status === 'active').length
+  const avgProgress = goals.length > 0 ? goals.reduce((sum, g) => sum + g.progress_percentage, 0) / goals.length : 0
 
   return (
     <div className="space-y-6">
@@ -168,27 +294,32 @@ export default function GoalTracking() {
         </button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-2xl font-bold text-gray-900">{totalGoals}</div>
-          <div className="text-sm text-gray-600">Total Goals</div>
+      {/* Summary Cards and Chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="text-2xl font-bold text-gray-900">{totalGoals}</div>
+              <div className="text-sm text-gray-600">Total Goals</div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="text-2xl font-bold text-blue-600">{activeGoals}</div>
+              <div className="text-sm text-gray-600">Active Goals</div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="text-2xl font-bold text-green-600">{completedGoals}</div>
+              <div className="text-sm text-gray-600">Completed</div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="text-2xl font-bold text-orange-600">{Math.round(avgProgress)}%</div>
+              <div className="text-sm text-gray-600">Avg Progress</div>
+            </div>
+          </div>
         </div>
+        
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-2xl font-bold text-blue-600">{activeGoals}</div>
-          <div className="text-sm text-gray-600">Active Goals</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-2xl font-bold text-green-600">{completedGoals}</div>
-          <div className="text-sm text-gray-600">Completed</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-2xl font-bold text-purple-600">{onTrackGoals}</div>
-          <div className="text-sm text-gray-600">On Track</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-2xl font-bold text-orange-600">{Math.round(avgProgress)}%</div>
-          <div className="text-sm text-gray-600">Avg Progress</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Goal Status Overview</h3>
+          <GoalCompletionChart goals={goals} />
         </div>
       </div>
 
@@ -295,8 +426,12 @@ export default function GoalTracking() {
                 </button>
               )}
 
-              <button className="text-sm text-gray-600 px-3 py-1 rounded-md hover:bg-gray-50 transition-colors">
-                View Details
+              <button 
+                onClick={() => openGoalDetail(goal)}
+                className="text-sm text-gray-600 px-3 py-1 rounded-md hover:bg-gray-50 transition-colors flex items-center space-x-1"
+              >
+                <EyeIcon className="h-3 w-3" />
+                <span>View Details</span>
               </button>
             </div>
           </div>
@@ -324,6 +459,21 @@ export default function GoalTracking() {
           )}
         </div>
       )}
+
+      {/* Modals */}
+      <CreateGoalModal 
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={handleCreateGoal}
+      />
+      
+      <GoalDetailModal
+        goal={selectedGoal}
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        onUpdate={handleUpdateGoal}
+        onDelete={handleDeleteGoal}
+      />
     </div>
   )
 }

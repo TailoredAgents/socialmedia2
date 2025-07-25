@@ -12,7 +12,8 @@ class Settings(BaseSettings):
     serper_api_key: str = ""
     
     # Database
-    database_url: str = "postgresql://user:password@localhost:5432/socialmedia_db"
+    database_url: str = "sqlite:///./socialmedia.db"  # Default to SQLite for development
+    postgres_url: str = ""  # PostgreSQL for production
     
     # Auth0
     auth0_domain: str = ""
@@ -46,6 +47,12 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+    
+    def get_database_url(self) -> str:
+        """Get the appropriate database URL based on environment"""
+        if self.environment == "production" and self.postgres_url:
+            return self.postgres_url
+        return self.database_url
 
 @lru_cache()
 def get_settings():

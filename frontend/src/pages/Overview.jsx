@@ -9,24 +9,8 @@ import {
   PlayIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline'
-
-const fetchMetrics = async () => {
-  const response = await fetch('http://localhost:8000/api/metrics')
-  if (!response.ok) throw new Error('Failed to fetch metrics')
-  return response.json()
-}
-
-const fetchWorkflowStatus = async () => {
-  const response = await fetch('http://localhost:8000/api/workflow/status')
-  if (!response.ok) throw new Error('Failed to fetch workflow status')
-  return response.json()
-}
-
-const fetchGoalsSummary = async () => {
-  const response = await fetch('http://localhost:8000/api/goals/summary')
-  if (!response.ok) throw new Error('Failed to fetch goals')
-  return response.json()
-}
+import { useEnhancedApi } from '../hooks/useEnhancedApi'
+import { useRealTimeMetrics } from '../hooks/useRealTimeData'
 
 const MetricCard = ({ title, value, change, changeType, icon: Icon, color = "blue" }) => {
   const colorClasses = {
@@ -113,21 +97,34 @@ const GoalProgress = ({ goal }) => (
 )
 
 export default function Overview() {
+  const { api } = useEnhancedApi()
+  const { metrics: realTimeMetrics, connectionStatus } = useRealTimeMetrics()
+  
   const { data: metrics, isLoading: metricsLoading, error: metricsError } = useQuery({
     queryKey: ['metrics'],
-    queryFn: fetchMetrics,
+    queryFn: () => api.analytics.getMetrics(),
     refetchInterval: 5 * 60 * 1000,
+    retry: 2
   })
 
   const { data: workflow, isLoading: workflowLoading } = useQuery({
-    queryKey: ['workflow'],
-    queryFn: fetchWorkflowStatus,
+    queryKey: ['workflow-status'],
+    queryFn: () => api.workflow.getStatusSummary(),
     refetchInterval: 30 * 1000,
+    retry: 2
   })
 
   const { data: goals, isLoading: goalsLoading } = useQuery({
-    queryKey: ['goals'],
-    queryFn: fetchGoalsSummary,
+    queryKey: ['goals-summary'],
+    queryFn: () => api.goals.getDashboard(),
+    retry: 2
+  })
+
+  const { data: memoryStats, isLoading: memoryLoading } = useQuery({
+    queryKey: ['memory-analytics'],
+    queryFn: () => api.memory.getAnalytics(),
+    refetchInterval: 5 * 60 * 1000,
+    retry: 2
   })
 
   if (metricsLoading) {
@@ -161,14 +158,16 @@ export default function Overview() {
           <div>
             <h1 className="text-3xl font-bold mb-2">🚀 AI Social Media Content Agent</h1>
             <p className="text-blue-100">
-              Autonomous content factory generating {metrics?.total_posts || 0} posts 
-              with {metrics?.engagement_rate || 0}% avg engagement
+              Autonomous content factory generating {realTimeMetrics?.postsToday || metrics?.total_posts || 0} posts 
+              with {realTimeMetrics?.engagementRate || metrics?.engagement_rate || 0}% avg engagement
             </p>
           </div>
           <div className="text-right">
-            <div className="text-sm text-blue-100">Cycle #{workflow?.workflow?.cycle_count || 142}</div>
+            <div className="text-sm text-blue-100">
+              Connection: {connectionStatus} • {realTimeMetrics?.activeUsers || 0} active users
+            </div>
             <div className="text-lg font-semibold">
-              {workflow?.workflow?.current_stage?.replace('_', ' ').toUpperCase() || 'ACTIVE'}
+              {workflow?.current_stage?.replace('_', ' ').toUpperCase() || 'ACTIVE'}
             </div>
           </div>
         </div>
@@ -177,35 +176,35 @@ export default function Overview() {
       {/* Key Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
-          title="Total Posts"
-          value={metrics?.total_posts?.toLocaleString() || '0'}
-          change="+12%"
-          changeType="increase"
-          icon={DocumentTextIcon}
+          title="Total Views"
+          value={realTimeMetrics?.totalViews?.toLocaleString() || metrics?.total_views?.toLocaleString() || '0'}
+          change={`${realTimeMetrics?.viewsChange || '+12'}%`}
+          changeType={realTimeMetrics?.viewsChange >= 0 ? "increase" : "decrease"}
+          icon={EyeIcon}
           color="blue"
         />
         <MetricCard
           title="Engagement Rate"
-          value={`${metrics?.engagement_rate || 0}%`}
-          change="+0.8%"
-          changeType="increase"
+          value={`${realTimeMetrics?.engagementRate || metrics?.engagement_rate || 0}%`}
+          change={`${realTimeMetrics?.engagementRateChange || '+0.8'}%`}
+          changeType={realTimeMetrics?.engagementRateChange >= 0 ? "increase" : "decrease"}
           icon={ChatBubbleLeftRightIcon}
           color="green"
         />
         <MetricCard
-          title="Followers Gained"
-          value={metrics?.followers_gained?.toLocaleString() || '0'}
-          change="+23%"
-          changeType="increase"
+          title="Total Followers"
+          value={realTimeMetrics?.totalFollowers?.toLocaleString() || metrics?.total_followers?.toLocaleString() || '0'}
+          change={`${realTimeMetrics?.followersChange || '+23'}%`}
+          changeType={realTimeMetrics?.followersChange >= 0 ? "increase" : "decrease"}
           icon={UsersIcon}
           color="purple"
         />
         <MetricCard
-          title="Total Reach"
-          value="26.8K"
-          change="-2.1%"
-          changeType="decrease"
-          icon={EyeIcon}
+          title="Total Engagement"
+          value={realTimeMetrics?.totalEngagement?.toLocaleString() || metrics?.total_engagement?.toLocaleString() || '0'}
+          change={`${realTimeMetrics?.engagementChange || '+5.2'}%`}
+          changeType={realTimeMetrics?.engagementChange >= 0 ? "increase" : "decrease"}
+          icon={DocumentTextIcon}
           color="orange"
         />
       </div>
@@ -214,7 +213,10 @@ export default function Overview() {
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">🤖 Autonomous Workflow</h2>
-          <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={() => api.workflow.executeDailyWorkflow()}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
             <PlayIcon className="h-4 w-4 mr-2" />
             Trigger Cycle
           </button>
@@ -226,11 +228,23 @@ export default function Overview() {
               <div key={i} className="h-16 bg-gray-200 rounded-lg"></div>
             ))}
           </div>
-        ) : (
+        ) : workflow?.executions?.length > 0 ? (
           <div className="space-y-3">
-            {workflow?.workflow?.stages?.map((stage, index) => (
-              <WorkflowStage key={index} stage={stage} />
+            {workflow.executions.slice(0, 4).map((execution, index) => (
+              <WorkflowStage key={index} stage={{
+                name: execution.workflow_type,
+                status: execution.status,
+                progress: execution.progress || 0,
+                duration_minutes: execution.duration_minutes,
+                scheduled_time: execution.started_at
+              }} />
             ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <PlayIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <p>No recent workflow executions</p>
+            <p className="text-sm">Click "Trigger Cycle" to start a new workflow</p>
           </div>
         )}
       </div>
@@ -248,45 +262,68 @@ export default function Overview() {
                 </div>
               ))}
             </div>
-          ) : (
+          ) : goals?.goals?.length > 0 ? (
             <div>
-              {goals?.summary?.goals?.map((goal) => (
-                <GoalProgress key={goal.id} goal={goal} />
+              {goals.goals.slice(0, 3).map((goal) => (
+                <GoalProgress key={goal.id} goal={{
+                  title: goal.title,
+                  progress: goal.progress_percentage,
+                  current: goal.current_value,
+                  target: goal.target_value,
+                  on_track: goal.is_on_track
+                }} />
               ))}
               <div className="text-sm text-gray-500 mt-4">
-                {goals?.summary?.active_goals || 0} active goals • 
-                {goals?.summary?.on_track_goals || 0} on track
+                {goals?.active_goals || 0} active goals • 
+                {goals?.on_track_goals || 0} on track
               </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <ChartBarIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p>No goals yet</p>
+              <p className="text-sm">Create your first goal to start tracking progress</p>
             </div>
           )}
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">🧠 Memory System</h2>
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span>Content Items:</span>
-              <span className="font-semibold">245</span>
+          {memoryLoading ? (
+            <div className="animate-pulse space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex justify-between">
+                  <div className="h-4 bg-gray-200 rounded w-24"></div>
+                  <div className="h-4 bg-gray-200 rounded w-8"></div>
+                </div>
+              ))}
             </div>
-            <div className="flex justify-between text-sm">
-              <span>Research Articles:</span>
-              <span className="font-semibold">45</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Generated Posts:</span>
-              <span className="font-semibold">156</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Repurpose Ready:</span>
-              <span className="font-semibold text-green-600">23</span>
-            </div>
-            <div className="pt-3 border-t">
-              <div className="flex items-center text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
-                <ChartBarIcon className="h-4 w-4 mr-1" />
-                View Memory Explorer →
+          ) : (
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span>Content Items:</span>
+                <span className="font-semibold">{memoryStats?.total_content || 0}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Vector Embeddings:</span>
+                <span className="font-semibold">{memoryStats?.total_embeddings || 0}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>High Performing:</span>
+                <span className="font-semibold text-green-600">{memoryStats?.high_performing || 0}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Repurpose Ready:</span>
+                <span className="font-semibold text-blue-600">{memoryStats?.repurpose_candidates || 0}</span>
+              </div>
+              <div className="pt-3 border-t">
+                <a href="/memory" className="flex items-center text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
+                  <ChartBarIcon className="h-4 w-4 mr-1" />
+                  View Memory Explorer →
+                </a>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

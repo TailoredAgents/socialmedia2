@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEnhancedApi } from '../hooks/useEnhancedApi'
 import { 
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -10,8 +11,12 @@ import {
   ArrowPathIcon,
   HeartIcon,
   ShareIcon,
-  EyeIcon
+  EyeIcon,
+  ChartPieIcon,
+  BoltIcon
 } from '@heroicons/react/24/outline'
+import SimilarityChart from '../components/Memory/SimilarityChart'
+import ContentDetailModal from '../components/Memory/ContentDetailModal'
 
 // Mock data for memory content
 const mockMemoryContent = [
@@ -87,47 +92,182 @@ export default function MemoryExplorer() {
   const [selectedType, setSelectedType] = useState('all')
   const [selectedPlatform, setSelectedPlatform] = useState('all')
   const [sortBy, setSortBy] = useState('created_at')
-  const [filteredContent, setFilteredContent] = useState(mockMemoryContent)
+  const [selectedContent, setSelectedContent] = useState(null)
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [showSimilarityChart, setShowSimilarityChart] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  
+  const { api, connectionStatus } = useEnhancedApi()
+  const queryClient = useQueryClient()
+
+  // Fetch all memory content
+  const { 
+    data: allMemoryContent = [], 
+    isLoading: memoryLoading, 
+    error: memoryError 
+  } = useQuery({
+    queryKey: ['memory', 'all', currentPage],
+    queryFn: () => api.memory.getAll(currentPage, 20),
+    staleTime: 2 * 60 * 1000,
+    retry: 2,
+    fallbackData: mockMemoryContent
+  })
+
+  // Search memory content
+  const { 
+    data: searchResults = [], 
+    isLoading: searchLoading, 
+    error: searchError 
+  } = useQuery({
+    queryKey: ['memory', 'search', searchQuery],
+    queryFn: () => api.memory.search(searchQuery, 10),
+    enabled: searchQuery.length > 2,
+    staleTime: 1 * 60 * 1000,
+    retry: 1
+  })
+
+  // Get memory analytics
+  const { 
+    data: memoryAnalytics, 
+    isLoading: analyticsLoading 
+  } = useQuery({
+    queryKey: ['memory', 'analytics'],
+    queryFn: api.memory.getAnalytics,
+    staleTime: 5 * 60 * 1000,
+    retry: 2
+  })
+
+  // Store memory mutation
+  const storeMemoryMutation = useMutation({
+    mutationFn: ({ content, metadata }) => api.memory.store(content, metadata),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['memory'] })
+    },
+    onError: (error) => {
+      console.error('Failed to store memory:', error)
+    }
+  })
+
+  // Update memory mutation
+  const updateMemoryMutation = useMutation({
+    mutationFn: ({ contentId, data }) => api.memory.update(contentId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['memory'] })
+      setShowDetailModal(false)
+    },
+    onError: (error) => {
+      console.error('Failed to update memory:', error)
+    }
+  })
+
+  // Delete memory mutation
+  const deleteMemoryMutation = useMutation({
+    mutationFn: api.memory.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['memory'] })
+      setShowDetailModal(false)
+    },
+    onError: (error) => {
+      console.error('Failed to delete memory:', error)
+    }
+  })
 
   // Filter content based on search and filters
   useEffect(() => {
-    let filtered = mockMemoryContent
+    const performSearch = async () => {
+      setIsSearching(true)
+      
+      try {
+        // If there's a search query, try FAISS similarity search first
+        if (searchQuery && searchQuery.length > 2) {
+          try {
+            const searchResults = await makeAuthenticatedRequest(
+              apiService.searchMemory,
+              searchQuery,
+              10
+            )
+            
+            if (searchResults && searchResults.length > 0) {
+              // Use real search results from FAISS
+              let filtered = searchResults
+              
+              // Apply additional filters
+              if (selectedType !== 'all') {
+                filtered = filtered.filter(item => item.metadata?.type === selectedType)
+              }
+              
+              if (selectedPlatform !== 'all') {
+                filtered = filtered.filter(item => item.metadata?.platform === selectedPlatform)
+              }
+              
+              setFilteredContent(filtered.map(result => ({
+                id: result.content_id,
+                title: result.metadata?.title || 'Untitled',
+                content: result.content || '',
+                type: result.metadata?.type || 'content',
+                platform: result.metadata?.platform || 'unknown',
+                engagement: result.metadata?.engagement || { likes: 0, shares: 0, views: 0 },
+                created_at: result.created_at,
+                tags: result.metadata?.tags || [],
+                similarity_score: result.similarity_score,
+                repurpose_suggestions: Math.floor(Math.random() * 5) + 1
+              })))
+              setIsSearching(false)
+              return
+            }
+          } catch (error) {
+            console.log('FAISS search not available, using local search:', error)
+          }
+        }
+        
+        // Fallback to local filtering
+        let filtered = mockMemoryContent
 
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(item => 
-        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-    }
+        // Search filter
+        if (searchQuery) {
+          filtered = filtered.filter(item => 
+            item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+          )
+        }
 
-    // Type filter
-    if (selectedType !== 'all') {
-      filtered = filtered.filter(item => item.type === selectedType)
-    }
+        // Type filter
+        if (selectedType !== 'all') {
+          filtered = filtered.filter(item => item.type === selectedType)
+        }
 
-    // Platform filter
-    if (selectedPlatform !== 'all') {
-      filtered = filtered.filter(item => item.platform === selectedPlatform)
-    }
+        // Platform filter
+        if (selectedPlatform !== 'all') {
+          filtered = filtered.filter(item => item.platform === selectedPlatform)
+        }
 
-    // Sort
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'engagement':
-          return (b.engagement.likes + b.engagement.shares) - (a.engagement.likes + a.engagement.shares)
-        case 'similarity':
-          return b.similarity_score - a.similarity_score
-        case 'repurpose':
-          return b.repurpose_suggestions - a.repurpose_suggestions
-        default: // created_at
-          return new Date(b.created_at) - new Date(a.created_at)
+        // Sort
+        filtered.sort((a, b) => {
+          switch (sortBy) {
+            case 'engagement':
+              return (b.engagement.likes + b.engagement.shares) - (a.engagement.likes + a.engagement.shares)
+            case 'similarity':
+              return b.similarity_score - a.similarity_score
+            case 'repurpose':
+              return b.repurpose_suggestions - a.repurpose_suggestions
+            default: // created_at
+              return new Date(b.created_at) - new Date(a.created_at)
+          }
+        })
+
+        setFilteredContent(filtered)
+      } catch (error) {
+        console.error('Search failed:', error)
+        setFilteredContent(mockMemoryContent)
+      } finally {
+        setIsSearching(false)
       }
-    })
+    }
 
-    setFilteredContent(filtered)
-  }, [searchQuery, selectedType, selectedPlatform, sortBy])
+    const searchTimeout = setTimeout(performSearch, searchQuery ? 300 : 0)
+    return () => clearTimeout(searchTimeout)
+  }, [searchQuery, selectedType, selectedPlatform, sortBy, apiService, makeAuthenticatedRequest])
 
   const getTypeIcon = (type) => {
     const typeConfig = contentTypes.find(t => t.value === type)
@@ -147,14 +287,64 @@ export default function MemoryExplorer() {
     })
   }
 
+  const handleContentClick = (content) => {
+    setSelectedContent(content)
+    setShowDetailModal(true)
+  }
+
+  const handleNodeClick = (contentId) => {
+    const content = filteredContent.find(item => item.id === contentId)
+    if (content) {
+      handleContentClick(content)
+    }
+  }
+
+  const handleRepurpose = (content, option = null) => {
+    console.log('Repurposing content:', content, 'with option:', option)
+    // TODO: Implement repurpose functionality
+    setShowDetailModal(false)
+  }
+
+  const handleEdit = (content) => {
+    console.log('Editing content:', content)
+    // TODO: Implement edit functionality
+  }
+
+  const handleDelete = (contentId) => {
+    console.log('Deleting content:', contentId)
+    // TODO: Implement delete functionality
+    setShowDetailModal(false)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Memory Explorer</h2>
-        <p className="text-sm text-gray-600">
-          Search and explore your content history, research, and insights
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Memory Explorer</h2>
+          <p className="text-sm text-gray-600">
+            Search and explore your content history, research, and insights
+          </p>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowSimilarityChart(!showSimilarityChart)}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              showSimilarityChart 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <ChartPieIcon className="h-4 w-4 inline mr-2" />
+            Similarity View
+          </button>
+          
+          <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center space-x-2">
+            <BoltIcon className="h-4 w-4" />
+            <span>Auto-Repurpose</span>
+          </button>
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -165,11 +355,16 @@ export default function MemoryExplorer() {
             <MagnifyingGlassIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search content..."
+              placeholder="Search content using AI similarity..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {isSearching && (
+              <div className="absolute right-3 top-3">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              </div>
+            )}
           </div>
 
           {/* Content Type Filter */}
@@ -207,6 +402,18 @@ export default function MemoryExplorer() {
           </select>
         </div>
       </div>
+
+      {/* Similarity Chart */}
+      {showSimilarityChart && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Content Similarity Map</h3>
+          <SimilarityChart content={filteredContent} onNodeClick={handleNodeClick} />
+          <p className="text-sm text-gray-500 mt-2">
+            Click on nodes to view detailed content information. 
+            {filteredContent.length > 0 && ` Showing ${filteredContent.length} content items.`}
+          </p>
+        </div>
+      )}
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -291,10 +498,16 @@ export default function MemoryExplorer() {
 
                 {/* Actions */}
                 <div className="flex space-x-2 mt-4">
-                  <button className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
+                  <button 
+                    onClick={() => handleRepurpose(item)}
+                    className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                  >
                     Repurpose Content
                   </button>
-                  <button className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                  <button 
+                    onClick={() => handleContentClick(item)}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
                     View Details
                   </button>
                 </div>
@@ -305,15 +518,37 @@ export default function MemoryExplorer() {
       </div>
 
       {/* Empty State */}
-      {filteredContent.length === 0 && (
+      {filteredContent.length === 0 && !isSearching && (
         <div className="text-center py-12">
           <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No content found</h3>
           <p className="mt-1 text-sm text-gray-500">
             Try adjusting your search criteria or filters.
+            {searchQuery && ' FAISS semantic search will be used when backend is connected.'}
           </p>
         </div>
       )}
+
+      {/* Loading State */}
+      {isSearching && (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">Searching...</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Finding similar content using AI-powered semantic search
+          </p>
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      <ContentDetailModal
+        content={selectedContent}
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        onRepurpose={handleRepurpose}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
     </div>
   )
 }

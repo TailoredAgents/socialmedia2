@@ -1,4 +1,10 @@
-import faiss
+try:
+    import faiss
+    FAISS_AVAILABLE = True
+except ImportError:
+    FAISS_AVAILABLE = False
+    print("FAISS not available, using simple vector search")
+
 import numpy as np
 import pickle
 import os
@@ -11,10 +17,19 @@ import uuid
 
 settings = get_settings()
 
+# Import simple vector search as fallback
+if not FAISS_AVAILABLE:
+    from backend.core.simple_vector_search import SimpleVectorSearch
+
 class FAISSMemorySystem:
     """Enhanced FAISS-based memory system for content storage and retrieval"""
     
     def __init__(self, dimension: int = 1536, index_path: str = "data/memory"):
+        if not FAISS_AVAILABLE:
+            # Use simple vector search as fallback
+            self._simple_search = SimpleVectorSearch(dimension, index_path)
+            return
+            
         self.dimension = dimension
         self.index_path = index_path
         self.index_file = os.path.join(index_path, "faiss.index")
@@ -27,19 +42,22 @@ class FAISSMemorySystem:
         os.makedirs(index_path, exist_ok=True)
         
         # Initialize or load FAISS index
-        self.index = self._load_or_create_index()
-        self.metadata = self._load_metadata()
+        self._index = self._load_or_create_index()
+        self._metadata = self._load_metadata()
         
-    def _load_or_create_index(self) -> faiss.Index:
+    def _load_or_create_index(self):
         """Load existing FAISS index or create new one"""
         if os.path.exists(self.index_file):
             try:
-                return faiss.read_index(self.index_file)
+                if FAISS_AVAILABLE:
+                    return faiss.read_index(self.index_file)
             except Exception as e:
                 print(f"Error loading index: {e}. Creating new index.")
         
         # Create new index using IndexFlatIP (Inner Product) for cosine similarity
-        return faiss.IndexFlatIP(self.dimension)
+        if FAISS_AVAILABLE:
+            return faiss.IndexFlatIP(self.dimension)
+        return None
     
     def _load_metadata(self) -> Dict:
         """Load metadata mapping index IDs to content information"""
@@ -53,12 +71,13 @@ class FAISSMemorySystem:
     
     def _save_index(self):
         """Save FAISS index to disk"""
-        faiss.write_index(self.index, self.index_file)
+        if FAISS_AVAILABLE and hasattr(self, '_index') and self._index:
+            faiss.write_index(self._index, self.index_file)
     
     def _save_metadata(self):
         """Save metadata to disk"""
         with open(self.metadata_file, 'w') as f:
-            json.dump(self.metadata, f, indent=2, default=str)
+            json.dump(self._metadata, f, indent=2, default=str)
     
     def embed_text(self, text: str) -> np.ndarray:
         """Create embedding for text using OpenAI"""
@@ -76,6 +95,9 @@ class FAISSMemorySystem:
     
     def store_content(self, content: str, metadata: Dict[str, Any]) -> str:
         """Store content with embeddings and metadata"""
+        if not FAISS_AVAILABLE:
+            return self._simple_search.store_content(content, metadata)
+            
         content_id = str(uuid.uuid4())
         
         # Create embedding
@@ -83,11 +105,11 @@ class FAISSMemorySystem:
         
         if embedding.any():
             # Add to FAISS index
-            self.index.add(embedding.reshape(1, -1))
+            self._index.add(embedding.reshape(1, -1))
             
             # Store metadata with index ID
-            index_id = self.index.ntotal - 1
-            self.metadata[str(index_id)] = {
+            index_id = self._index.ntotal - 1
+            self._metadata[str(index_id)] = {
                 'content_id': content_id,
                 'content': content,
                 'metadata': metadata,
@@ -105,7 +127,10 @@ class FAISSMemorySystem:
     
     def search_similar(self, query: str, top_k: int = 5, threshold: float = 0.7) -> List[Dict]:
         """Search for similar content"""
-        if self.index.ntotal == 0:
+        if not FAISS_AVAILABLE:
+            return self._simple_search.search_similar(query, top_k, threshold)
+            
+        if self._index.ntotal == 0:
             return []
         
         query_embedding = self.embed_text(query)
@@ -114,7 +139,7 @@ class FAISSMemorySystem:
             return []
         
         # Search FAISS index
-        scores, indices = self.index.search(query_embedding.reshape(1, -1), top_k)
+        scores, indices = self._index.search(query_embedding.reshape(1, -1), top_k)
         
         results = []
         for score, idx in zip(scores[0], indices[0]):
@@ -133,6 +158,9 @@ class FAISSMemorySystem:
     
     def get_content_by_type(self, content_type: str, limit: int = 10) -> List[Dict]:
         """Retrieve content by type"""
+        if not FAISS_AVAILABLE:
+            return self._simple_search.get_content_by_type(content_type, limit)
+            
         results = []
         for idx, meta in self.metadata.items():
             if meta.get('metadata', {}).get('type') == content_type:
@@ -149,6 +177,9 @@ class FAISSMemorySystem:
     
     def get_high_performing_content(self, min_engagement: float = 5.0, limit: int = 10) -> List[Dict]:
         """Retrieve high-performing content for learning"""
+        if not FAISS_AVAILABLE:
+            return self._simple_search.get_high_performing_content(min_engagement, limit)
+            
         results = []
         for idx, meta in self.metadata.items():
             engagement = meta.get('metadata', {}).get('engagement_rate', 0)
@@ -167,6 +198,9 @@ class FAISSMemorySystem:
     
     def get_content_for_repurposing(self, days_old: int = 30, min_engagement: float = 3.0) -> List[Dict]:
         """Find content suitable for repurposing"""
+        if not FAISS_AVAILABLE:
+            return self._simple_search.get_content_for_repurposing(days_old, min_engagement)
+            
         from datetime import timedelta
         cutoff_date = datetime.utcnow() - timedelta(days=days_old)
         
@@ -191,6 +225,9 @@ class FAISSMemorySystem:
     
     def analyze_content_patterns(self) -> Dict[str, Any]:
         """Analyze patterns in stored content"""
+        if not FAISS_AVAILABLE:
+            return self._simple_search.analyze_content_patterns()
+            
         if not self.metadata:
             return {'error': 'No content available for analysis'}
         
@@ -246,7 +283,7 @@ class FAISSMemorySystem:
             created_at = datetime.fromisoformat(meta.get('created_at', ''))
             if created_at < cutoff_date:
                 indices_to_remove.append(int(idx))
-                del self.metadata[idx]
+                del self._metadata[idx]
         
         # Note: FAISS doesn't support efficient deletion, so we'd need to rebuild index
         # For now, just remove from metadata
@@ -255,6 +292,32 @@ class FAISSMemorySystem:
             print(f"Cleaned up {len(indices_to_remove)} old content items from metadata")
         
         return len(indices_to_remove)
+
+    @property
+    def index(self):
+        """Get index object (compatibility)"""
+        if not FAISS_AVAILABLE:
+            return self._simple_search
+        return self._index if hasattr(self, '_index') else None
+    
+    @index.setter
+    def index(self, value):
+        """Set index object (compatibility)"""
+        if FAISS_AVAILABLE:
+            self._index = value
+    
+    @property
+    def metadata(self):
+        """Get metadata (compatibility)"""
+        if not FAISS_AVAILABLE:
+            return self._simple_search.metadata
+        return self._metadata if hasattr(self, '_metadata') else {}
+    
+    @metadata.setter  
+    def metadata(self, value):
+        """Set metadata (compatibility)"""
+        if FAISS_AVAILABLE:
+            self._metadata = value
 
 # Global memory instance
 memory_system = FAISSMemorySystem()

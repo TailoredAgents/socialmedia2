@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import NotificationSystem from './Notifications/NotificationSystem'
 import { 
   HomeIcon, 
   CalendarDaysIcon, 
@@ -7,16 +9,21 @@ import {
   DocumentTextIcon, 
   Cog6ToothIcon,
   Bars3Icon,
-  XMarkIcon 
+  XMarkIcon,
+  BrainIcon,
+  TargetIcon,
+  ArrowRightOnRectangleIcon,
+  BoltIcon
 } from '@heroicons/react/24/outline'
 
 const navigation = [
   { name: 'Overview', href: '/', icon: HomeIcon },
   { name: 'Calendar', href: '/calendar', icon: CalendarDaysIcon },
   { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },
+  { name: 'Performance', href: '/performance', icon: BoltIcon },
   { name: 'Content', href: '/content', icon: DocumentTextIcon },
-  { name: 'Memory', href: '/memory', icon: DocumentTextIcon },
-  { name: 'Goals', href: '/goals', icon: ChartBarIcon },
+  { name: 'Memory', href: '/memory', icon: BrainIcon },
+  { name: 'Goals', href: '/goals', icon: TargetIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ]
 
@@ -26,7 +33,9 @@ function classNames(...classes) {
 
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const location = useLocation()
+  const { user, logout, isAuthenticated } = useAuth()
 
   return (
     <div>
@@ -155,8 +164,60 @@ export default function Layout({ children }) {
                 <div className="h-2 w-2 bg-green-400 rounded-full"></div>
                 <span className="text-sm text-gray-600">Connected</span>
               </div>
-              <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-gray-700">JH</span>
+              
+              {/* Notification system */}
+              <NotificationSystem />
+              
+              {/* User menu */}
+              <div className="relative">
+                <button
+                  type="button"
+                  className="flex items-center space-x-2 text-sm"
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                >
+                  {user?.picture ? (
+                    <img
+                      className="h-8 w-8 rounded-full"
+                      src={user.picture}
+                      alt={user.name || 'User'}
+                    />
+                  ) : (
+                    <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-gray-700">
+                        {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                      </span>
+                    </div>
+                  )}
+                  <span className="hidden md:block text-sm font-medium text-gray-700">
+                    {user?.name || user?.email || 'User'}
+                  </span>
+                </button>
+
+                {userMenuOpen && (
+                  <div className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5">
+                    <div className="px-4 py-2 text-sm text-gray-900 border-b">
+                      <div className="font-medium">{user?.name || 'User'}</div>
+                      <div className="text-gray-500">{user?.email}</div>
+                    </div>
+                    <Link
+                      to="/settings"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      Settings
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout()
+                        setUserMenuOpen(false)
+                      }}
+                      className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <ArrowRightOnRectangleIcon className="mr-2 h-4 w-4" />
+                      Sign out
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

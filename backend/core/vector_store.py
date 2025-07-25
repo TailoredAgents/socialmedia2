@@ -133,7 +133,7 @@ class VectorStore:
             
         try:
             faiss.write_index(self._index, self.index_file)
-            logger.debug("FAISS index saved successfully")
+            logger.info("FAISS index saved successfully")
         except Exception as e:
             logger.error(f"Failed to save index: {e}")
     
@@ -142,7 +142,7 @@ class VectorStore:
         try:
             with open(self.metadata_file, 'w', encoding='utf-8') as f:
                 json.dump(self._metadata, f, indent=2, default=str, ensure_ascii=False)
-            logger.debug("Metadata saved successfully")
+            logger.info("Metadata saved successfully")
         except Exception as e:
             logger.error(f"Failed to save metadata: {e}")
     
@@ -151,7 +151,7 @@ class VectorStore:
         try:
             with open(self.id_mapping_file, 'w', encoding='utf-8') as f:
                 json.dump(self._id_mapping, f, indent=2)
-            logger.debug("ID mapping saved successfully")
+            logger.info("ID mapping saved successfully")
         except Exception as e:
             logger.error(f"Failed to save ID mapping: {e}")
     
@@ -207,7 +207,7 @@ class VectorStore:
         if self._next_internal_id % 100 == 0:
             self._save_all()
         
-        logger.debug(f"Added vector for content_id: {content_id}")
+        logger.info(f"Added vector for content_id: {content_id}")
         return content_id
     
     def add_vectors_batch(

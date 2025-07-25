@@ -724,7 +724,7 @@ class ContentGenerationService:
             return list(keywords)[:10]
             
         except Exception as e:
-            logger.debug(f"Failed to extract trending keywords: {e}")
+            logger.warning(f"Failed to extract trending keywords: {e}")
             return [topic.replace(" ", "").lower()]
     
     async def _calculate_originality_score(self, content: str) -> float:
@@ -744,7 +744,7 @@ class ContentGenerationService:
             return min(originality_score, 100.0)
             
         except Exception as e:
-            logger.debug(f"Failed to calculate originality score: {e}")
+            logger.warning(f"Failed to calculate originality score: {e}")
             return 75.0  # Default score
     
     def _calculate_brand_alignment_score(self, content: str, tone: ContentTone) -> float:
@@ -816,7 +816,7 @@ class ContentGenerationService:
                 return predicted_engagement, predicted_reach, viral_potential
             
         except Exception as e:
-            logger.debug(f"Failed to predict performance: {e}")
+            logger.warning(f"Failed to predict performance: {e}")
         
         # Default predictions
         return 3.5, 1000, 25.0
@@ -856,7 +856,7 @@ class ContentGenerationService:
                 session.add(content_item)
                 await session.commit()
             
-            logger.debug(f"Stored generated content: {content.content_id}")
+            logger.info(f"Stored generated content: {content.content_id}")
             
         except Exception as e:
             logger.error(f"Failed to store generated content: {e}")

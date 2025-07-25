@@ -2,6 +2,10 @@
 Enhanced memory API endpoints with FAISS vector search integration
 """
 from fastapi import APIRouter, HTTPException, Depends, Query, BackgroundTasks
+from backend.core.error_handler import (
+    handle_errors, ErrorCode, APIError, ValidationError, 
+    NotFoundError, ExternalServiceError, safe_execute
+)
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
@@ -50,6 +54,7 @@ class ContentPatternAnalysis(BaseModel):
     engagement_distribution: Dict[str, float]
 
 @router.post("/store", response_model=VectorMemoryResponse)
+@handle_errors("store_vector_memory")
 async def store_vector_memory(
     request: VectorStoreRequest,
     background_tasks: BackgroundTasks,
@@ -66,36 +71,38 @@ async def store_vector_memory(
         **request.metadata
     }
     
-    try:
-        # Store in FAISS and database
-        result = await memory_service.store_memory(
-            db=db,
-            content=request.content,
-            memory_type=request.memory_type,
-            metadata=metadata,
-            user_id=current_user.id
-        )
-        
-        # Get the stored memory from database
-        memory = db.query(Memory).filter(
-            Memory.content_id == result['content_id']
-        ).first()
-        
-        return VectorMemoryResponse(
-            id=memory.id,
-            content_id=memory.content_id,
-            content=memory.content,
-            memory_type=memory.memory_type,
-            metadata=memory.metadata,
-            created_at=memory.created_at,
-            vector_indexed=memory.vector_indexed
-        )
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to store memory: {str(e)}"
-        )
+    # Store in FAISS and database using safe execution
+    result = await safe_execute(
+        "memory storage",
+        memory_service.store_memory,
+        db=db,
+        content=request.content,
+        memory_type=request.memory_type,
+        metadata=metadata,
+        user_id=current_user.id,
+        error_code=ErrorCode.MEMORY_STORAGE_ERROR
+    )
+    
+    # Get the stored memory from database
+    memory = db.query(Memory).filter(
+        Memory.content_id == result['content_id']
+    ).first()
+    
+    if not memory:
+        raise NotFoundError(
+            ErrorCode.MEMORY_STORAGE_ERROR,
+            "Failed to retrieve stored memory from database"
+        ).to_http_exception()
+    
+    return VectorMemoryResponse(
+        id=memory.id,
+        content_id=memory.content_id,
+        content=memory.content,
+        memory_type=memory.memory_type,
+        metadata=memory.metadata,
+        created_at=memory.created_at,
+        vector_indexed=memory.vector_indexed
+    )
 
 @router.post("/search", response_model=List[VectorMemoryResponse])
 async def search_similar_memories(

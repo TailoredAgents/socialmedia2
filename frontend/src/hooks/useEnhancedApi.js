@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import apiService from '../services/api'
 import { useNotifications } from './useNotifications'
+import { error as logError, debug as logDebug } from '../utils/logger.js'
 
 // Enhanced API hook with better error handling, caching, and state management
 export const useEnhancedApi = () => {
@@ -30,7 +31,7 @@ export const useEnhancedApi = () => {
       setConnectionStatus('connected')
       return health
     } catch (error) {
-      console.error('API health check failed:', error)
+      logError('API health check failed:', error)
       setConnectionStatus('disconnected') 
       setApiHealth(null)
       return null
@@ -82,12 +83,12 @@ export const useEnhancedApi = () => {
         
         return result
       } catch (error) {
-        console.error(`API request failed (attempt ${attempt}):`, error)
+        logError(`API request failed (attempt ${attempt}):`, error)
         
         // Handle authentication errors
         if (error.message.includes('401') || error.message.includes('Unauthorized')) {
           try {
-            console.log('Token expired, attempting refresh...')
+            logDebug('Token expired, attempting refresh...')
             const newToken = await refreshToken()
             if (newToken) {
               apiService.setToken(newToken)
@@ -99,7 +100,7 @@ export const useEnhancedApi = () => {
               throw new Error('Authentication failed. Please log in again.')
             }
           } catch (refreshError) {
-            console.error('Token refresh failed:', refreshError)
+            logError('Token refresh failed:', refreshError)
             logout()
             showError('Session expired. Please log in again.', 'Authentication Error')
             throw new Error('Session expired. Please log in again.')

@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
+import { debug as logDebug } from '../../utils/logger.js'
 import {
   DndContext,
   DragOverlay,
@@ -438,7 +439,7 @@ export default function DragDropCalendar({ posts = [], onPostMove, onAddPost, on
   
   const handleBulkReschedule = useCallback(() => {
     // This would open a bulk reschedule modal
-    console.log('Bulk reschedule:', selectedPosts)
+    logDebug('Bulk reschedule:', selectedPosts)
     setBulkActionsOpen(false)
   }, [selectedPosts])
   

@@ -5,6 +5,8 @@ import { AuthProvider } from './contexts/AuthContext'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import NotificationContainer from './components/Notifications/NotificationContainer'
+import { ErrorBoundary, PageErrorBoundary } from './components/ErrorBoundary'
+import './styles/accessibility.css'
 import Login from './pages/Login'
 import Overview from './pages/Overview'
 import Calendar from './pages/Calendar'
@@ -27,7 +29,8 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <Auth0Provider
+    <ErrorBoundary componentName="App">
+      <Auth0Provider
       domain={import.meta.env.VITE_AUTH0_DOMAIN}
       clientId={import.meta.env.VITE_AUTH0_CLIENT_ID}
       authorizationParams={{
@@ -42,15 +45,25 @@ function App() {
         <AuthProvider>
           <Router>
             <div className="min-h-screen bg-gray-50">
+              {/* Skip to main content link */}
+              <a href="#main-content" className="skip-link">
+                Skip to main content
+              </a>
               <NotificationContainer />
               <Routes>
-                <Route path="/login" element={<Login />} />
+                <Route path="/login" element={
+                  <PageErrorBoundary pageName="Login">
+                    <Login />
+                  </PageErrorBoundary>
+                } />
                 <Route 
                   path="/" 
                   element={
                     <ProtectedRoute>
                       <Layout>
-                        <Overview />
+                        <PageErrorBoundary pageName="Overview">
+                          <Overview />
+                        </PageErrorBoundary>
                       </Layout>
                     </ProtectedRoute>
                   } 
@@ -60,7 +73,9 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Layout>
-                        <Calendar />
+                        <PageErrorBoundary pageName="Calendar">
+                          <Calendar />
+                        </PageErrorBoundary>
                       </Layout>
                     </ProtectedRoute>
                   } 
@@ -70,7 +85,9 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Layout>
-                        <Analytics />
+                        <PageErrorBoundary pageName="Analytics">
+                          <Analytics />
+                        </PageErrorBoundary>
                       </Layout>
                     </ProtectedRoute>
                   } 
@@ -80,7 +97,9 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Layout>
-                        <PerformanceDashboard />
+                        <PageErrorBoundary pageName="Performance">
+                          <PerformanceDashboard />
+                        </PageErrorBoundary>
                       </Layout>
                     </ProtectedRoute>
                   } 
@@ -90,7 +109,9 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Layout>
-                        <Content />
+                        <PageErrorBoundary pageName="Content">
+                          <Content />
+                        </PageErrorBoundary>
                       </Layout>
                     </ProtectedRoute>
                   } 
@@ -100,7 +121,9 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Layout>
-                        <MemoryExplorer />
+                        <PageErrorBoundary pageName="Memory">
+                          <MemoryExplorer />
+                        </PageErrorBoundary>
                       </Layout>
                     </ProtectedRoute>
                   } 
@@ -110,7 +133,9 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Layout>
-                        <GoalTracking />
+                        <PageErrorBoundary pageName="Goals">
+                          <GoalTracking />
+                        </PageErrorBoundary>
                       </Layout>
                     </ProtectedRoute>
                   } 
@@ -120,7 +145,9 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Layout>
-                        <Settings />
+                        <PageErrorBoundary pageName="Settings">
+                          <Settings />
+                        </PageErrorBoundary>
                       </Layout>
                     </ProtectedRoute>
                   } 
@@ -130,7 +157,8 @@ function App() {
           </Router>
         </AuthProvider>
       </QueryClientProvider>
-    </Auth0Provider>
+      </Auth0Provider>
+    </ErrorBoundary>
   )
 }
 

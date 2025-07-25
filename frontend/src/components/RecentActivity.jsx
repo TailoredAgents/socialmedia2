@@ -1,3 +1,4 @@
+import React, { useMemo, useCallback } from 'react'
 import { ClockIcon } from '@heroicons/react/24/outline'
 
 const activities = [
@@ -68,17 +69,17 @@ const getStatusDot = (status) => {
   }
 }
 
-export default function RecentActivity() {
+const RecentActivity = React.memo(function RecentActivity() {
   return (
-    <div className="bg-white shadow rounded-lg">
+    <div className="bg-white shadow rounded-lg" role="region" aria-labelledby="recent-activity-heading">
       <div className="px-4 py-5 sm:p-6">
-        <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+        <h3 id="recent-activity-heading" className="text-lg leading-6 font-medium text-gray-900 mb-4">
           Recent Activity
         </h3>
         <div className="flow-root">
-          <ul className="-mb-8">
+          <ul className="-mb-8" role="list" aria-label="Recent activity items">
             {activities.map((activity, activityIdx) => (
-              <li key={activity.id}>
+              <li key={activity.id} role="listitem">
                 <div className="relative pb-8">
                   {activityIdx !== activities.length - 1 ? (
                     <span
@@ -88,19 +89,29 @@ export default function RecentActivity() {
                   ) : null}
                   <div className="relative flex items-start space-x-3">
                     <div className="relative">
-                      <div className={`h-3 w-3 rounded-full ${getStatusDot(activity.status)} ring-8 ring-white`} />
+                      <div 
+                        className={`h-3 w-3 rounded-full ${getStatusDot(activity.status)} ring-8 ring-white`}
+                        role="img"
+                        aria-label={`Status: ${activity.status}`}
+                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-sm text-gray-900">
                         <span className="font-medium">{activity.message}</span>
                       </div>
                       <div className="mt-1 flex items-center space-x-2">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(activity.status)}`}>
+                        <span 
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(activity.status)}`}
+                          role="status"
+                          aria-label={`Activity status: ${activity.status}`}
+                        >
                           {activity.status}
                         </span>
                         <div className="flex items-center text-sm text-gray-500">
-                          <ClockIcon className="mr-1.5 h-4 w-4 text-gray-400" />
-                          {activity.time}
+                          <ClockIcon className="mr-1.5 h-4 w-4 text-gray-400" aria-hidden="true" />
+                          <time dateTime={activity.time} aria-label={`Time: ${activity.time}`}>
+                            {activity.time}
+                          </time>
                         </div>
                       </div>
                     </div>
@@ -113,4 +124,6 @@ export default function RecentActivity() {
       </div>
     </div>
   )
-}
+})
+
+export default RecentActivity

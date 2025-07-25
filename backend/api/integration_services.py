@@ -1,6 +1,6 @@
 """
 Integration Services API Endpoints
-Exposes Instagram, Facebook, research automation, and content generation services
+Exposes Instagram, Facebook, TikTok, research automation, and content generation services
 """
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query
 from sqlalchemy.orm import Session
@@ -13,6 +13,7 @@ from backend.db.models import User, ContentItem, ResearchData
 from backend.auth.dependencies import get_current_active_user
 from backend.integrations.instagram_client import instagram_client, InstagramMediaType
 from backend.integrations.facebook_client import facebook_client
+from backend.integrations.tiktok_client import tiktok_client, TikTokVideoPrivacy
 from backend.services.research_automation import research_service, ResearchQuery, ResearchSource
 from backend.services.content_automation import content_automation_service
 from backend.services.workflow_orchestration import workflow_orchestrator
@@ -35,6 +36,16 @@ class FacebookPostRequest(BaseModel):
     link: Optional[str] = None
     scheduled_publish_time: Optional[datetime] = None
     targeting: Optional[Dict[str, Any]] = Field(default_factory=dict)
+
+class TikTokVideoRequest(BaseModel):
+    video_url: str = Field(..., description="URL of video to upload")
+    description: str = Field(..., max_length=2200)
+    privacy_level: str = Field("PUBLIC_TO_EVERYONE", regex="^(PUBLIC_TO_EVERYONE|MUTUAL_FOLLOW_FRIENDS|FOLLOWER_OF_CREATOR|SELF_ONLY)$")
+    disable_duet: bool = False
+    disable_stitch: bool = False
+    disable_comment: bool = False
+    brand_content_toggle: bool = False
+    auto_add_music: bool = True
 
 class ResearchQueryRequest(BaseModel):
     keywords: List[str] = Field(..., min_items=1, max_items=10)
@@ -378,3 +389,267 @@ async def get_metrics_collection_status(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get metrics status: {str(e)}")
+
+# TikTok API Endpoints
+
+@router.post("/tiktok/video")
+async def upload_tiktok_video(
+    request: TikTokVideoRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Upload video to TikTok"""
+    try:
+        # Get user's TikTok access token
+        tiktok_token = await tiktok_client.get_user_token(current_user.id)
+        if not tiktok_token:
+            raise HTTPException(status_code=401, detail="TikTok account not connected")
+        
+        # Upload video to TikTok
+        publish_id = await tiktok_client.upload_video(
+            access_token=tiktok_token,
+            video_url=request.video_url,
+            description=request.description,
+            privacy_level=TikTokVideoPrivacy(request.privacy_level),
+            disable_duet=request.disable_duet,
+            disable_stitch=request.disable_stitch,
+            disable_comment=request.disable_comment,
+            brand_content_toggle=request.brand_content_toggle,
+            auto_add_music=request.auto_add_music
+        )
+        
+        # Store in database
+        content_item = ContentItem(
+            user_id=current_user.id,
+            content=request.description,
+            platform="tiktok",
+            content_type="video",
+            platform_post_id=publish_id,
+            status="published",
+            published_at=datetime.utcnow()
+        )
+        db.add(content_item)
+        db.commit()
+        
+        return {
+            "success": True,
+            "publish_id": publish_id,
+            "content_id": content_item.id,
+            "platform": "tiktok"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to upload TikTok video: {str(e)}")
+
+@router.get("/tiktok/user/info")
+async def get_tiktok_user_info(
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get TikTok user profile information"""
+    try:
+        tiktok_token = await tiktok_client.get_user_token(current_user.id)
+        if not tiktok_token:
+            raise HTTPException(status_code=401, detail="TikTok account not connected")
+        
+        user_info = await tiktok_client.get_user_info(access_token=tiktok_token)
+        
+        return {
+            "user_info": {
+                "open_id": user_info.open_id,
+                "display_name": user_info.display_name,
+                "avatar_url": user_info.avatar_url,
+                "follower_count": user_info.follower_count,
+                "following_count": user_info.following_count,
+                "likes_count": user_info.likes_count,
+                "video_count": user_info.video_count,
+                "is_verified": user_info.is_verified
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get TikTok user info: {str(e)}")
+
+@router.get("/tiktok/videos")
+async def get_tiktok_user_videos(
+    max_count: int = Query(20, ge=1, le=100),
+    cursor: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get user's TikTok videos"""
+    try:
+        tiktok_token = await tiktok_client.get_user_token(current_user.id)
+        if not tiktok_token:
+            raise HTTPException(status_code=401, detail="TikTok account not connected")
+        
+        videos_data = await tiktok_client.get_user_videos(
+            access_token=tiktok_token,
+            max_count=max_count,
+            cursor=cursor
+        )
+        
+        return {
+            "videos": [
+                {
+                    "id": video.id,
+                    "title": video.title,
+                    "description": video.video_description,
+                    "duration": video.duration,
+                    "cover_image_url": video.cover_image_url,
+                    "share_url": video.share_url,
+                    "create_time": video.create_time.isoformat(),
+                    "likes_count": video.likes_count,
+                    "view_count": video.video_view_count,
+                    "share_count": video.share_count,
+                    "comment_count": video.comment_count
+                }
+                for video in videos_data["videos"]
+            ],
+            "cursor": videos_data["cursor"],
+            "has_more": videos_data["has_more"],
+            "total": videos_data["total"]
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get TikTok videos: {str(e)}")
+
+@router.get("/tiktok/analytics/{video_id}")
+async def get_tiktok_video_analytics(
+    video_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get analytics for a TikTok video"""
+    try:
+        tiktok_token = await tiktok_client.get_user_token(current_user.id)
+        if not tiktok_token:
+            raise HTTPException(status_code=401, detail="TikTok account not connected")
+        
+        analytics_list = await tiktok_client.get_video_analytics(
+            access_token=tiktok_token,
+            video_ids=[video_id]
+        )
+        
+        if not analytics_list:
+            raise HTTPException(status_code=404, detail="Video analytics not found")
+        
+        analytics = analytics_list[0]
+        
+        return {
+            "analytics": {
+                "video_id": analytics.video_id,
+                "view_count": analytics.view_count,
+                "like_count": analytics.like_count,
+                "comment_count": analytics.comment_count,
+                "share_count": analytics.share_count,
+                "profile_view": analytics.profile_view,
+                "reach": analytics.reach,
+                "play_time_sum": analytics.play_time_sum,
+                "average_watch_time": analytics.average_watch_time,
+                "completion_rate": analytics.completion_rate,
+                "engagement_rate": analytics.engagement_rate,
+                "date_range_begin": analytics.date_range_begin.isoformat(),
+                "date_range_end": analytics.date_range_end.isoformat()
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get TikTok analytics: {str(e)}")
+
+@router.get("/tiktok/hashtags/trending")
+async def get_trending_tiktok_hashtags(
+    keywords: List[str] = Query(..., min_items=1, max_items=10),
+    period: int = Query(7, ge=1, le=120),
+    region_code: str = Query("US"),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get trending TikTok hashtags"""
+    try:
+        tiktok_token = await tiktok_client.get_user_token(current_user.id)
+        if not tiktok_token:
+            raise HTTPException(status_code=401, detail="TikTok account not connected")
+        
+        hashtags = await tiktok_client.search_hashtags(
+            access_token=tiktok_token,
+            keywords=keywords,
+            period=period,
+            region_code=region_code
+        )
+        
+        return {
+            "hashtags": [
+                {
+                    "hashtag_id": hashtag.hashtag_id,
+                    "hashtag_name": hashtag.hashtag_name,
+                    "view_count": hashtag.view_count,
+                    "publish_count": hashtag.publish_cnt,
+                    "is_commerce": hashtag.is_commerce,
+                    "description": hashtag.desc
+                }
+                for hashtag in hashtags
+            ],
+            "period_days": period,
+            "region_code": region_code,
+            "total": len(hashtags)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get trending hashtags: {str(e)}")
+
+@router.get("/tiktok/trending/videos")
+async def get_trending_tiktok_videos(
+    region_code: str = Query("US"),
+    period: int = Query(7, ge=1, le=120),
+    max_count: int = Query(50, ge=1, le=1000),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get trending TikTok videos"""
+    try:
+        tiktok_token = await tiktok_client.get_user_token(current_user.id)
+        if not tiktok_token:
+            raise HTTPException(status_code=401, detail="TikTok account not connected")
+        
+        trending_videos = await tiktok_client.get_trending_videos(
+            access_token=tiktok_token,
+            region_code=region_code,
+            period=period,
+            max_count=max_count
+        )
+        
+        return {
+            "trending_videos": trending_videos,
+            "region_code": region_code,
+            "period_days": period,
+            "total": len(trending_videos)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get trending videos: {str(e)}")
+
+@router.get("/tiktok/comments/{video_id}")
+async def get_tiktok_video_comments(
+    video_id: str,
+    max_count: int = Query(20, ge=1, le=50),
+    cursor: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get comments for a TikTok video"""
+    try:
+        tiktok_token = await tiktok_client.get_user_token(current_user.id)
+        if not tiktok_token:
+            raise HTTPException(status_code=401, detail="TikTok account not connected")
+        
+        comments_data = await tiktok_client.get_video_comments(
+            access_token=tiktok_token,
+            video_id=video_id,
+            max_count=max_count,
+            cursor=cursor
+        )
+        
+        return {
+            "comments": comments_data.get("comments", []),
+            "cursor": comments_data.get("cursor", ""),
+            "has_more": comments_data.get("has_more", False),
+            "total": comments_data.get("total", 0)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get TikTok comments: {str(e)}")

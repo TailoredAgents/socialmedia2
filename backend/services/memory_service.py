@@ -1,3 +1,8 @@
+"""
+Content Memory Service
+Provides high-level memory management functionality including content storage,
+retrieval, and semantic search operations using FAISS vector database.
+"""
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 import asyncio

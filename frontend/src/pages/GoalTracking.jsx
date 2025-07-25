@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEnhancedApi } from '../hooks/useEnhancedApi'
+import { error as logError } from '../utils/logger.js'
 import { 
   TrophyIcon,
   PlusIcon,
@@ -149,7 +150,7 @@ export default function GoalTracking() {
       setShowCreateModal(false)
     },
     onError: (error) => {
-      console.error('Failed to create goal:', error)
+      logError('Failed to create goal:', error)
     }
   })
 
@@ -162,7 +163,7 @@ export default function GoalTracking() {
       setShowDetailModal(false)
     },
     onError: (error) => {
-      console.error('Failed to update goal:', error)
+      logError('Failed to update goal:', error)
     }
   })
 
@@ -175,7 +176,7 @@ export default function GoalTracking() {
       setShowDetailModal(false)
     },
     onError: (error) => {
-      console.error('Failed to delete goal:', error)
+      logError('Failed to delete goal:', error)
     }
   })
 
@@ -187,7 +188,7 @@ export default function GoalTracking() {
       queryClient.invalidateQueries({ queryKey: ['goals-dashboard'] })
     },
     onError: (error) => {
-      console.error('Failed to update progress:', error)
+      logError('Failed to update progress:', error)
     }
   })
 
@@ -199,7 +200,7 @@ export default function GoalTracking() {
     try {
       await createGoalMutation.mutateAsync(goalData)
     } catch (error) {
-      console.error('Create goal error:', error)
+      logError('Create goal error:', error)
     }
   }
 
@@ -210,7 +211,7 @@ export default function GoalTracking() {
         goalData: updatedGoal 
       })
     } catch (error) {
-      console.error('Update goal error:', error)
+      logError('Update goal error:', error)
     }
   }
 
@@ -218,7 +219,7 @@ export default function GoalTracking() {
     try {
       await deleteGoalMutation.mutateAsync(goalId)
     } catch (error) {
-      console.error('Delete goal error:', error)
+      logError('Delete goal error:', error)
     }
   }
 
@@ -226,7 +227,7 @@ export default function GoalTracking() {
     try {
       await updateProgressMutation.mutateAsync({ goalId, progressData })
     } catch (error) {
-      console.error('Update progress error:', error)
+      logError('Update progress error:', error)
     }
   }
 

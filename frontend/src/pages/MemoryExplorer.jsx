@@ -1,6 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEnhancedApi } from '../hooks/useEnhancedApi'
+import { useNotifications } from '../hooks/useNotifications'
+import { error as logError, debug as logDebug } from '../utils/logger.js'
+import apiService from '../services/api'
+import { ApiErrorBoundary } from '../components/ErrorBoundary'
 import { 
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -13,7 +17,8 @@ import {
   ShareIcon,
   EyeIcon,
   ChartPieIcon,
-  BoltIcon
+  BoltIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import SimilarityChart from '../components/Memory/SimilarityChart'
 import ContentDetailModal from '../components/Memory/ContentDetailModal'
@@ -96,9 +101,12 @@ export default function MemoryExplorer() {
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showSimilarityChart, setShowSimilarityChart] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [editingContent, setEditingContent] = useState(null)
+  const [showEditModal, setShowEditModal] = useState(false)
   
-  const { api, connectionStatus } = useEnhancedApi()
+  const { api, connectionStatus, makeAuthenticatedRequest } = useEnhancedApi()
   const queryClient = useQueryClient()
+  const { showSuccess, showError } = useNotifications()
 
   // Fetch all memory content
   const { 
@@ -144,7 +152,7 @@ export default function MemoryExplorer() {
       queryClient.invalidateQueries({ queryKey: ['memory'] })
     },
     onError: (error) => {
-      console.error('Failed to store memory:', error)
+      logError('Failed to store memory:', error)
     }
   })
 
@@ -156,7 +164,7 @@ export default function MemoryExplorer() {
       setShowDetailModal(false)
     },
     onError: (error) => {
-      console.error('Failed to update memory:', error)
+      logError('Failed to update memory:', error)
     }
   })
 
@@ -168,7 +176,7 @@ export default function MemoryExplorer() {
       setShowDetailModal(false)
     },
     onError: (error) => {
-      console.error('Failed to delete memory:', error)
+      logError('Failed to delete memory:', error)
     }
   })
 
@@ -216,7 +224,7 @@ export default function MemoryExplorer() {
               return
             }
           } catch (error) {
-            console.log('FAISS search not available, using local search:', error)
+            logDebug('FAISS search not available, using local search:', error)
           }
         }
         
@@ -258,7 +266,7 @@ export default function MemoryExplorer() {
 
         setFilteredContent(filtered)
       } catch (error) {
-        console.error('Search failed:', error)
+        logError('Search failed:', error)
         setFilteredContent(mockMemoryContent)
       } finally {
         setIsSearching(false)
@@ -269,51 +277,154 @@ export default function MemoryExplorer() {
     return () => clearTimeout(searchTimeout)
   }, [searchQuery, selectedType, selectedPlatform, sortBy, apiService, makeAuthenticatedRequest])
 
-  const getTypeIcon = (type) => {
+  const getTypeIcon = useCallback((type) => {
     const typeConfig = contentTypes.find(t => t.value === type)
     const Icon = typeConfig?.icon || DocumentTextIcon
     return Icon
-  }
+  }, [])
 
-  const getEngagementTotal = (engagement) => {
+  const getEngagementTotal = useCallback((engagement) => {
     return (engagement.likes || 0) + (engagement.shares || 0)
-  }
+  }, [])
 
-  const formatDate = (dateString) => {
+  const formatDate = useCallback((dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       time: 'short'
     })
-  }
+  }, [])
 
-  const handleContentClick = (content) => {
+  const handleContentClick = useCallback((content) => {
     setSelectedContent(content)
     setShowDetailModal(true)
-  }
+  }, [])
 
-  const handleNodeClick = (contentId) => {
+  const handleNodeClick = useCallback((contentId) => {
     const content = filteredContent.find(item => item.id === contentId)
     if (content) {
       handleContentClick(content)
     }
-  }
+  }, [filteredContent, handleContentClick])
 
-  const handleRepurpose = (content, option = null) => {
-    console.log('Repurposing content:', content, 'with option:', option)
-    // TODO: Implement repurpose functionality
+  const handleRepurpose = async (content, option = null) => {
+    logDebug('Repurposing content:', content, 'with option:', option)
+    
+    try {
+      // Generate repurposed content using the workflow system
+      const repurposeData = {
+        source_content: content.content,
+        source_title: content.title,
+        target_platform: option?.platform || 'general',
+        repurpose_type: option?.id || 'general',
+        metadata: {
+          original_id: content.id,
+          original_platform: content.platform,
+          repurpose_option: option
+        }
+      }
+      
+      const result = await makeAuthenticatedRequest(
+        apiService.generateContent,
+        `Repurpose this content for ${option?.title || 'general use'}: ${content.content}`,
+        option?.id || 'text'
+      )
+      
+      if (result) {
+        showSuccess(
+          `Content repurposed successfully for ${option?.platform || 'general use'}!`,
+          'Repurpose Complete'
+        )
+        
+        // Optionally store the repurposed content in memory
+        const newContent = {
+          content: result.content || result,
+          metadata: {
+            type: 'repurposed',
+            original_id: content.id,
+            target_platform: option?.platform,
+            repurpose_type: option?.id
+          }
+        }
+        
+        await storeMemoryMutation.mutateAsync(newContent)
+      }
+    } catch (error) {
+      logError('Failed to repurpose content:', error)
+      showError('Failed to repurpose content. Please try again.', 'Repurpose Failed')
+    }
+    
     setShowDetailModal(false)
   }
 
   const handleEdit = (content) => {
-    console.log('Editing content:', content)
-    // TODO: Implement edit functionality
+    logDebug('Editing content:', content)
+    
+    // Close the detail modal and open edit interface
+    setShowDetailModal(false)
+    
+    // Set the content to be edited
+    setEditingContent({
+      id: content.id,
+      title: content.title,
+      content: content.content,
+      type: content.type,
+      platform: content.platform,
+      tags: content.tags || []
+    })
+    
+    // Show edit modal/form
+    setShowEditModal(true)
   }
 
-  const handleDelete = (contentId) => {
-    console.log('Deleting content:', contentId)
-    // TODO: Implement delete functionality
+  const handleDelete = async (contentId) => {
+    logDebug('Deleting content:', contentId)
+    
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this content? This action cannot be undone.'
+    )
+    
+    if (!confirmed) {
+      return
+    }
+    
+    try {
+      await deleteMemoryMutation.mutateAsync(contentId)
+      showSuccess('Content deleted successfully!', 'Delete Complete')
+    } catch (error) {
+      logError('Failed to delete content:', error)
+      showError('Failed to delete content. Please try again.', 'Delete Failed')
+    }
+    
     setShowDetailModal(false)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingContent) return
+    
+    try {
+      await updateMemoryMutation.mutateAsync({
+        contentId: editingContent.id,
+        data: {
+          title: editingContent.title,
+          content: editingContent.content,
+          metadata: {
+            type: editingContent.type,
+            platform: editingContent.platform,
+            tags: editingContent.tags,
+            updated_at: new Date().toISOString()
+          }
+        }
+      })
+      
+      showSuccess('Content updated successfully!', 'Update Complete')
+      setShowEditModal(false)
+      setEditingContent(null)
+    } catch (error) {
+      logError('Failed to update content:', error)
+      showError('Failed to update content. Please try again.', 'Update Failed')
+    }
   }
 
   return (
@@ -348,58 +459,88 @@ export default function MemoryExplorer() {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6" role="search" aria-labelledby="search-filters-heading">
+        <h2 id="search-filters-heading" className="sr-only">Search and filter content</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+            <label htmlFor="content-search" className="sr-only">
+              Search content using AI similarity
+            </label>
+            <MagnifyingGlassIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" aria-hidden="true" />
             <input
+              id="content-search"
               type="text"
               placeholder="Search content using AI similarity..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-describedby="search-help"
             />
+            <div id="search-help" className="sr-only">
+              Type to search through content using AI-powered semantic similarity
+            </div>
             {isSearching && (
-              <div className="absolute right-3 top-3">
+              <div className="absolute right-3 top-3" aria-label="Searching...">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
               </div>
             )}
           </div>
 
           {/* Content Type Filter */}
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {contentTypes.map(type => (
-              <option key={type.value} value={type.value}>{type.label}</option>
-            ))}
-          </select>
+          <div>
+            <label htmlFor="content-type-filter" className="sr-only">
+              Filter by content type
+            </label>
+            <select
+              id="content-type-filter"
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Filter by content type"
+            >
+              {contentTypes.map(type => (
+                <option key={type.value} value={type.value}>{type.label}</option>
+              ))}
+            </select>
+          </div>
 
           {/* Platform Filter */}
-          <select
-            value={selectedPlatform}
-            onChange={(e) => setSelectedPlatform(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {platforms.map(platform => (
-              <option key={platform.value} value={platform.value}>{platform.label}</option>
-            ))}
-          </select>
+          <div>
+            <label htmlFor="platform-filter" className="sr-only">
+              Filter by platform
+            </label>
+            <select
+              id="platform-filter"
+              value={selectedPlatform}
+              onChange={(e) => setSelectedPlatform(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Filter by platform"
+            >
+              {platforms.map(platform => (
+                <option key={platform.value} value={platform.value}>{platform.label}</option>
+              ))}
+            </select>
+          </div>
 
           {/* Sort By */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="created_at">Latest First</option>
-            <option value="engagement">Most Engaging</option>
-            <option value="similarity">Most Similar</option>
-            <option value="repurpose">Repurpose Ready</option>
-          </select>
+          <div>
+            <label htmlFor="sort-by" className="sr-only">
+              Sort content by
+            </label>
+            <select
+              id="sort-by"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Sort content by"
+            >
+              <option value="created_at">Latest First</option>
+              <option value="engagement">Most Engaging</option>
+              <option value="similarity">Most Similar</option>
+              <option value="repurpose">Repurpose Ready</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -416,36 +557,41 @@ export default function MemoryExplorer() {
       )}
 
       {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" role="list" aria-label="Content items">
         {filteredContent.map((item) => {
           const Icon = getTypeIcon(item.type)
           const engagementTotal = getEngagementTotal(item.engagement)
           
           return (
-            <div key={item.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+            <article 
+              key={item.id} 
+              className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-blue-500"
+              role="listitem"
+              aria-labelledby={`content-title-${item.id}`}
+            >
               <div className="p-6">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <Icon className="h-6 w-6 text-blue-600" />
+                    <Icon className="h-6 w-6 text-blue-600" aria-hidden="true" />
                     <div>
-                      <h3 className="font-semibold text-gray-900 line-clamp-1">
+                      <h3 id={`content-title-${item.id}`} className="font-semibold text-gray-900 line-clamp-1">
                         {item.title}
                       </h3>
                       <div className="flex items-center space-x-2 mt-1">
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                          {item.platform}
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full" role="text">
+                          Platform: {item.platform}
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <time className="text-xs text-gray-500" dateTime={item.created_at}>
                           {formatDate(item.created_at)}
-                        </span>
+                        </time>
                       </div>
                     </div>
                   </div>
                   
                   {item.similarity_score && (
                     <div className="text-right">
-                      <div className="text-sm font-medium text-green-600">
+                      <div className="text-sm font-medium text-green-600" aria-label={`Similarity match: ${Math.round(item.similarity_score * 100)} percent`}>
                         {Math.round(item.similarity_score * 100)}% match
                       </div>
                     </div>
@@ -497,22 +643,30 @@ export default function MemoryExplorer() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex space-x-2 mt-4">
+                <div className="flex space-x-2 mt-4" role="group" aria-label={`Actions for ${item.title}`}>
                   <button 
                     onClick={() => handleRepurpose(item)}
-                    className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                    className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                    aria-describedby={`repurpose-desc-${item.id}`}
                   >
                     Repurpose Content
                   </button>
+                  <div id={`repurpose-desc-${item.id}`} className="sr-only">
+                    Generate new content variations from this item
+                  </div>
                   <button 
                     onClick={() => handleContentClick(item)}
-                    className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                    aria-describedby={`details-desc-${item.id}`}
                   >
                     View Details
                   </button>
+                  <div id={`details-desc-${item.id}`} className="sr-only">
+                    View full content details and additional options
+                  </div>
                 </div>
               </div>
-            </div>
+            </article>
           )
         })}
       </div>
@@ -549,6 +703,134 @@ export default function MemoryExplorer() {
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
+
+      {/* Edit Modal */}
+      {showEditModal && editingContent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Content</h3>
+              <button
+                onClick={() => {
+                  setShowEditModal(false)
+                  setEditingContent(null)
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  value={editingContent.title}
+                  onChange={(e) => setEditingContent({
+                    ...editingContent,
+                    title: e.target.value
+                  })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Content
+                </label>
+                <textarea
+                  value={editingContent.content}
+                  onChange={(e) => setEditingContent({
+                    ...editingContent,
+                    content: e.target.value
+                  })}
+                  rows={8}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Type
+                  </label>
+                  <select
+                    value={editingContent.type}
+                    onChange={(e) => setEditingContent({
+                      ...editingContent,
+                      type: e.target.value
+                    })}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="content">Content</option>
+                    <option value="research">Research</option>
+                    <option value="image">Image</option>
+                    <option value="video">Video</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Platform
+                  </label>
+                  <select
+                    value={editingContent.platform}
+                    onChange={(e) => setEditingContent({
+                      ...editingContent,
+                      platform: e.target.value
+                    })}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="twitter">Twitter</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="web">Web</option>
+                    <option value="research">Research</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tags (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={editingContent.tags?.join(', ') || ''}
+                  onChange={(e) => setEditingContent({
+                    ...editingContent,
+                    tags: e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag)
+                  })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="AI, Marketing, Trends"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowEditModal(false)
+                  setEditingContent(null)
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={updateMemoryMutation.isPending}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {updateMemoryMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

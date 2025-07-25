@@ -750,7 +750,7 @@ class AutomatedResearchService:
             if len(self.research_history) > 100:
                 self.research_history = self.research_history[-100:]
             
-            logger.debug(f"Stored research results for job {research_result.job_id}")
+            logger.info(f"Stored research results for job {research_result.job_id}")
             
         except Exception as e:
             logger.error(f"Failed to store research results: {e}")

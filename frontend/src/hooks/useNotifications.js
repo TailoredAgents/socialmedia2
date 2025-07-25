@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { debug as logDebug } from '../utils/logger.js'
 
 // Custom hook for managing notifications
 export const useNotifications = () => {
@@ -108,7 +109,7 @@ export const useNotifications = () => {
           duration: 10000,
           action: {
             label: 'View Details',
-            onClick: () => console.log('Failed operations:', failures)
+            onClick: () => logDebug('Failed operations:', failures)
           }
         }
       )

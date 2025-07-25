@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useApi } from './useApi'
+import { error as logError, debug as logDebug } from '../utils/logger.js'
 
 export const useRealTimeData = (endpoint, options = {}) => {
   const [data, setData] = useState(null)
@@ -67,7 +68,7 @@ export const useRealTimeData = (endpoint, options = {}) => {
         }
       }
     } catch (err) {
-      console.error(`Real-time data fetch failed for ${endpoint}:`, err)
+      logError(`Real-time data fetch failed for ${endpoint}:`, err)
       
       if (attemptCount < retryAttempts) {
         setTimeout(() => {
@@ -146,7 +147,7 @@ export const useRealTimeAnalytics = (timeframe = '7d') => {
   return useRealTimeData('analytics', {
     refreshInterval: 30000, // 30 seconds
     onDataUpdate: (data) => {
-      console.log('Analytics updated:', data)
+      logDebug('Analytics updated:', data)
     }
   })
 }
@@ -155,7 +156,7 @@ export const useRealTimePerformance = (platform = 'all') => {
   return useRealTimeData('performance', {
     refreshInterval: 60000, // 1 minute
     onDataUpdate: (data) => {
-      console.log('Performance metrics updated:', data)
+      logDebug('Performance metrics updated:', data)
     }
   })
 }
@@ -164,7 +165,7 @@ export const useRealTimeGoals = () => {
   return useRealTimeData('goals', {
     refreshInterval: 120000, // 2 minutes
     onDataUpdate: (data) => {
-      console.log('Goals updated:', data)
+      logDebug('Goals updated:', data)
     }
   })
 }
@@ -173,7 +174,7 @@ export const useRealTimeMemory = () => {
   return useRealTimeData('memory', {
     refreshInterval: 300000, // 5 minutes
     onDataUpdate: (data) => {
-      console.log('Memory analytics updated:', data)
+      logDebug('Memory analytics updated:', data)
     }
   })
 }
@@ -182,7 +183,7 @@ export const useRealTimeNotifications = () => {
   return useRealTimeData('notifications', {
     refreshInterval: 60000, // 1 minute
     onDataUpdate: (data) => {
-      console.log('Notifications updated:', data)
+      logDebug('Notifications updated:', data)
     }
   })
 }
@@ -191,7 +192,7 @@ export const useRealTimeWorkflow = () => {
   return useRealTimeData('workflow', {
     refreshInterval: 30000, // 30 seconds
     onDataUpdate: (data) => {
-      console.log('Workflow status updated:', data)
+      logDebug('Workflow status updated:', data)
     }
   })
 }
@@ -200,7 +201,7 @@ export const useRealTimeContent = () => {
   return useRealTimeData('content', {
     refreshInterval: 60000, // 1 minute
     onDataUpdate: (data) => {
-      console.log('Content updated:', data)
+      logDebug('Content updated:', data)
     }
   })
 }

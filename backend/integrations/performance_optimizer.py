@@ -59,7 +59,10 @@ class PerformanceCache:
             "instagram_profile": 3600,
             "instagram_insights": 1800,
             "facebook_profile": 7200,
-            "facebook_insights": 1800
+            "facebook_insights": 1800,
+            "tiktok_profile": 3600,  # 1 hour
+            "tiktok_analytics": 1800,  # 30 minutes
+            "tiktok_trending": 900    # 15 minutes for trending content
         }
         
         logger.info(f"Performance cache initialized: max_size={max_size}, default_ttl={default_ttl}s")
@@ -95,7 +98,7 @@ class PerformanceCache:
                 del self.access_times[key]
         
         if expired_keys:
-            logger.debug(f"Evicted {len(expired_keys)} expired cache entries")
+            logger.info(f"Evicted {len(expired_keys)} expired cache entries")
             self.stats["evictions"] += len(expired_keys)
     
     def _evict_lru(self):
@@ -114,7 +117,7 @@ class PerformanceCache:
                 del self.access_times[key]
         
         if keys_to_remove:
-            logger.debug(f"LRU evicted {len(keys_to_remove)} cache entries")
+            logger.info(f"LRU evicted {len(keys_to_remove)} cache entries")
             self.stats["evictions"] += len(keys_to_remove)
     
     def get(self, platform: str, operation: str, **kwargs) -> Optional[Any]:
@@ -145,7 +148,7 @@ class PerformanceCache:
         entry.hit_count += 1
         self.stats["hits"] += 1
         
-        logger.debug(f"Cache hit: {platform}_{operation} (hits: {entry.hit_count})")
+        # Cache hit logged at trace level for performance
         return entry.data
     
     def set(self, platform: str, operation: str, data: Any, **kwargs):
@@ -171,7 +174,7 @@ class PerformanceCache:
         self._evict_lru()
         
         self.stats["cache_size"] = len(self.cache)
-        logger.debug(f"Cache set: {platform}_{operation} (TTL: {ttl}s)")
+        # Cache set logged at trace level for performance
     
     def clear(self):
         """Clear all cache entries"""
@@ -240,7 +243,7 @@ class ConnectionPool:
                 http2=True  # Enable HTTP/2 for better performance
             )
             
-            logger.debug(f"Created new connection pool for {platform}")
+            logger.info(f"Created new connection pool for {platform}")
         
         return self.pools[platform]
     
@@ -248,7 +251,7 @@ class ConnectionPool:
         """Close all connection pools"""
         for platform, client in self.pools.items():
             await client.aclose()
-            logger.debug(f"Closed connection pool for {platform}")
+            logger.info(f"Closed connection pool for {platform}")
         
         self.pools.clear()
     
@@ -270,7 +273,8 @@ class RateLimiter:
             "twitter": {"requests": 300, "window": 900, "burst": 50},
             "linkedin": {"requests": 100, "window": 3600, "burst": 20},
             "instagram": {"requests": 200, "window": 3600, "burst": 25},
-            "facebook": {"requests": 600, "window": 600, "burst": 100}
+            "facebook": {"requests": 600, "window": 600, "burst": 100},
+            "tiktok": {"requests": 10, "window": 86400, "burst": 5}  # Very strict limits
         }
         
         self.request_history: Dict[str, list] = {}
@@ -516,3 +520,7 @@ def cached_instagram_request(operation: str, cache_ttl: Optional[int] = None):
 def cached_facebook_request(operation: str, cache_ttl: Optional[int] = None):
     """Decorator for cached Facebook requests"""
     return performance_optimizer.cached_request("facebook", operation, cache_ttl)
+
+def cached_tiktok_request(operation: str, cache_ttl: Optional[int] = None):
+    """Decorator for cached TikTok requests"""
+    return performance_optimizer.cached_request("tiktok", operation, cache_ttl)

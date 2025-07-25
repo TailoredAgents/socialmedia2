@@ -36,9 +36,26 @@ class Settings(BaseSettings):
     twitter_api_secret: str = ""
     twitter_access_token: str = ""
     twitter_access_token_secret: str = ""
+    twitter_client_id: str = ""  # Added missing field
+    twitter_client_secret: str = ""  # Added missing field
+    twitter_bearer_token: str = ""  # Added missing field
     
     linkedin_client_id: str = ""
     linkedin_client_secret: str = ""
+    
+    # Instagram/Facebook
+    instagram_app_id: str = ""
+    instagram_app_secret: str = ""
+    instagram_access_token: str = ""
+    
+    facebook_app_id: str = ""
+    facebook_app_secret: str = ""
+    facebook_access_token: str = ""
+    
+    # TikTok
+    tiktok_client_id: str = ""
+    tiktok_client_secret: str = ""
+    tiktok_access_token: str = ""
     
     # Server
     port: int = 8000

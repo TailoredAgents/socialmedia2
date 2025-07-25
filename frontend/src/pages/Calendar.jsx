@@ -4,6 +4,7 @@ import DragDropCalendar from '../components/Calendar/DragDropCalendar'
 import CreatePostModal from '../components/Calendar/CreatePostModal'
 import { useApi } from '../hooks/useApi'
 import { useRealTimeContent } from '../hooks/useRealTimeData'
+import { error as logError, debug as logDebug } from '../utils/logger.js'
 
 // Mock data for scheduled posts
 const scheduledPosts = [
@@ -109,7 +110,7 @@ export default function Calendar() {
         
         setPosts(transformedPosts)
       } catch (error) {
-        console.error('Failed to load content:', error)
+        logError('Failed to load content:', error)
         // Fallback to mock data on error
         setPosts(scheduledPosts)
       } finally {
@@ -162,7 +163,7 @@ export default function Calendar() {
       
       setPosts(prev => [...prev, transformedPost])
     } catch (error) {
-      console.error('Failed to create content:', error)
+      logError('Failed to create content:', error)
       // Fallback to local state update
       setPosts(prev => [...prev, newPost])
     }
@@ -170,7 +171,7 @@ export default function Calendar() {
 
   const handlePostMove = async (post, targetId) => {
     try {
-      console.log('Moving post:', post, 'to:', targetId)
+      logDebug('Moving post:', post, 'to:', targetId)
       
       // Parse targetId - if it's a date, move to that date
       if (targetId.includes('-') && targetId.length === 10) {
@@ -193,13 +194,13 @@ export default function Calendar() {
       }
       
     } catch (error) {
-      console.error('Failed to move post:', error)
+      logError('Failed to move post:', error)
     }
   }
 
   const handleEditPost = async (post) => {
     // This would open an edit modal with the post data
-    console.log('Edit post:', post)
+    logDebug('Edit post:', post)
     setSelectedDate(post.date)
     setIsCreateModalOpen(true)
   }
@@ -234,7 +235,7 @@ export default function Calendar() {
       
       setPosts(prev => [...prev, finalPost])
     } catch (error) {
-      console.error('Failed to duplicate post:', error)
+      logError('Failed to duplicate post:', error)
       // Fallback to local state update
       setPosts(prev => [...prev, duplicatedPost])
     }
@@ -245,7 +246,7 @@ export default function Calendar() {
       await makeAuthenticatedRequest(() => apiService.deleteContent(postId))
       setPosts(prev => prev.filter(p => p.id !== postId))
     } catch (error) {
-      console.error('Failed to delete post:', error)
+      logError('Failed to delete post:', error)
       // Still remove from local state for UX
       setPosts(prev => prev.filter(p => p.id !== postId))
     }

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import apiService from '../services/api'
+import { error as logError } from '../utils/logger.js'
 
 export const useApi = () => {
   const { accessToken, refreshToken, isAuthenticated } = useAuth()
@@ -24,7 +25,7 @@ export const useApi = () => {
           apiService.setToken(newToken)
           return await requestFn(...args)
         } catch (refreshError) {
-          console.error('Token refresh failed:', refreshError)
+          logError('Token refresh failed:', refreshError)
           throw refreshError
         }
       }

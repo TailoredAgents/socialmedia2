@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { error as logError } from '../../utils/logger.js'
 import { 
   CheckCircleIcon, 
   ExclamationTriangleIcon, 
@@ -226,7 +227,7 @@ export default function NotificationSystem() {
       const fetchedNotifications = await api.notifications.getAll()
       setNotifications(fetchedNotifications || [])
     } catch (error) {
-      console.error('Failed to fetch notifications:', error)
+      logError('Failed to fetch notifications:', error)
     }
   }, [api])
 
@@ -279,7 +280,7 @@ export default function NotificationSystem() {
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       )
     } catch (error) {
-      console.error('Failed to mark notification as read:', error)
+      logError('Failed to mark notification as read:', error)
     }
   }, [api])
 
@@ -289,7 +290,7 @@ export default function NotificationSystem() {
       await api.notifications.markAllRead()
       setNotifications(prev => prev.map(n => ({ ...n, read: true })))
     } catch (error) {
-      console.error('Failed to mark all notifications as read:', error)
+      logError('Failed to mark all notifications as read:', error)
     }
   }, [api])
 

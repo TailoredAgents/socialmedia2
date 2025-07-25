@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { ApiErrorBoundary } from '../components/ErrorBoundary'
 import { 
   ArrowUpIcon, 
   ArrowDownIcon,
@@ -21,22 +22,22 @@ const MetricCard = ({ title, value, change, changeType, icon: Icon, color = "blu
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white rounded-lg shadow p-6" role="article" aria-labelledby={`metric-${title.replace(/\s+/g, '-').toLowerCase()}`}>
       <div className="flex items-center">
-        <Icon className={`h-8 w-8 ${colorClasses[color]}`} />
+        <Icon className={`h-8 w-8 ${colorClasses[color]}`} aria-hidden="true" />
         <div className="ml-4">
-          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p id={`metric-${title.replace(/\s+/g, '-').toLowerCase()}`} className="text-sm font-medium text-gray-600">{title}</p>
           <div className="flex items-center">
-            <p className={`text-2xl font-bold ${colorClasses[color]}`}>{value}</p>
+            <p className={`text-2xl font-bold ${colorClasses[color]}`} aria-label={`${title}: ${value}`}>{value}</p>
             <div className={`ml-2 flex items-center text-sm ${
               changeType === 'increase' ? 'text-green-600' : 'text-red-600'
             }`}>
               {changeType === 'increase' ? (
-                <ArrowUpIcon className="h-4 w-4" />
+                <ArrowUpIcon className="h-4 w-4" aria-hidden="true" />
               ) : (
-                <ArrowDownIcon className="h-4 w-4" />
+                <ArrowDownIcon className="h-4 w-4" aria-hidden="true" />
               )}
-              <span>{change}</span>
+              <span aria-label={`Change: ${changeType === 'increase' ? 'increased' : 'decreased'} by ${change}`}>{change}</span>
             </div>
           </div>
         </div>
@@ -59,10 +60,10 @@ const WorkflowStage = ({ stage }) => {
   }
 
   return (
-    <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+    <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm" role="article" aria-labelledby={`stage-${stage.name.replace(/\s+/g, '-').toLowerCase()}`}>
       <div>
-        <h3 className="font-medium text-gray-900">{stage.name}</h3>
-        <p className="text-sm text-gray-500">
+        <h3 id={`stage-${stage.name.replace(/\s+/g, '-').toLowerCase()}`} className="font-medium text-gray-900">{stage.name}</h3>
+        <p className="text-sm text-gray-500" aria-live="polite">
           {stage.status === 'running' 
             ? `Running... ${stage.progress}% complete`
             : stage.status === 'completed'
@@ -71,28 +72,32 @@ const WorkflowStage = ({ stage }) => {
           }
         </p>
       </div>
-      <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[stage.status]}`}>
-        {statusIcons[stage.status]} {stage.status}
+      <span 
+        className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[stage.status]}`}
+        role="status"
+        aria-label={`Status: ${stage.status}`}
+      >
+        <span aria-hidden="true">{statusIcons[stage.status]}</span> {stage.status}
       </span>
     </div>
   )
 }
 
 const GoalProgress = ({ goal }) => (
-  <div className="mb-4">
+  <div className="mb-4" role="article" aria-labelledby={`goal-${goal.title.replace(/\s+/g, '-').toLowerCase()}`}>
     <div className="flex justify-between text-sm mb-1">
-      <span className="font-medium text-gray-900">{goal.title}</span>
-      <span className={goal.on_track ? 'text-green-600' : 'text-yellow-600'}>
+      <span id={`goal-${goal.title.replace(/\s+/g, '-').toLowerCase()}`} className="font-medium text-gray-900">{goal.title}</span>
+      <span className={goal.on_track ? 'text-green-600' : 'text-yellow-600'} aria-label={`Progress: ${Math.round(goal.progress)} percent`}>
         {Math.round(goal.progress)}%
       </span>
     </div>
-    <div className="w-full bg-gray-200 rounded-full h-2">
+    <div className="w-full bg-gray-200 rounded-full h-2" role="progressbar" aria-valuenow={goal.progress} aria-valuemin="0" aria-valuemax="100" aria-labelledby={`goal-${goal.title.replace(/\s+/g, '-').toLowerCase()}`}>
       <div
         className={`h-2 rounded-full ${goal.on_track ? 'bg-green-500' : 'bg-yellow-500'}`}
         style={{ width: `${Math.min(goal.progress, 100)}%` }}
       />
     </div>
-    <p className="text-xs text-gray-500 mt-1">{goal.current} → {goal.target}</p>
+    <p className="text-xs text-gray-500 mt-1" aria-label={`Current: ${goal.current}, Target: ${goal.target}`}>{goal.current} → {goal.target}</p>
   </div>
 )
 

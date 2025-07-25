@@ -1,11 +1,16 @@
+import React from 'react'
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/solid'
 
-export default function MetricsCard({ stat }) {
+const MetricsCard = React.memo(function MetricsCard({ stat }) {
   return (
-    <div className="bg-white overflow-hidden shadow rounded-lg">
+    <div 
+      className="bg-white overflow-hidden shadow rounded-lg"
+      role="article"
+      aria-label={`${stat.name} metric`}
+    >
       <div className="p-5">
         <div className="flex items-center">
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0" aria-hidden="true">
             <stat.icon className="h-6 w-6 text-gray-400" />
           </div>
           <div className="ml-5 w-0 flex-1">
@@ -21,14 +26,22 @@ export default function MetricsCard({ stat }) {
                   stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
                 }`}>
                   {stat.changeType === 'increase' ? (
-                    <ArrowUpIcon className="h-3 w-3 flex-shrink-0 self-center text-green-500" />
+                    <ArrowUpIcon 
+                      className="h-3 w-3 flex-shrink-0 self-center text-green-500" 
+                      aria-hidden="true"
+                    />
                   ) : (
-                    <ArrowDownIcon className="h-3 w-3 flex-shrink-0 self-center text-red-500" />
+                    <ArrowDownIcon 
+                      className="h-3 w-3 flex-shrink-0 self-center text-red-500" 
+                      aria-hidden="true"
+                    />
                   )}
                   <span className="sr-only">
                     {stat.changeType === 'increase' ? 'Increased' : 'Decreased'} by
                   </span>
-                  {stat.change}
+                  <span aria-label={`Change: ${stat.changeType === 'increase' ? 'increased' : 'decreased'} by ${stat.change}`}>
+                    {stat.change}
+                  </span>
                 </div>
               </dd>
             </dl>
@@ -37,4 +50,6 @@ export default function MetricsCard({ stat }) {
       </div>
     </div>
   )
-}
+})
+
+export default MetricsCard

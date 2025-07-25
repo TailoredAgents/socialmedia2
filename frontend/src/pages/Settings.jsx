@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useEnhancedApi } from '../hooks/useEnhancedApi'
 import { useNotifications } from '../hooks/useNotifications'
+import { error as logError } from '../utils/logger.js'
 import {
   UserIcon,
   KeyIcon,
@@ -50,7 +51,7 @@ export default function Settings() {
         const health = await checkApiHealth()
         setApiHealth(health)
       } catch (error) {
-        console.error('Health check failed:', error)
+        logError('Health check failed:', error)
       }
     }
     

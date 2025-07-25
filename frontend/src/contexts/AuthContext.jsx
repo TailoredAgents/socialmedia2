@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
+import { error as logError } from '../utils/logger.js'
 
 const AuthContext = createContext()
 
@@ -43,7 +44,7 @@ export const AuthProvider = ({ children }) => {
             claims
           })
         } catch (error) {
-          console.error('Error getting access token:', error)
+          logError('Error getting access token:', error)
         }
       }
     }
@@ -80,7 +81,7 @@ export const AuthProvider = ({ children }) => {
       setAccessToken(token)
       return token
     } catch (error) {
-      console.error('Error refreshing token:', error)
+      logError('Error refreshing token:', error)
       throw error
     }
   }

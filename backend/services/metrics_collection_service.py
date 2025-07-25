@@ -262,7 +262,7 @@ class SocialMetricsCollector:
     async def _collect_job_metrics(self, job_id: str, job: MetricsCollectionJob):
         """Collect metrics for a single job"""
         try:
-            logger.debug(f"Collecting metrics for job: {job_id}")
+            logger.info(f"Collecting metrics for job: {job_id}")
             
             # Fetch platform-specific metrics
             raw_metrics = await self._fetch_platform_metrics(
@@ -281,7 +281,7 @@ class SocialMetricsCollector:
                 # Update job timestamp
                 job.last_collected = datetime.utcnow()
                 
-                logger.debug(f"Successfully collected metrics for {job_id}")
+                logger.info(f"Successfully collected metrics for {job_id}")
             else:
                 logger.warning(f"No metrics returned for job {job_id}")
                 
@@ -469,7 +469,7 @@ class SocialMetricsCollector:
                 session.add(snapshot)
                 await session.commit()
                 
-                logger.debug(f"Stored metrics for content {metrics.content_id} on {metrics.platform}")
+                logger.info(f"Stored metrics for content {metrics.content_id} on {metrics.platform}")
                 
         except Exception as e:
             logger.error(f"Failed to store metrics: {e}")

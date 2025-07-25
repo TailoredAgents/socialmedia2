@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { error as logError } from '../utils/logger.js'
 import { 
   Chart as ChartJS,
   CategoryScale,
@@ -169,7 +170,7 @@ export default function Analytics() {
           }))
         }
       } catch (error) {
-        console.error('Failed to load analytics:', error)
+        logError('Failed to load analytics:', error)
         // Keep using mock data on error
       } finally {
         setIsLoading(false)

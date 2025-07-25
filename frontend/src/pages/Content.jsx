@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEnhancedApi } from '../hooks/useEnhancedApi'
+import { error as logError } from '../utils/logger.js'
 import { 
   PlusIcon,
   MagnifyingGlassIcon,
@@ -175,7 +176,7 @@ export default function Content() {
       try {
         await deleteContentMutation.mutateAsync(contentId)
       } catch (error) {
-        console.error('Failed to delete content:', error)
+        logError('Failed to delete content:', error)
       }
     }
   }
@@ -184,7 +185,7 @@ export default function Content() {
     try {
       await publishContentMutation.mutateAsync(contentId)
     } catch (error) {
-      console.error('Failed to publish content:', error)
+      logError('Failed to publish content:', error)
     }
   }
 
@@ -197,7 +198,7 @@ export default function Content() {
           contentType: 'text' 
         })
       } catch (error) {
-        console.error('Failed to generate content:', error)
+        logError('Failed to generate content:', error)
       }
     }
   }

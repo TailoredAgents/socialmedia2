@@ -686,7 +686,7 @@ class SocialMediaMetricsCollector:
             
             db.commit()
             
-            logger.debug(f"Saved metrics for content {content_item.id} on {metrics.platform}")
+            logger.info(f"Saved metrics for content {content_item.id} on {metrics.platform}")
             
         except Exception as e:
             db.rollback()

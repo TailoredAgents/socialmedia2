@@ -1,4 +1,13 @@
 import { renderHook, act } from '@testing-library/react'
+
+// Mock logger before importing useNotifications
+jest.mock('../../utils/logger.js', () => ({
+  error: jest.fn(),
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn()
+}))
+
 import { useNotifications } from '../useNotifications'
 
 // Mock window.dispatchEvent

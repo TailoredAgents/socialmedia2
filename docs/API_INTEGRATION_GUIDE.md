@@ -1,5 +1,7 @@
 # API Integration Guide
 
+**Created by:** [Tailored Agents](https://tailoredagents.com) - AI Development Specialists
+
 Complete guide for integrating with the AI Social Media Content Agent APIs.
 
 ## 📋 Table of Contents

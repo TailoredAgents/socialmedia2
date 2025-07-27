@@ -60,8 +60,7 @@ describe('ProtectedRoute Component', () => {
       </ProtectedRoute>
     )
     
-    expect(screen.getByRole('status', { name: /loading/i }) || 
-           document.querySelector('.animate-spin')).toBeInTheDocument()
+    expect(document.querySelector('.animate-spin')).toBeInTheDocument()
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument()
   })
 

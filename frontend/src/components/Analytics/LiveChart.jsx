@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { 
   Chart as ChartJS,
   CategoryScale,
@@ -44,7 +44,7 @@ const chartTypes = {
   radar: { component: Radar, name: 'Radar Chart' }
 }
 
-export default function LiveChart({
+const LiveChart = React.memo(function LiveChart({
   title,
   type = 'line',
   data: initialData,
@@ -471,4 +471,6 @@ export function LivePerformanceRadar({ performanceData, ...props }) {
       {...props}
     />
   )
-}
+})
+
+export default LiveChart

@@ -3,10 +3,12 @@ from bs4 import BeautifulSoup
 import tweepy
 from openai import OpenAI
 import json
+import logging
 from typing import Dict, List, Any
 from backend.core.config import get_settings
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 class WebScrapingTool:
     """Custom web scraping tool for research agent"""
@@ -78,7 +80,7 @@ class TwitterTool:
                     wait_on_rate_limit=True
                 )
             except Exception as e:
-                print(f"Twitter API initialization failed: {e}")
+                logger.error(f"Twitter API initialization failed: {e}")
                 self.api = None
                 self.client = None
         else:
@@ -222,7 +224,7 @@ class FAISSMemoryTool:
             )
             return response.data[0].embedding
         except Exception as e:
-            print(f"Embedding failed: {e}")
+            logger.error(f"Embedding failed: {e}")
             return []
     
     def store_content(self, content: str, metadata: Dict[str, Any]):

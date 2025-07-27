@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 
-export default function SimilarityChart({ content, onNodeClick }) {
+const SimilarityChart = React.memo(function SimilarityChart({ content, onNodeClick }) {
   const canvasRef = useRef()
 
   useEffect(() => {
@@ -139,4 +139,6 @@ export default function SimilarityChart({ content, onNodeClick }) {
       </div>
     </div>
   )
-}
+})
+
+export default SimilarityChart

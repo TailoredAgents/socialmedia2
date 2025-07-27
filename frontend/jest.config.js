@@ -29,5 +29,13 @@ export default {
   ],
   transformIgnorePatterns: [
     'node_modules/(?!(query-string|decode-uri-component|split-on-first|filter-obj)/)'
-  ]
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 60,
+      functions: 60,
+      lines: 60,
+      statements: 60
+    }
+  }
 };

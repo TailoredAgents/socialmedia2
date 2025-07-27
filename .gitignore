@@ -165,3 +165,74 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+# AI/ML specific
+*.pkl
+*.joblib
+*.model
+data/
+models/
+checkpoints/
+wandb/
+mlruns/
+
+# Vector store files
+*.faiss
+*.index
+embeddings/
+
+# Social media data
+social_media_data/
+user_data/
+platform_cache/
+
+# Security and API keys (extra protection)
+config/secrets/
+secrets/
+credentials/
+tokens/
+*.pem
+*.key
+*.crt
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Documentation builds
+docs/_build/
+site/
+.mkdocs/
+
+# IDEs and editors
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+*.sublime-project
+*.sublime-workspace
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Platform-specific cache
+.platform/
+.vercel/
+.netlify/
+
+# CI/CD
+.github/workflows/secrets/
+
+# Performance profiling
+*.prof
+*.pstats
+
+# Development utilities
+.pre-commit-config.yaml.bak
+mypy.ini.bak

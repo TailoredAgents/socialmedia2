@@ -1,3 +1,8 @@
+/*
+ * AI Social Media Content Agent - Frontend Application
+ * Created by Tailored Agents - AI Development Specialists
+ */
+import { Suspense, lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Auth0Provider } from '@auth0/auth0-react'
@@ -7,15 +12,24 @@ import ProtectedRoute from './components/ProtectedRoute'
 import NotificationContainer from './components/Notifications/NotificationContainer'
 import { ErrorBoundary, PageErrorBoundary } from './components/ErrorBoundary'
 import './styles/accessibility.css'
-import Login from './pages/Login'
-import Overview from './pages/Overview'
-import Calendar from './pages/Calendar'
-import Analytics from './pages/Analytics'
-import PerformanceDashboard from './pages/PerformanceDashboard'
-import Content from './pages/Content'
-import MemoryExplorer from './pages/MemoryExplorer'
-import GoalTracking from './pages/GoalTracking'
-import Settings from './pages/Settings'
+
+// Lazy load pages for better performance
+const Login = lazy(() => import('./pages/Login'))
+const Overview = lazy(() => import('./pages/Overview'))
+const Calendar = lazy(() => import('./pages/Calendar'))
+const Analytics = lazy(() => import('./pages/Analytics'))
+const PerformanceDashboard = lazy(() => import('./pages/PerformanceDashboard'))
+const Content = lazy(() => import('./pages/Content'))
+const MemoryExplorer = lazy(() => import('./pages/MemoryExplorer'))
+const GoalTracking = lazy(() => import('./pages/GoalTracking'))
+const Settings = lazy(() => import('./pages/Settings'))
+
+// Loading component
+const PageLoadingSpinner = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+)
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,109 +64,111 @@ function App() {
                 Skip to main content
               </a>
               <NotificationContainer />
-              <Routes>
-                <Route path="/login" element={
-                  <PageErrorBoundary pageName="Login">
-                    <Login />
-                  </PageErrorBoundary>
-                } />
-                <Route 
-                  path="/" 
-                  element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <PageErrorBoundary pageName="Overview">
-                          <Overview />
-                        </PageErrorBoundary>
-                      </Layout>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/calendar" 
-                  element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <PageErrorBoundary pageName="Calendar">
-                          <Calendar />
-                        </PageErrorBoundary>
-                      </Layout>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/analytics" 
-                  element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <PageErrorBoundary pageName="Analytics">
-                          <Analytics />
-                        </PageErrorBoundary>
-                      </Layout>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/performance" 
-                  element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <PageErrorBoundary pageName="Performance">
-                          <PerformanceDashboard />
-                        </PageErrorBoundary>
-                      </Layout>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/content" 
-                  element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <PageErrorBoundary pageName="Content">
-                          <Content />
-                        </PageErrorBoundary>
-                      </Layout>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/memory" 
-                  element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <PageErrorBoundary pageName="Memory">
-                          <MemoryExplorer />
-                        </PageErrorBoundary>
-                      </Layout>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/goals" 
-                  element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <PageErrorBoundary pageName="Goals">
-                          <GoalTracking />
-                        </PageErrorBoundary>
-                      </Layout>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/settings" 
-                  element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <PageErrorBoundary pageName="Settings">
-                          <Settings />
-                        </PageErrorBoundary>
-                      </Layout>
-                    </ProtectedRoute>
-                  } 
-                />
-              </Routes>
+              <Suspense fallback={<PageLoadingSpinner />}>
+                <Routes>
+                  <Route path="/login" element={
+                    <PageErrorBoundary pageName="Login">
+                      <Login />
+                    </PageErrorBoundary>
+                  } />
+                  <Route 
+                    path="/" 
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <PageErrorBoundary pageName="Overview">
+                            <Overview />
+                          </PageErrorBoundary>
+                        </Layout>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/calendar" 
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <PageErrorBoundary pageName="Calendar">
+                            <Calendar />
+                          </PageErrorBoundary>
+                        </Layout>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/analytics" 
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <PageErrorBoundary pageName="Analytics">
+                            <Analytics />
+                          </PageErrorBoundary>
+                        </Layout>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/performance" 
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <PageErrorBoundary pageName="Performance">
+                            <PerformanceDashboard />
+                          </PageErrorBoundary>
+                        </Layout>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/content" 
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <PageErrorBoundary pageName="Content">
+                            <Content />
+                          </PageErrorBoundary>
+                        </Layout>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/memory" 
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <PageErrorBoundary pageName="Memory">
+                            <MemoryExplorer />
+                          </PageErrorBoundary>
+                        </Layout>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/goals" 
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <PageErrorBoundary pageName="Goals">
+                            <GoalTracking />
+                          </PageErrorBoundary>
+                        </Layout>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/settings" 
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <PageErrorBoundary pageName="Settings">
+                            <Settings />
+                          </PageErrorBoundary>
+                        </Layout>
+                      </ProtectedRoute>
+                    } 
+                  />
+                </Routes>
+              </Suspense>
             </div>
           </Router>
         </AuthProvider>

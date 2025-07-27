@@ -1,5 +1,7 @@
 # Performance Optimization Guide
 
+**Created by:** [Tailored Agents](https://tailoredagents.com) - AI Development Specialists
+
 This guide covers performance optimization strategies, monitoring, and troubleshooting for the AI Social Media Content Agent.
 
 ## 📊 Performance Overview

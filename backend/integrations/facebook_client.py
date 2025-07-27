@@ -1072,6 +1072,98 @@ class FacebookAPIClient:
         
         logger.info(f"Scheduled Facebook post {post.id} for {publish_time}")
         return post.id
+    
+    async def get_user_token(self, user_id: int) -> Optional[str]:
+        """
+        Get stored Facebook access token for user
+        
+        Args:
+            user_id: User ID
+            
+        Returns:
+            Facebook access token or None if not found
+        """
+        try:
+            return await oauth_manager.get_user_access_token(user_id, "facebook")
+        except Exception as e:
+            logger.error(f"Failed to get Facebook token for user {user_id}: {e}")
+            return None
+    
+    async def create_post(
+        self,
+        access_token: str,
+        message: str,
+        media_urls: Optional[List[str]] = None,
+        link: Optional[str] = None,
+        scheduled_publish_time: Optional[datetime] = None
+    ) -> Dict[str, Any]:
+        """
+        Create Facebook post (wrapper method for integration API compatibility)
+        
+        Args:
+            access_token: Facebook access token
+            message: Post message
+            media_urls: List of media URLs (optional)
+            link: Link to include (optional)
+            scheduled_publish_time: When to publish (optional)
+            
+        Returns:
+            Post creation result
+        """
+        # Get user's Facebook pages
+        pages = await self.get_user_pages(access_token)
+        if not pages:
+            raise Exception("No Facebook pages found for user")
+        
+        # Use the first page (could be enhanced to let user choose)
+        page = pages[0]
+        page_id = page.id
+        page_access_token = page.access_token
+        
+        # Optimize content for Facebook
+        optimized_message = self.optimize_for_facebook(message)
+        
+        if media_urls and len(media_urls) > 0:
+            # Create photo/video post
+            if self._is_video_url(media_urls[0]):
+                result = await self.create_video_post(
+                    page_access_token=page_access_token,
+                    page_id=page_id,
+                    video_url=media_urls[0],
+                    title=optimized_message[:100],  # Use first part as title
+                    description=optimized_message,
+                    published=scheduled_publish_time is None,
+                    scheduled_publish_time=scheduled_publish_time
+                )
+            else:
+                result = await self.create_photo_post(
+                    page_access_token=page_access_token,
+                    page_id=page_id,
+                    photo_url=media_urls[0],
+                    caption=optimized_message,
+                    published=scheduled_publish_time is None,
+                    scheduled_publish_time=scheduled_publish_time
+                )
+        else:
+            # Create text post
+            result = await self.create_text_post(
+                page_access_token=page_access_token,
+                page_id=page_id,
+                message=optimized_message,
+                link=link,
+                published=scheduled_publish_time is None,
+                scheduled_publish_time=scheduled_publish_time
+            )
+        
+        return {
+            "id": result.id,
+            "created_time": result.created_time.isoformat() if result.created_time else None
+        }
+    
+    def _is_video_url(self, url: str) -> bool:
+        """Check if URL points to a video file"""
+        video_extensions = ['.mp4', '.mov', '.avi', '.wmv', '.flv', '.webm']
+        return any(url.lower().endswith(ext) for ext in video_extensions)
 
 # Global Facebook client instance
 facebook_client = FacebookAPIClient()

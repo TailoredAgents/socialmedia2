@@ -1,11 +1,19 @@
+"""
+AI Social Media Content Agent - Backend API
+Created by Tailored Agents - AI Development Specialists
+Enterprise-grade AI-powered social media management platform
+"""
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 import os
+import logging
 from dotenv import load_dotenv
 from datetime import datetime
 from contextlib import asynccontextmanager
+
+logger = logging.getLogger(__name__)
 
 # Import database components
 from backend.db.database import engine
@@ -34,9 +42,9 @@ async def lifespan(app: FastAPI):
     try:
         # Create tables if they don't exist
         Base.metadata.create_all(bind=engine)
-        print("✅ Database tables initialized")
+        logger.info("✅ Database tables initialized")
     except Exception as e:
-        print("Database initialization failed: " + str(e))
+        logger.error(f"Database initialization failed: {str(e)}")
     
     yield
 

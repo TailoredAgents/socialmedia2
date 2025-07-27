@@ -717,6 +717,50 @@ class TwitterAPIClient:
         import re
         mentions = re.findall(r'@\w+', text)
         return [mention.lower() for mention in mentions]
+    
+    async def get_user_token(self, user_id: int) -> Optional[str]:
+        """
+        Get stored Twitter access token for user
+        
+        Args:
+            user_id: User ID
+            
+        Returns:
+            Twitter access token or None if not found
+        """
+        try:
+            return await oauth_manager.get_user_access_token(user_id, "twitter")
+        except Exception as e:
+            logger.error(f"Failed to get Twitter token for user {user_id}: {e}")
+            return None
+    
+    async def create_post(
+        self,
+        access_token: str,
+        text: str,
+        media_urls: Optional[List[str]] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Create Twitter post (wrapper method for integration API compatibility)
+        
+        Args:
+            access_token: Twitter access token
+            text: Tweet text
+            media_urls: Media URLs (optional)
+            **kwargs: Additional parameters
+            
+        Returns:
+            Post creation result
+        """
+        # Use existing post_tweet method
+        result = await self.post_tweet(access_token, text, media_urls)
+        
+        return {
+            "id": result.id,
+            "created_at": result.created_at.isoformat(),
+            "text": result.text
+        }
 
 # Global Twitter client instance
 twitter_client = TwitterAPIClient()

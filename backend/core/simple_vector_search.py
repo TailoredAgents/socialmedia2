@@ -5,12 +5,14 @@ import numpy as np
 import json
 import os
 import uuid
+import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from openai import OpenAI
 from backend.core.config import get_settings
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 class SimpleVectorSearch:
     """Simple vector search using NumPy cosine similarity"""
@@ -37,7 +39,7 @@ class SimpleVectorSearch:
             try:
                 return np.load(self.vectors_file)
             except Exception as e:
-                print(f"Error loading vectors: {e}")
+                logger.error(f"Error loading vectors: {e}")
         return np.empty((0, self.dimension), dtype=np.float32)
     
     def _load_metadata(self) -> Dict:
@@ -47,7 +49,7 @@ class SimpleVectorSearch:
                 with open(self.metadata_file, 'r') as f:
                     return json.load(f)
             except Exception as e:
-                print(f"Error loading metadata: {e}")
+                logger.error(f"Error loading metadata: {e}")
         return {}
     
     def _save_vectors(self):
@@ -70,7 +72,7 @@ class SimpleVectorSearch:
             # Normalize for cosine similarity
             return embedding / np.linalg.norm(embedding)
         except Exception as e:
-            print(f"Embedding failed: {e}")
+            logger.error(f"Embedding failed: {e}")
             return np.zeros(self.dimension, dtype=np.float32)
     
     def cosine_similarity(self, vec1: np.ndarray, vec2: np.ndarray) -> float:

@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -22,7 +23,7 @@ ChartJS.register(
   ArcElement
 )
 
-export const GoalProgressChart = ({ goal }) => {
+export const GoalProgressChart = React.memo(function GoalProgressChart({ goal }) {
   const data = {
     labels: ['Start', 'Current', 'Target'],
     datasets: [
@@ -76,9 +77,9 @@ export const GoalProgressChart = ({ goal }) => {
       <Line data={data} options={options} />
     </div>
   )
-}
+})
 
-export const GoalCompletionChart = ({ goals }) => {
+export const GoalCompletionChart = React.memo(function GoalCompletionChart({ goals }) {
   const statusCounts = goals.reduce((acc, goal) => {
     acc[goal.status] = (acc[goal.status] || 0) + 1
     return acc
@@ -124,9 +125,9 @@ export const GoalCompletionChart = ({ goals }) => {
       <Doughnut data={data} options={options} />
     </div>
   )
-}
+})
 
-export const ProgressTimelineChart = ({ goal }) => {
+export const ProgressTimelineChart = React.memo(function ProgressTimelineChart({ goal }) {
   // Generate mock timeline data based on milestones
   const generateTimelineData = () => {
     const startDate = new Date(goal.start_date)
@@ -217,4 +218,4 @@ export const ProgressTimelineChart = ({ goal }) => {
       <Line data={data} options={options} />
     </div>
   )
-}
+})

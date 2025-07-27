@@ -1,4 +1,13 @@
 import { renderHook, act, waitFor } from '@testing-library/react'
+
+// Mock logger before importing useEnhancedApi
+jest.mock('../../utils/logger.js', () => ({
+  error: jest.fn(),
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn()
+}))
+
 import { useEnhancedApi } from '../useEnhancedApi'
 
 // Mock dependencies

@@ -1,9 +1,12 @@
 import json
 import os
 import uuid
+import logging
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 from dataclasses import dataclass, asdict
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class SimpleGoal:
@@ -54,7 +57,7 @@ class SimpleGoalTracker:
                         goal = SimpleGoal(**goal_data)
                         self.goals[goal.goal_id] = goal
         except Exception as e:
-            print(f"Error loading goals: {e}")
+            logger.error(f"Error loading goals: {e}")
             self.goals = {}
     
     def _save_goals(self):
@@ -68,7 +71,7 @@ class SimpleGoalTracker:
             with open(self.data_path, 'w') as f:
                 json.dump(data, f, indent=2, default=str)
         except Exception as e:
-            print(f"Error saving goals: {e}")
+            logger.error(f"Error saving goals: {e}")
     
     def create_goal(self, title: str, description: str, goal_type: str, 
                    target_value: float, target_date: str, platform: Optional[str] = None) -> SimpleGoal:

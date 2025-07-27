@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import NotificationSystem from './Notifications/NotificationSystem'
@@ -31,17 +31,42 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
 
-export default function Layout({ children }) {
+function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const location = useLocation()
   const { user, logout, isAuthenticated } = useAuth()
 
+  // Memoize navigation items to prevent re-creation on every render
+  const navigationItems = useMemo(() => navigation, [])
+
+  // Memoize handlers to prevent re-creation
+  const handleSidebarOpen = useCallback(() => {
+    setSidebarOpen(true)
+  }, [])
+
+  const handleSidebarClose = useCallback(() => {
+    setSidebarOpen(false)
+  }, [])
+
+  const handleUserMenuToggle = useCallback(() => {
+    setUserMenuOpen(prev => !prev)
+  }, [])
+
+  const handleUserMenuClose = useCallback(() => {
+    setUserMenuOpen(false)
+  }, [])
+
+  const handleLogout = useCallback(() => {
+    setUserMenuOpen(false)
+    logout()
+  }, [logout])
+
   return (
     <div>
       {/* Mobile sidebar */}
       <div className={`relative z-50 lg:hidden ${sidebarOpen ? '' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-900/80" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-gray-900/80" onClick={handleSidebarClose} />
         
         <div className="fixed inset-0 flex">
           <div className="relative mr-16 flex w-full max-w-xs flex-1">
@@ -49,7 +74,7 @@ export default function Layout({ children }) {
               <button 
                 type="button" 
                 className="-m-2.5 p-2.5 focus:outline-none focus:ring-2 focus:ring-white"
-                onClick={() => setSidebarOpen(false)}
+                onClick={handleSidebarClose}
                 aria-label="Close navigation menu"
               >
                 <XMarkIcon className="h-6 w-6 text-white" aria-hidden="true" />
@@ -67,7 +92,7 @@ export default function Layout({ children }) {
                 <ul className="flex flex-1 flex-col gap-y-7">
                   <li>
                     <ul className="-mx-2 space-y-1" role="list">
-                      {navigation.map((item) => (
+                      {navigationItems.map((item) => (
                         <li key={item.name} role="listitem">
                           <Link
                             to={item.href}
@@ -114,7 +139,7 @@ export default function Layout({ children }) {
             <ul className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul className="-mx-2 space-y-1" role="list">
-                  {navigation.map((item) => (
+                  {navigationItems.map((item) => (
                     <li key={item.name} role="listitem">
                       <Link
                         to={item.href}
@@ -151,7 +176,7 @@ export default function Layout({ children }) {
           <button
             type="button"
             className="-m-2.5 p-2.5 text-gray-700 lg:hidden focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onClick={() => setSidebarOpen(true)}
+            onClick={handleSidebarOpen}
             aria-label="Open navigation menu"
           >
             <Bars3Icon className="h-6 w-6" aria-hidden="true" />
@@ -179,7 +204,7 @@ export default function Layout({ children }) {
                 <button
                   type="button"
                   className="flex items-center space-x-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1"
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  onClick={handleUserMenuToggle}
                   aria-expanded={userMenuOpen}
                   aria-haspopup="menu"
                   aria-label={`User menu for ${user?.name || user?.email || 'user'}`}
@@ -216,16 +241,13 @@ export default function Layout({ children }) {
                     <Link
                       to="/settings"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                      onClick={() => setUserMenuOpen(false)}
+                      onClick={handleUserMenuClose}
                       role="menuitem"
                     >
                       Settings
                     </Link>
                     <button
-                      onClick={() => {
-                        logout()
-                        setUserMenuOpen(false)
-                      }}
+                      onClick={handleLogout}
                       className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
                       role="menuitem"
                     >
@@ -248,3 +270,5 @@ export default function Layout({ children }) {
     </div>
   )
 }
+
+export default React.memo(Layout)

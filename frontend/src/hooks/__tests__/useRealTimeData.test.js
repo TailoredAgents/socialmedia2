@@ -1,5 +1,23 @@
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+// Mock logger before importing useRealTimeData
+jest.mock('../../utils/logger.js', () => ({
+  error: jest.fn(),
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn()
+}))
+
+// Mock the Auth context first
+jest.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    accessToken: 'test-token',
+    refreshToken: jest.fn(),
+    isAuthenticated: true
+  })
+}))
+
 import { useRealTimeData } from '../useRealTimeData'
 
 // Mock the API service

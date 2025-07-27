@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { 
   ExclamationTriangleIcon,
   InformationCircleIcon,
@@ -57,7 +57,7 @@ const alertTypeConfig = {
   }
 }
 
-export default function PerformanceAlert({ 
+const PerformanceAlert = React.memo(function PerformanceAlert({ 
   type = 'info', 
   title, 
   message, 
@@ -169,7 +169,9 @@ export default function PerformanceAlert({
       </div>
     </div>
   )
-}
+})
+
+export default PerformanceAlert
 
 // Specialized alert components for common use cases
 export function PerformanceMetricAlert({ metric, currentValue, threshold, comparison = 'above', ...props }) {

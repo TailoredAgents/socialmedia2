@@ -1,4 +1,13 @@
 import { renderHook, act } from '@testing-library/react'
+
+// Mock logger before importing useApi
+jest.mock('../../utils/logger.js', () => ({
+  error: jest.fn(),
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn()
+}))
+
 import { useApi } from '../useApi'
 
 // Mock the auth context
@@ -13,17 +22,21 @@ jest.mock('../../contexts/AuthContext', () => ({
 }))
 
 // Mock the API service
-const mockApiService = {
-  setToken: jest.fn(),
-  get: jest.fn(),
-  post: jest.fn()
-}
-
-jest.mock('../../services/api', () => mockApiService)
+jest.mock('../../services/api', () => ({
+  __esModule: true,
+  default: {
+    setToken: jest.fn(),
+    get: jest.fn(),
+    post: jest.fn()
+  }
+}))
 
 describe('useApi Hook', () => {
+  let mockApiService
+  
   beforeEach(() => {
     jest.clearAllMocks()
+    mockApiService = require('../../services/api').default
   })
 
   it('sets token when authenticated', () => {

@@ -868,6 +868,22 @@ class TikTokAPIClient:
                 "viral_potential_videos": len([a for a in analytics_list if a.view_count > total_views / len(analytics_list) * 3])
             }
         }
+    
+    async def get_user_token(self, user_id: int) -> Optional[str]:
+        """
+        Get stored TikTok access token for user
+        
+        Args:
+            user_id: User ID
+            
+        Returns:
+            TikTok access token or None if not found
+        """
+        try:
+            return await oauth_manager.get_user_access_token(user_id, "tiktok")
+        except Exception as e:
+            logger.error(f"Failed to get TikTok token for user {user_id}: {e}")
+            return None
 
 
 # Global TikTok client instance

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   ArrowUpIcon, 
   ArrowDownIcon,
@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useRealTimeAnalytics, useRealTimePerformance } from '../../hooks/useRealTimeData'
 
-export default function RealTimeMetrics({ timeframe = '7d' }) {
+const RealTimeMetrics = React.memo(function RealTimeMetrics({ timeframe = '7d' }) {
   const [connectionStatus, setConnectionStatus] = useState('connected')
   const { 
     data: analyticsData, 
@@ -285,4 +285,6 @@ export default function RealTimeMetrics({ timeframe = '7d' }) {
       )}
     </div>
   )
-}
+})
+
+export default RealTimeMetrics

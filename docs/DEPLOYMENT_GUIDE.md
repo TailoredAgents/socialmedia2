@@ -1,5 +1,7 @@
 # Deployment Guide - AI Social Media Content Agent
 
+**Created by:** [Tailored Agents](https://tailoredagents.com) - AI Development Specialists
+
 This comprehensive guide covers deployment strategies, configurations, and best practices for the AI Social Media Content Agent in production environments.
 
 ## 📋 Table of Contents

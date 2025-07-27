@@ -15,7 +15,9 @@
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "lint:fix": "eslint . --fix",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "analyze": "npm run build && npx vite preview --open --port 4173",
+    "bundle-analyzer": "npm run build && open dist/stats.html"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.2.4",
@@ -29,7 +31,9 @@
     "react": "^18.3.1",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0"
+    "react-router-dom": "^6.28.0",
+    "react-window": "^1.8.11",
+    "react-window-infinite-loader": "^1.0.10"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.28.0",
@@ -53,7 +57,9 @@
     "lint-staged": "^16.1.2",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
+    "rollup-plugin-visualizer": "^6.0.3",
     "tailwindcss": "^3.4.16",
+    "terser": "^5.43.1",
     "vite": "^5.4.11"
   },
   "lint-staged": {

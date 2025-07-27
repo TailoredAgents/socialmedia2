@@ -4,6 +4,9 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 import json
 import uuid
+import logging
+
+logger = logging.getLogger(__name__)
 
 class GoalType(Enum):
     FOLLOWER_GROWTH = "follower_growth"
@@ -102,7 +105,7 @@ class GoalTrackingSystem:
         except FileNotFoundError:
             self.goals = {}
         except Exception as e:
-            print(f"Error loading goals: {e}")
+            logger.error(f"Error loading goals: {e}")
             self.goals = {}
     
     def _save_goals(self):
@@ -119,7 +122,7 @@ class GoalTrackingSystem:
             with open(self.data_path, 'w') as f:
                 json.dump(data, f, indent=2, default=str)
         except Exception as e:
-            print(f"Error saving goals: {e}")
+            logger.error(f"Error saving goals: {e}")
     
     def _dict_to_goal(self, data: Dict) -> Goal:
         """Convert dictionary to Goal object"""

@@ -1,6 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
-import { Auth0Provider } from '@auth0/auth0-react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Layout from '../Layout'
 
@@ -37,15 +36,9 @@ const queryClient = new QueryClient({
 const renderWithProviders = (component) => {
   return render(
     <BrowserRouter>
-      <Auth0Provider
-        domain="test-domain"
-        clientId="test-client-id"
-        authorizationParams={{ redirectUri: window.location.origin }}
-      >
-        <QueryClientProvider client={queryClient}>
-          {component}
-        </QueryClientProvider>
-      </Auth0Provider>
+      <QueryClientProvider client={queryClient}>
+        {component}
+      </QueryClientProvider>
     </BrowserRouter>
   )
 }

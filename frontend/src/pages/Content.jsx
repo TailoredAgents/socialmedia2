@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEnhancedApi } from '../hooks/useEnhancedApi'
 import { error as logError } from '../utils/logger.js'
+import VirtualizedContentList, { VirtualizedContentGrid } from '../components/VirtualizedContentList'
 import { 
   PlusIcon,
   MagnifyingGlassIcon,
@@ -50,6 +51,7 @@ export default function Content() {
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [selectedContent, setSelectedContent] = useState(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
   
   const { api } = useEnhancedApi()
   const queryClient = useQueryClient()
@@ -110,19 +112,25 @@ export default function Content() {
     }
   })
 
-  const filteredContent = content.filter(item => {
-    const matchesSearch = !searchQuery || 
-      item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.content?.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    const matchesType = selectedType === 'all' || item.content_type === selectedType
-    const matchesPlatform = selectedPlatform === 'all' || item.platform === selectedPlatform
-    const matchesStatus = selectedStatus === 'all' || item.status === selectedStatus
-    
-    return matchesSearch && matchesType && matchesPlatform && matchesStatus
-  })
+  const filteredContent = useMemo(() => {
+    return content.filter(item => {
+      const matchesSearch = !searchQuery || 
+        item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.content?.toLowerCase().includes(searchQuery.toLowerCase())
+      
+      const matchesType = selectedType === 'all' || item.content_type === selectedType
+      const matchesPlatform = selectedPlatform === 'all' || item.platform === selectedPlatform
+      const matchesStatus = selectedStatus === 'all' || item.status === selectedStatus
+      
+      return matchesSearch && matchesType && matchesPlatform && matchesStatus
+    })
+  }, [content, searchQuery, selectedType, selectedPlatform, selectedStatus])
 
-  const getStatusIcon = (status) => {
+  // Use virtualization for large lists (more than 20 items)
+  const shouldVirtualize = filteredContent.length > 20
+
+  // Memoized helper functions for virtualization
+  const getStatusIcon = useMemo(() => (status) => {
     switch (status) {
       case 'published':
         return <CheckCircleIcon className="h-4 w-4 text-green-500" />
@@ -133,9 +141,9 @@ export default function Content() {
       default:
         return <DocumentTextIcon className="h-4 w-4 text-gray-500" />
     }
-  }
+  }, [])
 
-  const getStatusColor = (status) => {
+  const getStatusColor = useMemo(() => (status) => {
     switch (status) {
       case 'published':
         return 'bg-green-100 text-green-800'
@@ -148,9 +156,9 @@ export default function Content() {
       default:
         return 'bg-gray-100 text-gray-800'
     }
-  }
+  }, [])
 
-  const getContentTypeIcon = (type) => {
+  const getContentTypeIcon = useMemo(() => (type) => {
     switch (type) {
       case 'image':
         return <PhotoIcon className="h-4 w-4" />
@@ -159,9 +167,9 @@ export default function Content() {
       default:
         return <DocumentTextIcon className="h-4 w-4" />
     }
-  }
+  }, [])
 
-  const formatDate = (dateString) => {
+  const formatDate = useMemo(() => (dateString) => {
     if (!dateString) return 'Not scheduled'
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -169,7 +177,7 @@ export default function Content() {
       hour: '2-digit',
       minute: '2-digit'
     })
-  }
+  }, [])
 
   const handleDeleteContent = async (contentId) => {
     if (window.confirm('Are you sure you want to delete this content?')) {
@@ -201,6 +209,16 @@ export default function Content() {
         logError('Failed to generate content:', error)
       }
     }
+  }
+
+  // Event handlers for virtualized list
+  const handleViewContent = (item) => {
+    setSelectedContent(item)
+  }
+
+  const handleEditContent = (item) => {
+    // Navigate to edit or open edit modal
+    console.log('Edit content:', item)
   }
 
   return (
@@ -305,7 +323,7 @@ export default function Content() {
         </div>
       </div>
 
-      {/* Content Grid */}
+      {/* Content Grid/List */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
@@ -317,77 +335,136 @@ export default function Content() {
           ))}
         </div>
       ) : filteredContent.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredContent.map((item) => (
-            <div key={item.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    {getContentTypeIcon(item.content_type)}
-                    <span className="text-sm font-medium text-gray-600 capitalize">
-                      {item.content_type || 'text'}
+        shouldVirtualize ? (
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-sm text-gray-600">
+                Showing {filteredContent.length} items (virtualized for performance)
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`px-3 py-1 text-xs rounded ${
+                    viewMode === 'grid' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  Grid
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-3 py-1 text-xs rounded ${
+                    viewMode === 'list' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  List
+                </button>
+              </div>
+            </div>
+            {viewMode === 'grid' ? (
+              <VirtualizedContentGrid
+                items={filteredContent}
+                onView={handleViewContent}
+                onEdit={handleEditContent}
+                onPublish={handlePublishContent}
+                onDelete={handleDeleteContent}
+                formatDate={formatDate}
+                getStatusIcon={getStatusIcon}
+                getStatusColor={getStatusColor}
+                getContentTypeIcon={getContentTypeIcon}
+                height={600}
+                itemHeight={280}
+                itemsPerRow={3}
+              />
+            ) : (
+              <VirtualizedContentList
+                items={filteredContent}
+                onView={handleViewContent}
+                onEdit={handleEditContent}
+                onPublish={handlePublishContent}
+                onDelete={handleDeleteContent}
+                formatDate={formatDate}
+                getStatusIcon={getStatusIcon}
+                getStatusColor={getStatusColor}
+                getContentTypeIcon={getContentTypeIcon}
+                height={600}
+                itemHeight={120}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredContent.map((item) => (
+              <div key={item.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      {getContentTypeIcon(item.content_type)}
+                      <span className="text-sm font-medium text-gray-600 capitalize">
+                        {item.content_type || 'text'}
+                      </span>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
+                      {item.status}
                     </span>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
-                    {item.status}
-                  </span>
-                </div>
-                
-                <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                  {item.title || 'Untitled'}
-                </h3>
-                
-                <p className="text-sm text-gray-600 mb-4 line-clamp-3">
-                  {item.content || 'No content preview available'}
-                </p>
-                
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                  <span className="capitalize">{item.platform || 'All platforms'}</span>
-                  <span>{formatDate(item.scheduled_at || item.created_at)}</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2 text-xs text-gray-500">
-                    {getStatusIcon(item.status)}
-                    <span>{item.performance?.views || 0} views</span>
+                  
+                  <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                    {item.title || 'Untitled'}
+                  </h3>
+                  
+                  <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+                    {item.content || 'No content preview available'}
+                  </p>
+                  
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+                    <span className="capitalize">{item.platform || 'All platforms'}</span>
+                    <span>{formatDate(item.scheduled_at || item.created_at)}</span>
                   </div>
                   
-                  <div className="flex items-center space-x-1">
-                    <button
-                      onClick={() => setSelectedContent(item)}
-                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                      title="View"
-                    >
-                      <EyeIcon className="h-4 w-4" />
-                    </button>
-                    <button
-                      className="p-1 text-gray-400 hover:text-green-600 transition-colors"
-                      title="Edit"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </button>
-                    {item.status === 'draft' && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2 text-xs text-gray-500">
+                      {getStatusIcon(item.status)}
+                      <span>{item.performance?.views || 0} views</span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-1">
                       <button
-                        onClick={() => handlePublishContent(item.id)}
+                        onClick={() => handleViewContent(item)}
                         className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                        title="Publish"
+                        title="View"
                       >
-                        <ShareIcon className="h-4 w-4" />
+                        <EyeIcon className="h-4 w-4" />
                       </button>
-                    )}
-                    <button
-                      onClick={() => handleDeleteContent(item.id)}
-                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                      title="Delete"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
+                      <button
+                        onClick={() => handleEditContent(item)}
+                        className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+                        title="Edit"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
+                      {item.status === 'draft' && (
+                        <button
+                          onClick={() => handlePublishContent(item.id)}
+                          className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                          title="Publish"
+                        >
+                          <ShareIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteContent(item.id)}
+                        className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                        title="Delete"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )
       ) : (
         <div className="text-center py-12">
           <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />

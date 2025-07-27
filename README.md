@@ -2,11 +2,25 @@
 
 **Enterprise-Grade AI-Powered Social Media Management Platform**
 
+*Created by [Tailored Agents](https://tailoredagents.com) - AI Development Specialists*
+
 ![Version](https://img.shields.io/badge/version-2.0-blue)
 ![Python](https://img.shields.io/badge/python-3.11+-green)
 ![React](https://img.shields.io/badge/react-18.x-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Production Ready](https://img.shields.io/badge/production-ready-brightgreen)
+
+## 🚦 CI/CD Status
+
+[![Backend Tests](https://github.com/ai-social-media-agent/ai-social-media-agent/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/ai-social-media-agent/ai-social-media-agent/actions/workflows/backend-tests.yml)
+[![Frontend CI](https://github.com/ai-social-media-agent/ai-social-media-agent/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/ai-social-media-agent/ai-social-media-agent/actions/workflows/frontend-ci.yml)
+[![Security Scan](https://github.com/ai-social-media-agent/ai-social-media-agent/actions/workflows/security-scan.yml/badge.svg)](https://github.com/ai-social-media-agent/ai-social-media-agent/actions/workflows/security-scan.yml)
+[![Code Quality](https://github.com/ai-social-media-agent/ai-social-media-agent/actions/workflows/code-quality.yml/badge.svg)](https://github.com/ai-social-media-agent/ai-social-media-agent/actions/workflows/code-quality.yml)
+[![Deploy Production](https://github.com/ai-social-media-agent/ai-social-media-agent/actions/workflows/deploy-production.yml/badge.svg)](https://github.com/ai-social-media-agent/ai-social-media-agent/actions/workflows/deploy-production.yml)
+
+[![codecov](https://codecov.io/gh/ai-social-media-agent/ai-social-media-agent/branch/main/graph/badge.svg)](https://codecov.io/gh/ai-social-media-agent/ai-social-media-agent)
+[![Maintainability](https://api.codeclimate.com/v1/badges/maintainability)](https://codeclimate.com/github/ai-social-media-agent/ai-social-media-agent/maintainability)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=ai-social-media-agent&metric=security_rating)](https://sonarcloud.io/dashboard?id=ai-social-media-agent)
 
 ## 🌟 Overview
 

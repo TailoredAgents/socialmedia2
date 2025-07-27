@@ -979,6 +979,106 @@ class InstagramAPIClient:
             "quota_total": response.get("rate_limit_settings", {}).get("quota_total", 25),
             "quota_duration": response.get("rate_limit_settings", {}).get("quota_duration", 3600)
         }
+    
+    async def get_user_token(self, user_id: int) -> Optional[str]:
+        """
+        Get stored Instagram access token for user
+        
+        Args:
+            user_id: User ID
+            
+        Returns:
+            Instagram access token or None if not found
+        """
+        try:
+            return await oauth_manager.get_user_access_token(user_id, "instagram")
+        except Exception as e:
+            logger.error(f"Failed to get Instagram token for user {user_id}: {e}")
+            return None
+    
+    async def create_post(
+        self,
+        access_token: str,
+        caption: str,
+        media_urls: List[str],
+        media_type: InstagramMediaType,
+        location_id: Optional[str] = None,
+        hashtags: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """
+        Create Instagram post (wrapper method for integration API compatibility)
+        
+        Args:
+            access_token: Facebook access token
+            caption: Post caption
+            media_urls: List of media URLs
+            media_type: Type of media
+            location_id: Location ID
+            hashtags: List of hashtags
+            
+        Returns:
+            Post creation result
+        """
+        # Get Instagram Business Account ID for this user
+        pages = await self.get_facebook_pages(access_token)
+        ig_account_id = None
+        
+        for page in pages:
+            if "instagram_business_account" in page:
+                ig_account_id = page["instagram_business_account"]["id"]
+                break
+        
+        if not ig_account_id:
+            raise Exception("No Instagram Business Account found")
+        
+        # Optimize caption with hashtags
+        optimized_caption = self.optimize_caption(caption, hashtags)
+        
+        if media_type == InstagramMediaType.IMAGE and len(media_urls) == 1:
+            # Single image post
+            result = await self.post_image(
+                access_token=access_token,
+                ig_user_id=ig_account_id,
+                image_url=media_urls[0],
+                caption=optimized_caption,
+                location_id=location_id
+            )
+        elif media_type == InstagramMediaType.VIDEO and len(media_urls) == 1:
+            # Single video post
+            result = await self.post_video(
+                access_token=access_token,
+                ig_user_id=ig_account_id,
+                video_url=media_urls[0],
+                caption=optimized_caption,
+                location_id=location_id
+            )
+        elif media_type == InstagramMediaType.CAROUSEL_ALBUM and len(media_urls) > 1:
+            # Carousel post
+            media_items = [{"type": "image", "url": url} for url in media_urls]
+            result = await self.post_carousel(
+                access_token=access_token,
+                ig_user_id=ig_account_id,
+                media_items=media_items,
+                caption=optimized_caption,
+                location_id=location_id
+            )
+        elif media_type == InstagramMediaType.REELS and len(media_urls) == 1:
+            # Reels post
+            result = await self.post_reel(
+                access_token=access_token,
+                ig_user_id=ig_account_id,
+                video_url=media_urls[0],
+                caption=optimized_caption,
+                location_id=location_id
+            )
+        else:
+            raise ValueError(f"Unsupported media configuration: {media_type} with {len(media_urls)} URLs")
+        
+        return {
+            "id": result.id,
+            "permalink": result.permalink,
+            "media_type": result.media_type
+        }
 
 # Global Instagram client instance
 instagram_client = InstagramAPIClient()

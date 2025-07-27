@@ -717,6 +717,37 @@ class SocialOAuthManager:
             logger.error(f"Error disconnecting platform: {e}")
             db.rollback()
             return False
+    
+    async def get_user_access_token(
+        self,
+        user_id: int,
+        platform: str
+    ) -> Optional[str]:
+        """
+        Get user's access token for a platform (async wrapper for get_valid_token)
+        
+        Args:
+            user_id: User ID
+            platform: Social media platform
+            
+        Returns:
+            Access token or None if not found
+        """
+        try:
+            from backend.db.database import get_db
+            
+            # Get database session
+            db_generator = get_db()
+            db = next(db_generator)
+            
+            try:
+                return await self.get_valid_token(user_id, platform, db)
+            finally:
+                db.close()
+                
+        except Exception as e:
+            logger.error(f"Error getting user access token: {e}")
+            return None
 
 # Global OAuth manager instance
 oauth_manager = SocialOAuthManager()

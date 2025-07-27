@@ -1,5 +1,6 @@
 """
 LinkedIn API Integration Client
+Created by Tailored Agents - AI Development Specialists
 Integration Specialist Component - Complete LinkedIn API integration for professional content
 """
 import asyncio
@@ -720,6 +721,22 @@ class LinkedInAPIClient:
                 text = text.replace(hashtag, '')
         
         return text.strip()
+    
+    async def get_user_token(self, user_id: int) -> Optional[str]:
+        """
+        Get stored LinkedIn access token for user
+        
+        Args:
+            user_id: User ID
+            
+        Returns:
+            LinkedIn access token or None if not found
+        """
+        try:
+            return await oauth_manager.get_user_access_token(user_id, "linkedin")
+        except Exception as e:
+            logger.error(f"Failed to get LinkedIn token for user {user_id}: {e}")
+            return None
 
 # Global LinkedIn client instance
 linkedin_client = LinkedInAPIClient()

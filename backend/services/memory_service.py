@@ -17,6 +17,7 @@ from backend.db.database import get_db
 from backend.core.config import get_settings
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 class MemoryService:
     """Service for managing memory system with FAISS integration"""
@@ -66,7 +67,7 @@ class MemoryService:
             
         except Exception as e:
             db.rollback()
-            print(f"Error storing memory: {e}")
+            logger.error(f"Error storing memory: {e}")
             return None
     
     async def search_similar_memories(
@@ -124,7 +125,7 @@ class MemoryService:
             return search_results[:limit]
             
         except Exception as e:
-            print(f"Error searching memories: {e}")
+            logger.error(f"Error searching memories: {e}")
             return []
     
     async def find_memories_for_content_creation(
@@ -177,7 +178,7 @@ class MemoryService:
             }
             
         except Exception as e:
-            print(f"Error finding memories for content: {e}")
+            logger.error(f"Error finding memories for content: {e}")
             return {
                 'similar_content': [],
                 'research_insights': [],
@@ -238,7 +239,7 @@ class MemoryService:
             }
             
         except Exception as e:
-            print(f"Error analyzing content performance: {e}")
+            logger.error(f"Error analyzing content performance: {e}")
             return {
                 'error': str(e),
                 'total_memories': 0,
@@ -285,7 +286,7 @@ class MemoryService:
                         failed_count += 1
                         
                 except Exception as e:
-                    print(f"Error indexing memory {memory.id}: {e}")
+                    logger.error(f"Error indexing memory {memory.id}: {e}")
                     failed_count += 1
             
             # Commit all updates
@@ -302,7 +303,7 @@ class MemoryService:
             
         except Exception as e:
             db.rollback()
-            print(f"Error syncing database with FAISS: {e}")
+            logger.error(f"Error syncing database with FAISS: {e}")
             return {'indexed': 0, 'failed': 0, 'remaining': 0, 'error': str(e)}
     
     async def cleanup_old_memories(
@@ -334,7 +335,7 @@ class MemoryService:
         except Exception as e:
             if db:
                 db.rollback()
-            print(f"Error cleaning up memories: {e}")
+            logger.error(f"Error cleaning up memories: {e}")
             return 0
 
 # Global memory service instance

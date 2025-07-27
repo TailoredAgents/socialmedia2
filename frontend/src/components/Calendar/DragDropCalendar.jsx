@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { debug as logDebug } from '../../utils/logger.js'
 import {
   DndContext,
@@ -58,7 +58,7 @@ const platforms = {
 }
 
 // Enhanced draggable post item component with actions
-function DraggablePostItem({ post, isDragging, onEdit, onDuplicate, onDelete, isSelected, onSelect }) {
+const DraggablePostItem = React.memo(function DraggablePostItem({ post, isDragging, onEdit, onDuplicate, onDelete, isSelected, onSelect }) {
   const [showActions, setShowActions] = useState(false)
   const {
     attributes,
@@ -172,10 +172,10 @@ function DraggablePostItem({ post, isDragging, onEdit, onDuplicate, onDelete, is
       </div>
     </div>
   )
-}
+})
 
 // Enhanced droppable day cell component with time slots
-function DroppableDay({ day, date, posts, currentDate, onAddPost, selectedPosts, onSelectPost, onEditPost, onDuplicatePost, onDeletePost }) {
+const DroppableDay = React.memo(function DroppableDay({ day, date, posts, currentDate, onAddPost, selectedPosts, onSelectPost, onEditPost, onDuplicatePost, onDeletePost }) {
   const isToday = isSameDay(date, new Date())
   const dayName = format(date, 'EEEE').toLowerCase()
   const optimalTimesForDay = optimalTimes[dayName] || []
@@ -341,9 +341,9 @@ function DroppableDay({ day, date, posts, currentDate, onAddPost, selectedPosts,
       </div>
     </div>
   )
-}
+})
 
-export default function DragDropCalendar({ posts = [], onPostMove, onAddPost, onEditPost, onDuplicatePost, onDeletePost }) {
+const DragDropCalendar = React.memo(function DragDropCalendar({ posts = [], onPostMove, onAddPost, onEditPost, onDuplicatePost, onDeletePost }) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [activeId, setActiveId] = useState(null)
   const [selectedPosts, setSelectedPosts] = useState([])
@@ -673,4 +673,6 @@ export default function DragDropCalendar({ posts = [], onPostMove, onAddPost, on
       </DragOverlay>
     </DndContext>
   )
-}
+})
+
+export default DragDropCalendar

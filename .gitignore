@@ -110,12 +110,8 @@ public
 dist/
 *.local
 
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Environment variables - REMOVED FOR DEPLOYMENT
+# .env files are now tracked in git
 
 # Database
 *.db
@@ -146,7 +142,7 @@ bower_components
 
 # Render-specific files
 .render/
-render.yaml
+# render.yaml now tracked for deployment
 
 # OS generated files
 .DS_Store

@@ -1,0 +1,109 @@
+# Render Blueprint for AI Social Media Content Agent
+# Deploy with: render-cli deploy --blueprint render.yaml
+
+services:
+  # Backend API Service
+  - type: web
+    name: ai-social-backend
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: |
+      cd backend &&
+      pip install --upgrade pip &&
+      pip install -r requirements.txt
+    startCommand: |
+      cd backend &&
+      uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ai-social-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: ai-social-redis
+          property: connectionString
+      # API Keys (set these in Render dashboard)
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SERPER_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      # Social Media API Keys
+      - key: TWITTER_API_KEY
+        sync: false
+      - key: TWITTER_API_SECRET
+        sync: false
+      - key: TWITTER_ACCESS_TOKEN
+        sync: false
+      - key: TWITTER_ACCESS_TOKEN_SECRET
+        sync: false
+      - key: TWITTER_CLIENT_ID
+        sync: false
+      - key: TWITTER_CLIENT_SECRET
+        sync: false
+      - key: TWITTER_BEARER_TOKEN
+        sync: false
+      - key: LINKEDIN_CLIENT_ID
+        sync: false
+      - key: LINKEDIN_CLIENT_SECRET
+        sync: false
+      - key: INSTAGRAM_APP_ID
+        sync: false
+      - key: INSTAGRAM_APP_SECRET
+        sync: false
+      - key: FACEBOOK_APP_ID
+        sync: false
+      - key: FACEBOOK_APP_SECRET
+        sync: false
+      - key: TIKTOK_CLIENT_ID
+        sync: false
+      - key: TIKTOK_CLIENT_SECRET
+        sync: false
+      # CORS Configuration
+      - key: CORS_ORIGINS
+        value: https://ai-social-frontend.onrender.com,http://localhost:5173
+      - key: ALLOWED_HOSTS
+        value: ai-social-backend.onrender.com,localhost,127.0.0.1
+
+  # Frontend Service
+  - type: web
+    name: ai-social-frontend
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: |
+      cd frontend &&
+      npm ci &&
+      npm run build
+    startCommand: |
+      cd frontend &&
+      npm run preview -- --host 0.0.0.0 --port $PORT
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://ai-social-backend.onrender.com
+      - key: VITE_ENVIRONMENT
+        value: production
+
+  # Redis Cache Service
+  - type: redis
+    name: ai-social-redis
+    region: oregon
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+
+# Database Service
+databases:
+  - name: ai-social-db
+    databaseName: ai_social_media
+    region: oregon
+    plan: starter

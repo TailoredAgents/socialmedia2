@@ -7,7 +7,7 @@
 ![Version](https://img.shields.io/badge/version-2.0-blue)
 ![Python](https://img.shields.io/badge/python-3.11+-green)
 ![React](https://img.shields.io/badge/react-18.x-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+![License](https://img.shields.io/badge/license-Proprietary-red)
 ![Production Ready](https://img.shields.io/badge/production-ready-brightgreen)
 
 ## 🚦 CI/CD Status
@@ -965,9 +965,85 @@ git push origin feature/your-feature-name
 
 ---
 
-## 📄 License
+## 💼 Commercial Licensing & Enterprise Solutions
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### **ENTERPRISE-READY AI SOCIAL MEDIA PLATFORM**
+
+**Copyright (c) 2025 Tailored Agents LLC. All Rights Reserved.**
+
+This AI Social Media Content Agent is a **commercial software solution** designed for businesses, enterprises, and individuals seeking professional social media management capabilities.
+
+### 🏢 **LICENSING TIERS AVAILABLE**
+
+| License Tier | Price | Use Case | Features |
+|--------------|-------|----------|----------|
+| **Personal** | **FREE** | Individual, non-commercial | 3 accounts, basic features |
+| **Small Business** | **$49/month** | Single business entity | 10 accounts, email support, 5 users |
+| **Enterprise** | **$199/month** | Large organizations | 50 accounts, priority support, unlimited users |
+| **Commercial Services** | **$499/month** | Service providers/agencies | 200 client accounts, white-label, revenue sharing |
+| **Enterprise Unlimited** | **$999/month** | Enterprise-scale operations | Unlimited accounts, custom development |
+
+### ✅ **AUTHORIZED USES**
+
+With proper licensing, you may use this software for:
+
+- ✅ **Business Operations**: Internal social media management for your company
+- ✅ **Client Services**: Providing social media management to clients (Commercial Services License)
+- ✅ **Personal Use**: Individual social media management (Personal License)
+- ✅ **Enterprise Integration**: Custom integrations and enterprise deployments
+- ✅ **White-Label Solutions**: Branded solutions for service providers
+
+### 🚫 **USAGE RESTRICTIONS**
+
+Without proper licensing, the following are prohibited:
+
+- ❌ **Unlicensed Commercial Use**: Using beyond your licensing tier limits
+- ❌ **Reverse Engineering**: Extracting proprietary algorithms or architecture  
+- ❌ **Unauthorized Distribution**: Sharing, copying, or redistributing the software
+- ❌ **Competing Products**: Creating competing platforms using our IP
+- ❌ **License Violations**: Exceeding account limits or usage parameters
+
+### 💰 **ENTERPRISE BENEFITS**
+
+**Why Choose Our Commercial License:**
+
+- 🔒 **Legal Compliance**: Fully licensed for commercial use
+- 🛠️ **Enterprise Support**: Dedicated technical and account management
+- 📊 **SLA Guarantees**: 99.5% uptime with professional support tiers
+- 🔧 **Custom Development**: Tailored features and integrations available
+- 📈 **Scalable Architecture**: Handles enterprise-scale social media operations
+- 🏷️ **White-Label Options**: Brand the platform as your own solution
+
+### 📞 **Get Licensed Today**
+
+**Ready to get started with proper licensing?**
+
+**Tailored Agents LLC**  
+📧 **Sales**: sales@tailoredagents.com  
+📞 **Phone**: 1-800-TAILORED (1-800-824-5673)  
+🌐 **Website**: https://tailoredagents.com  
+📋 **Legal**: legal@tailoredagents.com
+
+### 🛡️ **Legal Framework**
+
+This software is protected under:
+- **Commercial Software License Agreement** (See [LICENSE](LICENSE) file)
+- **United States Copyright Law** (17 U.S.C. § 101 et seq.)
+- **Delaware State Contract Law**
+- **Trade Secret Protection** (Uniform Trade Secrets Act)
+
+**📋 Complete licensing terms and conditions available in our [LICENSE](LICENSE) file.**
+
+---
+
+## 🚀 **Get Started with Enterprise Licensing**
+
+1. **Choose Your Tier**: Select the licensing tier that fits your business needs
+2. **Contact Sales**: Reach out to discuss your requirements and get pricing
+3. **Deploy Quickly**: Get up and running with professional onboarding support
+4. **Scale Confidently**: Grow your social media operations with enterprise-grade infrastructure
+
+**Ready to transform your social media management? [Contact our sales team today!](mailto:sales@tailoredagents.com)**
 
 ---
 

@@ -300,6 +300,142 @@ def safe_execute(
         ).to_http_exception()
 
 
+# Circuit Breaker Pattern Implementation
+class CircuitBreakerState(Enum):
+    """Circuit breaker states"""
+    CLOSED = "closed"
+    OPEN = "open"
+    HALF_OPEN = "half_open"
+
+class CircuitBreaker:
+    """Circuit breaker for external service calls"""
+    
+    def __init__(
+        self,
+        failure_threshold: int = 5,
+        recovery_timeout: int = 60,
+        expected_exception: Type[Exception] = Exception
+    ):
+        self.failure_threshold = failure_threshold
+        self.recovery_timeout = recovery_timeout
+        self.expected_exception = expected_exception
+        self.failure_count = 0
+        self.last_failure_time = None
+        self.state = CircuitBreakerState.CLOSED
+    
+    def call(self, func, *args, **kwargs):
+        """Execute function with circuit breaker protection"""
+        if self.state == CircuitBreakerState.OPEN:
+            if self._should_attempt_reset():
+                self.state = CircuitBreakerState.HALF_OPEN
+                logger.info("Circuit breaker transitioning to HALF_OPEN")
+            else:
+                raise ExternalServiceError(
+                    ErrorCode.PLATFORM_UNAVAILABLE,
+                    "Service temporarily unavailable (circuit breaker open)",
+                    context={"circuit_breaker_state": self.state.value}
+                )
+        
+        try:
+            result = func(*args, **kwargs)
+            self._on_success()
+            return result
+        except self.expected_exception as e:
+            self._on_failure()
+            raise
+    
+    def _should_attempt_reset(self):
+        """Check if circuit breaker should attempt reset"""
+        return (
+            self.last_failure_time and
+            (datetime.utcnow().timestamp() - self.last_failure_time) > self.recovery_timeout
+        )
+    
+    def _on_success(self):
+        """Handle successful call"""
+        self.failure_count = 0
+        self.state = CircuitBreakerState.CLOSED
+    
+    def _on_failure(self):
+        """Handle failed call"""
+        self.failure_count += 1
+        self.last_failure_time = datetime.utcnow().timestamp()
+        
+        if self.failure_count >= self.failure_threshold:
+            self.state = CircuitBreakerState.OPEN
+            logger.warning(f"Circuit breaker opened after {self.failure_count} failures")
+
+# Retry Logic Implementation
+import asyncio
+import functools
+from typing import Callable
+
+def retry_on_failure(
+    max_attempts: int = 3,
+    delay_seconds: float = 1.0,
+    backoff_multiplier: float = 2.0,
+    exceptions: tuple = (Exception,)
+):
+    """Decorator for retry logic with exponential backoff"""
+    def decorator(func: Callable):
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            last_exception = None
+            
+            for attempt in range(max_attempts):
+                try:
+                    if asyncio.iscoroutinefunction(func):
+                        return await func(*args, **kwargs)
+                    else:
+                        return func(*args, **kwargs)
+                except exceptions as e:
+                    last_exception = e
+                    
+                    if attempt == max_attempts - 1:
+                        # Last attempt failed
+                        logger.error(f"Function {func.__name__} failed after {max_attempts} attempts: {str(e)}")
+                        break
+                    
+                    # Calculate delay with exponential backoff
+                    delay = delay_seconds * (backoff_multiplier ** attempt)
+                    logger.warning(f"Attempt {attempt + 1} failed for {func.__name__}, retrying in {delay}s: {str(e)}")
+                    
+                    await asyncio.sleep(delay)
+            
+            # All attempts failed
+            raise last_exception
+        
+        return wrapper
+    return decorator
+
+# Enhanced error handling with circuit breakers
+_circuit_breakers = {}
+
+def get_circuit_breaker(service_name: str) -> CircuitBreaker:
+    """Get or create circuit breaker for service"""
+    if service_name not in _circuit_breakers:
+        _circuit_breakers[service_name] = CircuitBreaker()
+    return _circuit_breakers[service_name]
+
+def with_circuit_breaker(service_name: str):
+    """Decorator to add circuit breaker protection"""
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            circuit_breaker = get_circuit_breaker(service_name)
+            
+            try:
+                if asyncio.iscoroutinefunction(func):
+                    return circuit_breaker.call(lambda: asyncio.create_task(func(*args, **kwargs)))
+                else:
+                    return circuit_breaker.call(func, *args, **kwargs)
+            except Exception as e:
+                logger.error(f"Circuit breaker call failed for {service_name}: {str(e)}")
+                raise
+        
+        return wrapper
+    return decorator
+
 # Decorator for endpoint error handling
 def handle_errors(operation: str):
     """Decorator for standardized endpoint error handling"""
@@ -322,3 +458,38 @@ def handle_errors(operation: str):
                 ).to_http_exception()
         return wrapper
     return decorator
+
+# Enhanced exception handling for async operations
+class AsyncErrorHandler:
+    """Centralized async error handling"""
+    
+    @staticmethod
+    async def handle_async_operation(
+        operation: str,
+        async_func: Callable,
+        *args,
+        **kwargs
+    ):
+        """Handle async operations with comprehensive error handling"""
+        try:
+            result = await async_func(*args, **kwargs)
+            return result
+        except asyncio.TimeoutError:
+            raise ExternalServiceError(
+                ErrorCode.PLATFORM_UNAVAILABLE,
+                f"Operation {operation} timed out",
+                context={"operation": operation}
+            )
+        except asyncio.CancelledError:
+            logger.info(f"Operation {operation} was cancelled")
+            raise
+        except APIError:
+            # Re-raise API errors
+            raise
+        except Exception as e:
+            logger.error(f"Async operation {operation} failed: {str(e)}")
+            raise APIError(
+                ErrorCode.INTERNAL_SERVER_ERROR,
+                f"Async operation {operation} failed",
+                context={"operation": operation, "error": str(e)}
+            )

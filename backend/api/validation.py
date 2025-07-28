@@ -1,10 +1,16 @@
 """
 API validation utilities and common validators
+Enhanced with security features and comprehensive input validation
 """
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, validator
 from datetime import datetime, date
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Request
+import re
+import html
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ValidationError(Exception):
     """Custom validation error"""
@@ -226,3 +232,229 @@ def bad_request_exception(message: str) -> HTTPException:
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=message
     )
+
+# Enhanced Security Validation Features
+
+class RequestSizeValidator:
+    """Validate request size limits"""
+    
+    @staticmethod
+    def validate_request_size(request: Request, max_size_mb: int = 10):
+        """Validate request size"""
+        content_length = request.headers.get('content-length')
+        if content_length:
+            size_mb = int(content_length) / (1024 * 1024)
+            if size_mb > max_size_mb:
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail=f"Request too large. Maximum size: {max_size_mb}MB"
+                )
+
+class SQLInjectionValidator:
+    """Validate against SQL injection patterns"""
+    
+    SQL_INJECTION_PATTERNS = [
+        r"(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)",
+        r"(--|#|/\*|\*/)",
+        r"(\b(OR|AND)\s+\d+\s*=\s*\d+)",
+        r"(\'\s*(OR|AND)\s*\'\w*\'\s*=\s*\'\w*\')",
+        r"(\bUNION\s+SELECT\b)",
+        r"(\bEXEC\s*\()",
+    ]
+    
+    @classmethod
+    def validate_sql_injection(cls, text: str) -> str:
+        """Validate text for SQL injection patterns"""
+        if not text:
+            return text
+            
+        # Check for SQL injection patterns
+        for pattern in cls.SQL_INJECTION_PATTERNS:
+            if re.search(pattern, text, re.IGNORECASE):
+                logger.warning(f"Potential SQL injection attempt detected: {pattern}")
+                raise ValidationError("Invalid input detected")
+        
+        return text
+
+class XSSValidator:
+    """Validate against XSS attacks"""
+    
+    @staticmethod
+    def sanitize_html(text: str, allowed_tags: List[str] = None) -> str:
+        """Sanitize HTML to prevent XSS"""
+        if not text:
+            return text
+        
+        # Default: escape all HTML
+        if allowed_tags is None or len(allowed_tags) == 0:
+            return html.escape(text)
+        
+        # For basic HTML sanitization without bleach
+        # Remove script tags and dangerous attributes
+        dangerous_patterns = [
+            r'<script[^>]*>.*?</script>',
+            r'<iframe[^>]*>.*?</iframe>',
+            r'<object[^>]*>.*?</object>',
+            r'<embed[^>]*>.*?</embed>',
+            r'on\w+\s*=\s*["\'][^"\']*["\']',
+            r'javascript:',
+            r'vbscript:',
+            r'data:text/html'
+        ]
+        
+        cleaned = text
+        for pattern in dangerous_patterns:
+            cleaned = re.sub(pattern, '', cleaned, flags=re.IGNORECASE | re.DOTALL)
+        
+        return cleaned
+
+class InputValidator:
+    """Comprehensive input validation"""
+    
+    @staticmethod
+    def validate_text_input(
+        text: str,
+        min_length: int = 0,
+        max_length: int = 10000,
+        allow_html: bool = False,
+        check_sql_injection: bool = True
+    ) -> str:
+        """Comprehensive text input validation"""
+        if not text and min_length > 0:
+            raise ValidationError(f"Text must be at least {min_length} characters")
+        
+        if len(text) > max_length:
+            raise ValidationError(f"Text must be at most {max_length} characters")
+        
+        # SQL injection check
+        if check_sql_injection:
+            SQLInjectionValidator.validate_sql_injection(text)
+        
+        # HTML sanitization
+        if not allow_html:
+            text = XSSValidator.sanitize_html(text, allowed_tags=[])
+        
+        return text.strip()
+    
+    @staticmethod
+    def validate_email(email: str) -> str:
+        """Validate email format"""
+        if not email:
+            raise ValidationError("Email is required")
+        
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            raise ValidationError("Invalid email format")
+        
+        return email.lower().strip()
+    
+    @staticmethod
+    def validate_url(url: str, allow_local: bool = False) -> str:
+        """Validate URL format"""
+        if not url:
+            raise ValidationError("URL is required")
+        
+        # Basic URL pattern
+        url_pattern = r'^https?://[^\s/$.?#].[^\s]*$'
+        if not re.match(url_pattern, url):
+            raise ValidationError("Invalid URL format")
+        
+        # Check for local URLs if not allowed
+        if not allow_local:
+            local_patterns = [
+                r'localhost',
+                r'127\.0\.0\.1',
+                r'0\.0\.0\.0',
+                r'10\.\d+\.\d+\.\d+',
+                r'192\.168\.\d+\.\d+',
+                r'172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+'
+            ]
+            
+            for pattern in local_patterns:
+                if re.search(pattern, url, re.IGNORECASE):
+                    raise ValidationError("Local URLs not allowed")
+        
+        return url.strip()
+    
+    @staticmethod
+    def validate_username(username: str) -> str:
+        """Validate username format"""
+        if not username:
+            raise ValidationError("Username is required")
+        
+        if len(username) < 3 or len(username) > 30:
+            raise ValidationError("Username must be between 3 and 30 characters")
+        
+        # Only alphanumeric characters, underscores, and hyphens
+        if not re.match(r'^[a-zA-Z0-9_-]+$', username):
+            raise ValidationError("Username can only contain letters, numbers, underscores, and hyphens")
+        
+        return username.lower().strip()
+
+class RateLimitValidator:
+    """Rate limiting validation helpers"""
+    
+    @staticmethod
+    def check_rate_limit_headers(request: Request) -> Dict[str, Any]:
+        """Extract rate limiting information from request"""
+        return {
+            'client_ip': request.client.host if request.client else None,
+            'user_agent': request.headers.get('user-agent'),
+            'referer': request.headers.get('referer'),
+            'forwarded_for': request.headers.get('x-forwarded-for'),
+            'real_ip': request.headers.get('x-real-ip')
+        }
+
+# Enhanced validation functions
+def validate_api_key(api_key: str) -> str:
+    """Validate API key format"""
+    if not api_key:
+        raise ValidationError("API key is required")
+    
+    # Basic API key format validation
+    if not re.match(r'^[a-zA-Z0-9]{32,128}$', api_key):
+        raise ValidationError("Invalid API key format")
+    
+    return api_key
+
+def validate_file_upload(file_content: bytes, max_size_mb: int = 10, allowed_types: List[str] = None) -> bool:
+    """Validate file upload"""
+    if not file_content:
+        raise ValidationError("File content is required")
+    
+    # Check file size
+    size_mb = len(file_content) / (1024 * 1024)
+    if size_mb > max_size_mb:
+        raise ValidationError(f"File too large. Maximum size: {max_size_mb}MB")
+    
+    # Basic file type validation (you might want to add more sophisticated detection)
+    if allowed_types:
+        # This is a basic implementation - in production, use proper file type detection
+        pass
+    
+    return True
+
+def create_validation_middleware():
+    """Create validation middleware for FastAPI"""
+    async def validation_middleware(request: Request, call_next):
+        try:
+            # Validate request size
+            RequestSizeValidator.validate_request_size(request)
+            
+            # Log rate limiting info for monitoring
+            rate_limit_info = RateLimitValidator.check_rate_limit_headers(request)
+            logger.debug(f"Request validation: {rate_limit_info}")
+            
+            response = await call_next(request)
+            return response
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Validation middleware error: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal validation error"
+            )
+    
+    return validation_middleware

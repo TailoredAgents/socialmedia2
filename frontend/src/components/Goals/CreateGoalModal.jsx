@@ -152,19 +152,25 @@ export default function CreateGoalModal({ isOpen, onClose, onSubmit }) {
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose}></div>
 
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+        <div 
+          className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+        >
           <form onSubmit={handleSubmit}>
             <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
               <div className="sm:flex sm:items-start">
                 <div className="w-full">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
+                    <h3 id="modal-title" className="text-lg leading-6 font-medium text-gray-900">
                       Create New Goal
                     </h3>
                     <button
                       type="button"
                       onClick={onClose}
                       className="text-gray-400 hover:text-gray-600"
+                      aria-label="Close modal"
                     >
                       <XMarkIcon className="h-6 w-6" />
                     </button>
@@ -212,10 +218,11 @@ export default function CreateGoalModal({ isOpen, onClose, onSubmit }) {
 
                     {/* Title */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
                         Goal Title
                       </label>
                       <input
+                        id="title"
                         type="text"
                         name="title"
                         value={formData.title}
@@ -232,10 +239,11 @@ export default function CreateGoalModal({ isOpen, onClose, onSubmit }) {
 
                     {/* Description */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                         Description
                       </label>
                       <textarea
+                        id="description"
                         name="description"
                         value={formData.description}
                         onChange={handleInputChange}
@@ -252,10 +260,11 @@ export default function CreateGoalModal({ isOpen, onClose, onSubmit }) {
 
                     {/* Platform */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="platform" className="block text-sm font-medium text-gray-700 mb-1">
                         Platform
                       </label>
                       <select
+                        id="platform"
                         name="platform"
                         value={formData.platform}
                         onChange={handleInputChange}
@@ -272,11 +281,12 @@ export default function CreateGoalModal({ isOpen, onClose, onSubmit }) {
                     {/* Values */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="current_value" className="block text-sm font-medium text-gray-700 mb-1">
                           Current Value
                         </label>
                         <div className="relative">
                           <input
+                            id="current_value"
                             type="number"
                             name="current_value"
                             value={formData.current_value}
@@ -299,11 +309,12 @@ export default function CreateGoalModal({ isOpen, onClose, onSubmit }) {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="target_value" className="block text-sm font-medium text-gray-700 mb-1">
                           Target Value
                         </label>
                         <div className="relative">
                           <input
+                            id="target_value"
                             type="number"
                             name="target_value"
                             value={formData.target_value}
@@ -328,10 +339,11 @@ export default function CreateGoalModal({ isOpen, onClose, onSubmit }) {
 
                     {/* Target Date */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="target_date" className="block text-sm font-medium text-gray-700 mb-1">
                         Target Date
                       </label>
                       <input
+                        id="target_date"
                         type="date"
                         name="target_date"
                         value={formData.target_date}

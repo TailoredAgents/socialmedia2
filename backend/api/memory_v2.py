@@ -13,6 +13,7 @@ from backend.db.models import MemoryContent, User
 from backend.auth.dependencies import get_current_active_user
 from backend.core.vector_store import VectorStore
 from backend.services.embedding_service import EmbeddingService
+from backend.services.cache_decorators import cached, cache_invalidate
 
 router = APIRouter(prefix="/api/memory", tags=["memory"])
 
@@ -72,6 +73,7 @@ class SearchResult(BaseModel):
     similarity_score: float
     match_reason: str
 
+@cache_invalidate("memory", "search")  # Invalidate search cache when new content is added
 @router.post("/store", response_model=MemoryContentResponse)
 async def store_content(
     request: StoreContentRequest,
@@ -135,6 +137,7 @@ async def store_content(
             detail=f"Failed to store content in memory system: {str(e)}"
         )
 
+@cached("memory", "search", ttl=600)  # 10 minute cache for search results
 @router.post("/search", response_model=List[SearchResult])
 async def search_content(
     request: SearchRequest,

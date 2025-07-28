@@ -75,19 +75,21 @@ export default function CreatePostModal({ isOpen, onClose, selectedDate, onCreat
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-500 transition-colors"
+            aria-label="Close"
           >
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4" data-testid="create-post-form">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="post-title" className="block text-sm font-medium text-gray-700 mb-1">
               Title
             </label>
             <input
+              id="post-title"
               type="text"
               value={formData.title}
               onChange={(e) => handleInputChange('title', e.target.value)}
@@ -103,10 +105,11 @@ export default function CreatePostModal({ isOpen, onClose, selectedDate, onCreat
 
           {/* Content */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="post-content" className="block text-sm font-medium text-gray-700 mb-1">
               Content
             </label>
             <textarea
+              id="post-content"
               value={formData.content}
               onChange={(e) => handleInputChange('content', e.target.value)}
               rows={4}
@@ -126,10 +129,11 @@ export default function CreatePostModal({ isOpen, onClose, selectedDate, onCreat
 
           {/* Platform */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="post-platform" className="block text-sm font-medium text-gray-700 mb-1">
               Platform
             </label>
             <select
+              id="post-platform"
               value={formData.platform}
               onChange={(e) => handleInputChange('platform', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -145,11 +149,12 @@ export default function CreatePostModal({ isOpen, onClose, selectedDate, onCreat
           {/* Date and Time */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="post-date" className="block text-sm font-medium text-gray-700 mb-1">
                 <CalendarIcon className="h-4 w-4 inline mr-1" />
                 Date
               </label>
               <input
+                id="post-date"
                 type="date"
                 value={formData.date}
                 onChange={(e) => handleInputChange('date', e.target.value)}
@@ -164,11 +169,12 @@ export default function CreatePostModal({ isOpen, onClose, selectedDate, onCreat
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="post-time" className="block text-sm font-medium text-gray-700 mb-1">
                 <ClockIcon className="h-4 w-4 inline mr-1" />
                 Time
               </label>
               <input
+                id="post-time"
                 type="time"
                 value={formData.time}
                 onChange={(e) => handleInputChange('time', e.target.value)}
@@ -184,10 +190,11 @@ export default function CreatePostModal({ isOpen, onClose, selectedDate, onCreat
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="post-status" className="block text-sm font-medium text-gray-700 mb-1">
               Status
             </label>
             <select
+              id="post-status"
               value={formData.status}
               onChange={(e) => handleInputChange('status', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

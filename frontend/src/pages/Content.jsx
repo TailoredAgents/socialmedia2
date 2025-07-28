@@ -51,6 +51,8 @@ export default function Content() {
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [selectedContent, setSelectedContent] = useState(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingContent, setEditingContent] = useState(null)
   const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
   
   const { api } = useEnhancedApi()
@@ -91,6 +93,20 @@ export default function Content() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['content'] })
       queryClient.invalidateQueries({ queryKey: ['upcoming-content'] })
+    }
+  })
+
+  // Update content mutation
+  const updateContentMutation = useMutation({
+    mutationFn: ({ id, data }) => api.content.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['content'] })
+      queryClient.invalidateQueries({ queryKey: ['upcoming-content'] })
+      setShowEditModal(false)
+      setEditingContent(null)
+    },
+    onError: (error) => {
+      logError('Failed to update content:', error)
     }
   })
 
@@ -217,8 +233,8 @@ export default function Content() {
   }
 
   const handleEditContent = (item) => {
-    // Navigate to edit or open edit modal
-    console.log('Edit content:', item)
+    setEditingContent(item)
+    setShowEditModal(true)
   }
 
   return (
@@ -486,6 +502,201 @@ export default function Content() {
           </div>
         </div>
       )}
+
+      {/* Edit Content Modal */}
+      {showEditModal && editingContent && (
+        <ContentEditModal
+          content={editingContent}
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false)
+            setEditingContent(null)
+          }}
+          onSave={(updatedContent) => {
+            updateContentMutation.mutate({
+              id: editingContent.id,
+              data: updatedContent
+            })
+          }}
+          isLoading={updateContentMutation.isPending}
+        />
+      )}
+    </div>
+  )
+}
+
+// Simple Content Edit Modal Component
+function ContentEditModal({ content, isOpen, onClose, onSave, isLoading }) {
+  const [formData, setFormData] = useState({
+    title: content.title || '',
+    content: content.content || '',
+    platform: content.platform || 'twitter',
+    type: content.type || 'text',
+    status: content.status || 'draft',
+    scheduled_for: content.scheduled_for || ''
+  })
+
+  if (!isOpen) return null
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    onSave(formData)
+  }
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        {/* Backdrop */}
+        <div 
+          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
+          onClick={onClose}
+        ></div>
+
+        {/* Modal */}
+        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+          <form onSubmit={handleSubmit}>
+            <div className="bg-white px-4 pt-5 pb-4 sm:p-6">
+              <div className="flex items-start justify-between mb-6">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Edit Content
+                </h3>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <span className="sr-only">Close</span>
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => handleChange('title', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Content title..."
+                  />
+                </div>
+
+                {/* Content */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Content
+                  </label>
+                  <textarea
+                    value={formData.content}
+                    onChange={(e) => handleChange('content', e.target.value)}
+                    rows={6}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Write your content here..."
+                    required
+                  />
+                </div>
+
+                {/* Platform and Type */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Platform
+                    </label>
+                    <select
+                      value={formData.platform}
+                      onChange={(e) => handleChange('platform', e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="twitter">Twitter</option>
+                      <option value="linkedin">LinkedIn</option>
+                      <option value="instagram">Instagram</option>
+                      <option value="facebook">Facebook</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Type
+                    </label>
+                    <select
+                      value={formData.type}
+                      onChange={(e) => handleChange('type', e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="text">Text Post</option>
+                      <option value="image">Image</option>
+                      <option value="video">Video</option>
+                      <option value="carousel">Carousel</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => handleChange('status', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="published">Published</option>
+                  </select>
+                </div>
+
+                {/* Scheduled Date (only show if status is scheduled) */}
+                {formData.status === 'scheduled' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Scheduled For
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={formData.scheduled_for}
+                      onChange={(e) => handleChange('scheduled_for', e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   )
 }

@@ -3,17 +3,19 @@ try:
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
-    print("FAISS not available, using simple vector search")
 
 import numpy as np
 import pickle
 import os
+import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from openai import OpenAI
 from backend.core.config import get_settings
 import json
 import uuid
+
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
@@ -52,7 +54,7 @@ class FAISSMemorySystem:
                 if FAISS_AVAILABLE:
                     return faiss.read_index(self.index_file)
             except Exception as e:
-                print(f"Error loading index: {e}. Creating new index.")
+                logger.warning(f"Error loading index: {e}. Creating new index.")
         
         # Create new index using IndexFlatIP (Inner Product) for cosine similarity
         if FAISS_AVAILABLE:
@@ -66,7 +68,7 @@ class FAISSMemorySystem:
                 with open(self.metadata_file, 'r') as f:
                     return json.load(f)
             except Exception as e:
-                print(f"Error loading metadata: {e}. Starting with empty metadata.")
+                logger.warning(f"Error loading metadata: {e}. Starting with empty metadata.")
         return {}
     
     def _save_index(self):
@@ -90,7 +92,7 @@ class FAISSMemorySystem:
             # Normalize for cosine similarity
             return embedding / np.linalg.norm(embedding)
         except Exception as e:
-            print(f"Embedding failed: {e}")
+            logger.error(f"Embedding failed: {e}")
             return np.zeros(self.dimension, dtype=np.float32)
     
     def store_content(self, content: str, metadata: Dict[str, Any]) -> str:
@@ -289,7 +291,7 @@ class FAISSMemorySystem:
         # For now, just remove from metadata
         if indices_to_remove:
             self._save_metadata()
-            print(f"Cleaned up {len(indices_to_remove)} old content items from metadata")
+            logger.info(f"Cleaned up {len(indices_to_remove)} old content items from metadata")
         
         return len(indices_to_remove)
 

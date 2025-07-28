@@ -685,3 +685,98 @@ def create_apm_middleware():
             raise e
     
     return apm_middleware
+
+class PrometheusMetrics:
+    """
+    Prometheus-compatible metrics exporter
+    Exports APM metrics in Prometheus format
+    """
+    
+    def __init__(self, apm_service: APMService):
+        self.apm = apm_service
+    
+    def generate_metrics(self) -> str:
+        """Generate Prometheus metrics format"""
+        lines = []
+        
+        # Add help and type declarations
+        lines.extend([
+            "# HELP apm_cpu_usage_percent Current CPU usage percentage",
+            "# TYPE apm_cpu_usage_percent gauge",
+            "# HELP apm_memory_usage_percent Current memory usage percentage",
+            "# TYPE apm_memory_usage_percent gauge",
+            "# HELP apm_disk_usage_percent Current disk usage percentage", 
+            "# TYPE apm_disk_usage_percent gauge",
+            "# HELP apm_response_time_avg_ms Average response time in milliseconds",
+            "# TYPE apm_response_time_avg_ms gauge",
+            "# HELP apm_error_rate_percent Error rate percentage",
+            "# TYPE apm_error_rate_percent gauge",
+            "# HELP apm_total_requests_total Total number of requests processed",
+            "# TYPE apm_total_requests_total counter",
+            "# HELP apm_cache_hit_ratio Cache hit ratio as a percentage",
+            "# TYPE apm_cache_hit_ratio gauge",
+            "# HELP apm_database_pool_usage_percent Database pool usage percentage",
+            "# TYPE apm_database_pool_usage_percent gauge",
+            "# HELP apm_active_alerts_total Number of currently active alerts",
+            "# TYPE apm_active_alerts_total gauge",
+            "# HELP apm_memory_leaks_detected_total Number of memory leaks detected",
+            "# TYPE apm_memory_leaks_detected_total gauge",
+            ""
+        ])
+        
+        try:
+            # Get current metrics
+            if self.apm.system_metrics and self.apm.app_metrics:
+                latest_system = self.apm.system_metrics[-1]
+                latest_app = self.apm.app_metrics[-1]
+                timestamp = int(latest_system.timestamp.timestamp() * 1000)
+                
+                # System metrics
+                lines.extend([
+                    f"apm_cpu_usage_percent {latest_system.cpu_percent} {timestamp}",
+                    f"apm_memory_usage_percent {latest_system.memory_percent} {timestamp}",
+                    f"apm_disk_usage_percent {latest_system.disk_usage_percent} {timestamp}",
+                    f"apm_response_time_avg_ms {latest_system.response_time_avg} {timestamp}",
+                    f"apm_error_rate_percent {latest_system.error_rate} {timestamp}",
+                    f"apm_total_requests_total {latest_system.request_count} {timestamp}",
+                    ""
+                ])
+                
+                # Application metrics
+                lines.extend([
+                    f"apm_cache_hit_ratio {latest_app.cache_hit_ratio} {timestamp}",
+                    f"apm_database_pool_usage_percent {latest_app.database_pool_usage} {timestamp}",
+                    f"apm_memory_leaks_detected_total {latest_app.memory_leaks_detected} {timestamp}",
+                    ""
+                ])
+                
+                # Alert metrics
+                critical_alerts = len([a for a in self.apm.active_alerts.values() if a.severity == AlertSeverity.CRITICAL])
+                warning_alerts = len([a for a in self.apm.active_alerts.values() if a.severity == AlertSeverity.WARNING])
+                
+                lines.extend([
+                    f"apm_active_alerts_total{{severity=\"critical\"}} {critical_alerts} {timestamp}",
+                    f"apm_active_alerts_total{{severity=\"warning\"}} {warning_alerts} {timestamp}",
+                    f"apm_active_alerts_total{{severity=\"all\"}} {len(self.apm.active_alerts)} {timestamp}",
+                    ""
+                ])
+                
+                # Network metrics
+                if latest_system.network_io:
+                    lines.extend([
+                        f"apm_network_bytes_sent_total {latest_system.network_io.get('bytes_sent', 0)} {timestamp}",
+                        f"apm_network_bytes_recv_total {latest_system.network_io.get('bytes_recv', 0)} {timestamp}",
+                        ""
+                    ])
+                
+                # Connection metrics
+                lines.append(f"apm_active_connections {latest_system.active_connections} {timestamp}")
+                
+        except Exception as e:
+            logger.error(f"Error generating Prometheus metrics: {e}")
+            lines.append(f"# ERROR: Failed to generate metrics: {e}")
+        
+        return "\n".join(lines)
+
+# Global Prometheus metrics instance
+prometheus_metrics = PrometheusMetrics(apm_service)

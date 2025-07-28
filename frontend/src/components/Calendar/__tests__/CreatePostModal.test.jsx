@@ -49,8 +49,8 @@ describe('CreatePostModal', () => {
     })
     
     // Submit form
-    const createButton = screen.getByRole('button', { name: /create post/i })
-    fireEvent.click(createButton)
+    const form = screen.getByTestId('create-post-form')
+    fireEvent.submit(form)
     
     await waitFor(() => {
       expect(mockProps.onCreatePost).toHaveBeenCalledWith(
@@ -67,8 +67,8 @@ describe('CreatePostModal', () => {
     render(<CreatePostModal {...mockProps} />)
     
     // Try to submit empty form
-    const createButton = screen.getByRole('button', { name: /create post/i })
-    fireEvent.click(createButton)
+    const form = screen.getByTestId('create-post-form')
+    fireEvent.submit(form)
     
     await waitFor(() => {
       expect(screen.getByText('Title is required')).toBeInTheDocument()
@@ -104,8 +104,8 @@ describe('CreatePostModal', () => {
     fireEvent.change(titleInput, { target: { value: 'Test Post' } })
     fireEvent.change(contentInput, { target: { value: 'Test content' } })
     
-    const createButton = screen.getByRole('button', { name: /create post/i })
-    fireEvent.click(createButton)
+    const form = screen.getByTestId('create-post-form')
+    fireEvent.submit(form)
     
     await waitFor(() => {
       expect(mockProps.onCreatePost).toHaveBeenCalled()

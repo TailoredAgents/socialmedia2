@@ -1,8 +1,11 @@
 import json
 import os
 import uuid
+import logging
 from typing import Dict, List, Any, Optional
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 class SimpleMemorySystem:
     """Simplified memory system without FAISS dependency"""
@@ -20,7 +23,7 @@ class SimpleMemorySystem:
                 with open(self.data_path, 'r') as f:
                     self.content_store = json.load(f)
         except Exception as e:
-            print(f"Error loading memory: {e}")
+            logger.error(f"Error loading memory: {e}")
             self.content_store = {}
     
     def _save_memory(self):
@@ -30,7 +33,7 @@ class SimpleMemorySystem:
             with open(self.data_path, 'w') as f:
                 json.dump(self.content_store, f, indent=2, default=str)
         except Exception as e:
-            print(f"Error saving memory: {e}")
+            logger.error(f"Error saving memory: {e}")
     
     def store_content(self, content: str, metadata: Dict[str, Any]) -> str:
         """Store content with metadata"""

@@ -12,6 +12,7 @@ import json
 from backend.db.database import get_db
 from backend.db.models import ContentLog, User
 from backend.auth.dependencies import get_current_active_user
+from backend.services.cache_decorators import cached, cache_invalidate
 
 router = APIRouter(prefix="/api/content", tags=["content"])
 
@@ -67,6 +68,7 @@ class ContentAnalytics(BaseModel):
     avg_engagement: float
     top_performing_posts: List[Dict[str, Any]]
 
+@cache_invalidate("content", "user_content_list")  # Invalidate user content list cache
 @router.post("/", response_model=ContentResponse)
 async def create_content(
     request: CreateContentRequest,
@@ -95,6 +97,7 @@ async def create_content(
     
     return content
 
+@cached("content", "user_content_list", ttl=300)  # 5 minute cache
 @router.get("/", response_model=List[ContentResponse])
 async def get_user_content(
     current_user: User = Depends(get_current_active_user),
@@ -120,6 +123,7 @@ async def get_user_content(
     
     return content_items
 
+@cached("content", "single_content", ttl=600)  # 10 minute cache
 @router.get("/{content_id}", response_model=ContentResponse)
 async def get_content(
     content_id: int,

@@ -82,7 +82,7 @@ def generate_auth0_config():
         "client_id": "your_client_id_here",
         "client_secret": "your_client_secret_here",
         "audience": "https://your-api-audience/",
-        "callback_url": "http://localhost:8000/api/auth/auth0/callback"
+        "callback_url": os.getenv("AUTH0_CALLBACK_URL", "http://localhost:8000/api/auth/auth0/callback")
     }
     
     print("\n📋 Auth0 Configuration Template:")

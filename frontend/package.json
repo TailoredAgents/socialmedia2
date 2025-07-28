@@ -17,7 +17,9 @@
     "lint:fix": "eslint . --fix",
     "prepare": "husky install",
     "analyze": "npm run build && npx vite preview --open --port 4173",
-    "bundle-analyzer": "npm run build && open dist/stats.html"
+    "bundle-analyzer": "npm run build && open dist/stats.html",
+    "bundle-size": "npm run build && node scripts/check-bundle-size.js",
+    "bundle-report": "npm run build && node scripts/bundle-report.js"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.2.4",
@@ -36,6 +38,7 @@
     "react-window-infinite-loader": "^1.0.10"
   },
   "devDependencies": {
+    "@axe-core/react": "^4.10.2",
     "@babel/preset-env": "^7.28.0",
     "@babel/preset-react": "^7.27.1",
     "@testing-library/jest-dom": "^6.6.3",
@@ -53,6 +56,7 @@
     "husky": "^9.1.7",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.0.5",
+    "jest-axe": "^10.0.0",
     "jest-environment-jsdom": "^30.0.5",
     "lint-staged": "^16.1.2",
     "postcss": "^8.5.6",
@@ -60,7 +64,7 @@
     "rollup-plugin-visualizer": "^6.0.3",
     "tailwindcss": "^3.4.16",
     "terser": "^5.43.1",
-    "vite": "^5.4.11"
+    "vite": "^6.3.5"
   },
   "lint-staged": {
     "src/**/*.{js,jsx}": [

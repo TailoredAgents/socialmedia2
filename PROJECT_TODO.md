@@ -765,7 +765,7 @@ Based on comprehensive code review and project analysis, the following critical 
 
 2. **Advanced AI Capabilities:**
    - GPT-4 integration for enhanced content generation
-   - Image generation and optimization with DALL-E
+   - Image generation and optimization with GPT Image 1
    - Video content creation and editing
    - Voice-to-content conversion
 

@@ -168,10 +168,15 @@ class OpenAITool:
         return self.generate_text(prompt, max_tokens=150)
     
     def create_image(self, prompt: str, size: str = "1024x1024") -> Dict[str, Any]:
-        """Generate image using DALL-E"""
+        """
+        Generate image using GPT Image 1
+        
+        GPT Image 1 is OpenAI's latest image generation model that provides
+        high-quality, consistent image generation optimized for social media content.
+        """
         try:
             response = self.client.images.generate(
-                model="dall-e-3",
+                model="gpt-image-1",
                 prompt=prompt,
                 size=size,
                 quality="standard",
@@ -181,12 +186,13 @@ class OpenAITool:
             return {
                 "status": "success",
                 "image_url": response.data[0].url,
-                "prompt": prompt
+                "prompt": prompt,
+                "model": "gpt-image-1"
             }
         except Exception as e:
             return {
                 "status": "error",
-                "error": f"Failed to generate image: {str(e)}"
+                "error": f"Failed to generate image with GPT Image 1: {str(e)}"
             }
     
     def analyze_sentiment(self, text: str) -> Dict[str, Any]:

@@ -223,7 +223,7 @@ const AIStatus = ({ darkMode }) => {
             className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}
           >
             {currentTask}
-          </span>
+          </motion.span>
         </div>
         
         <div className="flex justify-between items-center">

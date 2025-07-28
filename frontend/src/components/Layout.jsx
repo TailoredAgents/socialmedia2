@@ -10,8 +10,8 @@ import {
   Cog6ToothIcon,
   Bars3Icon,
   XMarkIcon,
-  BrainIcon,
-  TargetIcon,
+  CpuChipIcon,
+  CheckCircleIcon,
   ArrowRightOnRectangleIcon,
   BoltIcon
 } from '@heroicons/react/24/outline'
@@ -22,8 +22,8 @@ const navigation = [
   { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },
   { name: 'Performance', href: '/performance', icon: BoltIcon },
   { name: 'Content', href: '/content', icon: DocumentTextIcon },
-  { name: 'Memory', href: '/memory', icon: BrainIcon },
-  { name: 'Goals', href: '/goals', icon: TargetIcon },
+  { name: 'Memory', href: '/memory', icon: CpuChipIcon },
+  { name: 'Goals', href: '/goals', icon: CheckCircleIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ]
 

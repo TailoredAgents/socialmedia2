@@ -42,15 +42,20 @@ class Settings(BaseSettings):
     
     linkedin_client_id: str = ""
     linkedin_client_secret: str = ""
+    linkedin_access_token: str = ""
+    linkedin_user_id: str = ""
     
     # Instagram/Facebook
     instagram_app_id: str = ""
     instagram_app_secret: str = ""
     instagram_access_token: str = ""
+    instagram_business_id: str = ""
     
     facebook_app_id: str = ""
     facebook_app_secret: str = ""
     facebook_access_token: str = ""
+    facebook_page_id: str = ""
+    facebook_page_access_token: str = ""
     
     # TikTok
     tiktok_client_id: str = ""
@@ -60,6 +65,15 @@ class Settings(BaseSettings):
     # Server
     port: int = 8000
     host: str = "0.0.0.0"
+    
+    # CORS & Security
+    allowed_hosts: str = "localhost,127.0.0.1"
+    cors_origins: str = "http://localhost:5173,http://localhost:3000"
+    
+    # Demo Features
+    demo_mode: str = "false"
+    mock_social_apis: str = "false"
+    show_sample_data: str = "false"
     
     class Config:
         env_file = ".env"

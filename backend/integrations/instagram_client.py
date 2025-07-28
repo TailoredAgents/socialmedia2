@@ -73,10 +73,10 @@ class InstagramInsight:
     shares: int
     likes: int
     comments: int
-    video_views: Optional[int] = None
     profile_visits: int
     website_clicks: int
     fetched_at: datetime
+    video_views: Optional[int] = None
 
 @dataclass
 class InstagramProfile:

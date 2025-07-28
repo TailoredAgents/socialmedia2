@@ -205,3 +205,12 @@ export const useRealTimeContent = () => {
     }
   })
 }
+
+export const useRealTimeMetrics = () => {
+  return useRealTimeData('analytics', {
+    refreshInterval: 30000, // 30 seconds
+    onDataUpdate: (data) => {
+      logDebug('Real-time metrics updated:', data)
+    }
+  })
+}

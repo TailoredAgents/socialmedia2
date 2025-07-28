@@ -19,8 +19,8 @@ import {
 } from '@dnd-kit/sortable'
 import {
   useSortable,
-  CSS,
 } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { useDroppable } from '@dnd-kit/core'
 import { format, addDays, startOfWeek, isSameDay, parseISO } from 'date-fns'
 import { 

@@ -6,6 +6,7 @@ retrieval, and semantic search operations using FAISS vector database.
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 import asyncio
+import logging
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from sqlalchemy.orm import Session

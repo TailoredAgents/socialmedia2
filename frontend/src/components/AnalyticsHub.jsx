@@ -31,45 +31,14 @@ ChartJS.register(
   Filler
 )
 
-// Mock analytics data
-const mockData = {
-  engagement: {
-    daily: [12, 15, 8, 22, 18, 25, 30, 28, 35, 42, 38, 45, 52, 48],
-    labels: ['Jan 15', 'Jan 16', 'Jan 17', 'Jan 18', 'Jan 19', 'Jan 20', 'Jan 21', 'Jan 22', 'Jan 23', 'Jan 24', 'Jan 25', 'Jan 26', 'Jan 27', 'Jan 28']
-  },
-  platforms: {
-    data: [35, 25, 20, 15, 5],
-    labels: ['LinkedIn', 'Twitter', 'Instagram', 'Facebook', 'TikTok']
-  },
-  contentTypes: {
-    data: [40, 30, 20, 10],
-    labels: ['Text Posts', 'Images', 'Videos', 'Carousels']
-  },
-  hourly: {
-    data: [5, 3, 2, 1, 2, 4, 8, 12, 15, 18, 22, 25, 28, 24, 20, 18, 15, 12, 10, 8, 7, 6, 5, 4],
-    labels: Array.from({ length: 24 }, (_, i) => `${i}:00`)
-  },
-  viral: {
-    reach: [1200, 2400, 3800, 5200, 8900, 12400, 15800],
-    engagement: [45, 89, 152, 234, 445, 623, 789],
-    labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7']
-  },
-  performance: {
-    labels: ['Reach', 'Engagement', 'Clicks', 'Shares', 'Saves'],
-    datasets: [{
-      label: 'This Month',
-      data: [85, 92, 78, 65, 88],
-      backgroundColor: 'rgba(0, 128, 128, 0.2)',
-      borderColor: '#008080',
-      pointBackgroundColor: '#008080'
-    }, {
-      label: 'Last Month',
-      data: [70, 85, 65, 55, 75],
-      backgroundColor: 'rgba(255, 215, 0, 0.2)',
-      borderColor: '#FFD700',
-      pointBackgroundColor: '#FFD700'
-    }]
-  }
+// Empty state data structure - replace with API calls
+const emptyData = {
+  engagement: { daily: [], labels: [] },
+  platforms: { data: [], labels: [] },
+  contentTypes: { data: [], labels: [] },
+  hourly: { data: [], labels: [] },
+  viral: { reach: [], engagement: [], labels: [] },
+  performance: { labels: [], datasets: [] }
 }
 
 // Filter Component
@@ -467,10 +436,10 @@ const AnalyticsHub = ({ darkMode, searchQuery }) => {
           <div className="h-64">
             <Line 
               data={{
-                labels: mockData.engagement.labels,
+                labels: emptyData.engagement.labels,
                 datasets: [{
                   label: 'Engagement Rate',
-                  data: mockData.engagement.daily,
+                  data: emptyData.engagement.daily,
                   borderColor: '#008080',
                   backgroundColor: 'rgba(0, 128, 128, 0.1)',
                   fill: true,
@@ -487,9 +456,9 @@ const AnalyticsHub = ({ darkMode, searchQuery }) => {
           <div className="h-64">
             <Doughnut 
               data={{
-                labels: mockData.platforms.labels,
+                labels: emptyData.platforms.labels,
                 datasets: [{
-                  data: mockData.platforms.data,
+                  data: emptyData.platforms.data,
                   backgroundColor: ['#008080', '#FFD700', '#20B2AA', '#87CEEB', '#DDA0DD'],
                   borderWidth: 0
                 }]
@@ -504,10 +473,10 @@ const AnalyticsHub = ({ darkMode, searchQuery }) => {
           <div className="h-64">
             <Bar 
               data={{
-                labels: mockData.hourly.labels,
+                labels: emptyData.hourly.labels,
                 datasets: [{
                   label: 'Posts',
-                  data: mockData.hourly.data,
+                  data: emptyData.hourly.data,
                   backgroundColor: 'rgba(0, 128, 128, 0.8)',
                   borderRadius: 4
                 }]
@@ -521,7 +490,7 @@ const AnalyticsHub = ({ darkMode, searchQuery }) => {
         <ChartContainer title="Performance Comparison" darkMode={darkMode} delay={0.5}>
           <div className="h-64">
             <Radar 
-              data={mockData.performance}
+              data={emptyData.performance}
               options={radarOptions}
             />
           </div>
@@ -533,18 +502,18 @@ const AnalyticsHub = ({ darkMode, searchQuery }) => {
         <div className="h-64">
           <Line 
             data={{
-              labels: mockData.viral.labels,
+              labels: emptyData.viral.labels,
               datasets: [
                 {
                   label: 'Reach',
-                  data: mockData.viral.reach,
+                  data: emptyData.viral.reach,
                   borderColor: '#008080',
                   backgroundColor: 'rgba(0, 128, 128, 0.1)',
                   yAxisID: 'y'
                 },
                 {
                   label: 'Engagement',
-                  data: mockData.viral.engagement,
+                  data: emptyData.viral.engagement,
                   borderColor: '#FFD700',
                   backgroundColor: 'rgba(255, 215, 0, 0.1)',
                   yAxisID: 'y1'

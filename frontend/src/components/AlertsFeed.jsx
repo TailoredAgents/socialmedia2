@@ -2,94 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import InfiniteScroll from 'react-infinite-scroll-component'
 
-// Mock alerts data
-const generateMockAlerts = (startIndex = 0, count = 20) => {
-  const alertTypes = [
-    {
-      type: 'engagement',
-      icon: '🚀',
-      title: 'High Engagement Alert',
-      color: 'green',
-      actions: ['View Post', 'Boost Further']
-    },
-    {
-      type: 'approval',
-      icon: '📝',
-      title: 'Content Approval Needed',
-      color: 'yellow',
-      actions: ['Approve', 'Edit', 'Reject']
-    },
-    {
-      type: 'milestone',
-      icon: '🎯',
-      title: 'Goal Milestone Reached',
-      color: 'blue',
-      actions: ['View Progress', 'Update Goal']
-    },
-    {
-      type: 'error',
-      icon: '⚠️',
-      title: 'Posting Failed',
-      color: 'red',
-      actions: ['Retry', 'Edit Post']
-    },
-    {
-      type: 'trending',
-      icon: '📈',
-      title: 'Trending Topic Alert',
-      color: 'purple',
-      actions: ['Create Content', 'Learn More']
-    }
-  ]
-
-  const platforms = ['LinkedIn', 'Twitter', 'Instagram', 'Facebook', 'TikTok']
-  const messages = {
-    engagement: [
-      'Your LinkedIn post about AI trends is performing 300% above average',
-      'Instagram story gained 500+ views in the first hour',
-      'Twitter thread about automation got 50+ retweets'
-    ],
-    approval: [
-      'Draft post "Social Media ROI Guide" is ready for review',
-      'Weekly newsletter content needs approval before scheduling',
-      'Video content for TikTok requires final approval'
-    ],
-    milestone: [
-      'Reached 5,000 followers on LinkedIn - 90% of monthly goal!',
-      'Achieved 4.5% engagement rate this week',
-      'Monthly content creation goal exceeded by 20%'
-    ],
-    error: [
-      'Failed to post to Instagram due to authentication error',
-      'LinkedIn post scheduling failed - API rate limit exceeded',
-      'Facebook post rejected due to content policy violation'
-    ],
-    trending: [
-      '#AIMarketing is trending - perfect time to share your expertise',
-      'Remote work discussions are gaining traction on LinkedIn',
-      'Video marketing content is performing exceptionally well'
-    ]
-  }
-
-  return Array.from({ length: count }, (_, i) => {
-    const alertType = alertTypes[Math.floor(Math.random() * alertTypes.length)]
-    const platform = platforms[Math.floor(Math.random() * platforms.length)]
-    const message = messages[alertType.type][Math.floor(Math.random() * messages[alertType.type].length)]
-    
-    return {
-      id: startIndex + i + 1,
-      type: alertType.type,
-      icon: alertType.icon,
-      title: alertType.title,
-      message,
-      platform,
-      timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-      priority: Math.random() > 0.7 ? 'high' : Math.random() > 0.4 ? 'medium' : 'low',
-      read: Math.random() > 0.3,
-      color: alertType.color,
-      actions: alertType.actions
-    }
-  })
+// Empty alerts data - replace with API calls
+const generateEmptyAlerts = (startIndex = 0, count = 0) => {
+  return []
 }
 
 // Alert Card Component
@@ -265,14 +180,14 @@ const AlertsFeed = ({ darkMode, searchQuery }) => {
 
   // Initialize alerts
   useEffect(() => {
-    const initialAlerts = generateMockAlerts(0, 20)
+    const initialAlerts = generateEmptyAlerts(0, 20)
     setAlerts(initialAlerts)
   }, [])
 
   // Load more alerts for infinite scroll
   const loadMoreAlerts = useCallback(() => {
     setTimeout(() => {
-      const newAlerts = generateMockAlerts(alerts.length, 10)
+      const newAlerts = generateEmptyAlerts(alerts.length, 10)
       setAlerts(prev => [...prev, ...newAlerts])
       
       // Simulate end of data after 100 items

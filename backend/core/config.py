@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     allowed_hosts: str = "localhost,127.0.0.1"
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
     
-    # Demo Features
+    # Production Features
     demo_mode: str = "false"
     mock_social_apis: str = "false"
     show_sample_data: str = "false"

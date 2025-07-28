@@ -29,24 +29,24 @@ ChartJS.register(
   Filler
 )
 
-// Mock data for demonstration
-const mockMetrics = {
-  totalPosts: 156,
-  engagement: 4.2,
-  followers: 2750,
-  roi: 12500,
-  postsGrowth: 12,
-  engagementGrowth: 0.8,
-  followersGrowth: 342,
-  roiGrowth: 1800
+// Empty state data - replace with API calls
+const emptyMetrics = {
+  totalPosts: 0,
+  engagement: 0,
+  followers: 0,
+  roi: 0,
+  postsGrowth: 0,
+  engagementGrowth: 0,
+  followersGrowth: 0,
+  roiGrowth: 0
 }
 
-const mockChartData = {
+const emptyChartData = {
   followerGrowth: {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    labels: [],
     datasets: [{
       label: 'Followers',
-      data: [2100, 2200, 2350, 2400, 2600, 2750],
+      data: [],
       borderColor: '#008080',
       backgroundColor: 'rgba(0, 128, 128, 0.1)',
       fill: true,
@@ -54,18 +54,18 @@ const mockChartData = {
     }]
   },
   engagementBreakdown: {
-    labels: ['Likes', 'Comments', 'Shares', 'Saves'],
+    labels: [],
     datasets: [{
-      data: [45, 25, 20, 10],
+      data: [],
       backgroundColor: ['#008080', '#FFD700', '#20B2AA', '#87CEEB'],
       borderWidth: 0
     }]
   },
   contentPerformance: {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    labels: [],
     datasets: [{
       label: 'Engagement Rate',
-      data: [3.2, 4.1, 3.8, 4.5, 4.9, 3.6, 2.8],
+      data: [],
       backgroundColor: 'rgba(0, 128, 128, 0.8)',
       borderRadius: 8
     }]
@@ -345,23 +345,23 @@ const Overview = ({ darkMode, searchQuery }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Total Posts"
-          value={mockMetrics.totalPosts}
-          growth={mockMetrics.postsGrowth}
+          value={emptyMetrics.totalPosts}
+          growth={emptyMetrics.postsGrowth}
           icon="📝"
           darkMode={darkMode}
           delay={0.1}
         />
         <MetricCard
           title="Engagement Rate"
-          value={`${mockMetrics.engagement}%`}
-          growth={mockMetrics.engagementGrowth}
+          value={`${emptyMetrics.engagement}%`}
+          growth={emptyMetrics.engagementGrowth}
           icon="💙"
           darkMode={darkMode}
           delay={0.2}
         />
         <MetricCard
           title="Followers"
-          value={mockMetrics.followers.toLocaleString()}
+          value={emptyMetrics.followers.toLocaleString()}
           growth={15.2}
           icon="👥"
           darkMode={darkMode}
@@ -369,7 +369,7 @@ const Overview = ({ darkMode, searchQuery }) => {
         />
         <MetricCard
           title="Time Saved"
-          value={`$${mockMetrics.roi.toLocaleString()}`}
+          value={`$${emptyMetrics.roi.toLocaleString()}`}
           growth={18.5}
           icon="💰"
           darkMode={darkMode}
@@ -381,13 +381,13 @@ const Overview = ({ darkMode, searchQuery }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartContainer title="Follower Growth" darkMode={darkMode} delay={0.5}>
           <div className="h-64">
-            <Line data={mockChartData.followerGrowth} options={chartOptions} />
+            <Line data={emptyChartData.followerGrowth} options={chartOptions} />
           </div>
         </ChartContainer>
 
         <ChartContainer title="Engagement Breakdown" darkMode={darkMode} delay={0.6}>
           <div className="h-64">
-            <Doughnut data={mockChartData.engagementBreakdown} options={doughnutOptions} />
+            <Doughnut data={emptyChartData.engagementBreakdown} options={doughnutOptions} />
           </div>
         </ChartContainer>
       </div>
@@ -396,7 +396,7 @@ const Overview = ({ darkMode, searchQuery }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <ChartContainer title="Weekly Performance" darkMode={darkMode} delay={0.7}>
           <div className="h-48">
-            <Bar data={mockChartData.contentPerformance} options={chartOptions} />
+            <Bar data={emptyChartData.contentPerformance} options={chartOptions} />
           </div>
         </ChartContainer>
 

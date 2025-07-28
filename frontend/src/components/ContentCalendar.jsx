@@ -5,45 +5,8 @@ import Calendar from 'react-calendar'
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns'
 import 'react-calendar/dist/Calendar.css'
 
-// Mock data for scheduled posts
-const mockPosts = [
-  {
-    id: '1',
-    title: 'AI Marketing Trends 2025',
-    platform: 'LinkedIn',
-    scheduledDate: new Date(2025, 0, 29),
-    status: 'scheduled',
-    content: 'Discover the top AI marketing trends that will shape 2025...',
-    imageUrl: null
-  },
-  {
-    id: '2',
-    title: 'Social Media ROI Guide',
-    platform: 'Twitter',
-    scheduledDate: new Date(2025, 0, 30),
-    status: 'draft',
-    content: 'Calculate your social media ROI with these proven strategies...',
-    imageUrl: null
-  },
-  {
-    id: '3',
-    title: 'Content Automation Tips',
-    platform: 'Instagram',
-    scheduledDate: new Date(2025, 0, 31),
-    status: 'scheduled',
-    content: 'Automate your content creation process with these expert tips...',
-    imageUrl: null
-  },
-  {
-    id: '4',
-    title: 'Weekly Industry Update',
-    platform: 'Facebook',
-    scheduledDate: new Date(2025, 1, 1),
-    status: 'published',
-    content: 'This week in social media marketing: key updates and insights...',
-    imageUrl: null
-  }
-]
+// Empty posts array - replace with API calls
+const emptyPosts = []
 
 const platforms = [
   { name: 'LinkedIn', color: '#0077B5', icon: '💼' },
@@ -215,7 +178,7 @@ const FilterSection = ({ selectedPlatforms, setSelectedPlatforms, darkMode }) =>
 
 // Main Content Calendar Component
 const ContentCalendar = ({ darkMode, searchQuery }) => {
-  const [posts, setPosts] = useState(mockPosts)
+  const [posts, setPosts] = useState(emptyPosts)
   const [view, setView] = useState('calendar') // 'calendar' or 'list'
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [selectedPlatforms, setSelectedPlatforms] = useState(platforms.map(p => p.name))

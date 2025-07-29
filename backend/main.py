@@ -35,6 +35,7 @@ from backend.api.memory_vector import router as memory_vector_router
 from backend.api.workflow_v2 import router as workflow_router
 from backend.api.notifications import router as notifications_router
 from backend.api.integration_services import router as integration_router
+from backend.api.deep_research import router as deep_research_router
 
 # Import security utilities
 from backend.auth.security import add_security_headers
@@ -84,6 +85,7 @@ app = FastAPI(
     - **Advanced Analytics** with real-time performance tracking
     - **Automated Workflows** with intelligent optimization
     - **Enterprise Authentication** via Auth0 + JWT
+    - **Autonomous Industry Research** with GPT-4o-Mini powered weekly intelligence gathering
 
     ### 🔧 Technical Architecture
     - **Backend:** FastAPI with SQLAlchemy ORM
@@ -101,6 +103,7 @@ app = FastAPI(
     - **Integrations** - Social media platform integrations
     - **Workflows** - Automated workflow orchestration
     - **Notifications** - Smart notification management
+    - **Deep Research** - Autonomous industry intelligence gathering
 
     ### 🔒 Security
     - JWT-based authentication with Auth0 integration
@@ -174,6 +177,10 @@ app = FastAPI(
         {
             "name": "system",
             "description": "System health and monitoring endpoints"
+        },
+        {
+            "name": "Deep Research",
+            "description": "Autonomous industry research and intelligence gathering using GPT-4o-Mini"
         }
     ],
     lifespan=lifespan
@@ -217,6 +224,7 @@ app.include_router(memory_vector_router)
 app.include_router(workflow_router)
 app.include_router(notifications_router)
 app.include_router(integration_router)
+app.include_router(deep_research_router)
 
 # Include monitoring routes
 from backend.api.monitoring import router as monitoring_router
@@ -251,7 +259,8 @@ async def root():
             "goals": "/api/goals",
             "integrations": "/api/integrations",
             "workflows": "/api/workflow",
-            "notifications": "/api/notifications"
+            "notifications": "/api/notifications",
+            "deep_research": "/api/v1/deep-research"
         },
         "features": [
             "AI-Powered Content Generation",
@@ -259,7 +268,8 @@ async def root():
             "Multi-Platform Integration",
             "Advanced Analytics",
             "Automated Workflows",
-            "Enterprise Authentication"
+            "Enterprise Authentication",
+            "Autonomous Industry Research"
         ]
     }
 

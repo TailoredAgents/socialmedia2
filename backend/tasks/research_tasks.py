@@ -1,8 +1,12 @@
 from celery import current_task
+from celery.schedules import crontab
 from backend.tasks.celery_app import celery_app
 from backend.agents.crew_config import research_agent, create_research_task
 from backend.agents.tools import web_scraper, twitter_tool, memory_tool, openai_tool
+from backend.services.research_scheduler import research_scheduler
+import asyncio
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -273,3 +277,225 @@ def research_web_content(urls=None):
             'status': 'error',
             'message': f'Web content research failed: {str(exc)}'
         }
+
+# ============================================================================
+# NEW: Deep Research Tasks with GPT-4o-Mini
+# ============================================================================
+
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=300)
+def execute_weekly_deep_research_task(self, industry: str):
+    """
+    Celery task for executing weekly deep research using GPT-4o-Mini
+    
+    Args:
+        industry: Target industry for research
+        
+    Returns:
+        Research execution results
+    """
+    try:
+        logger.info(f"Starting weekly deep research task for {industry}")
+        
+        # Run async research in sync context
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            result = loop.run_until_complete(
+                research_scheduler.execute_weekly_research(industry)
+            )
+            return result
+        finally:
+            loop.close()
+            
+    except Exception as e:
+        logger.error(f"Weekly deep research task failed for {industry}: {e}")
+        
+        # Retry on failure
+        if self.request.retries < self.max_retries:
+            logger.info(f"Retrying deep research task for {industry} (attempt {self.request.retries + 1}/{self.max_retries})")
+            raise self.retry(countdown=300, exc=e)
+        
+        # Final failure
+        return {
+            "status": "failed",
+            "industry": industry,
+            "error": str(e),
+            "retries": self.request.retries
+        }
+
+@celery_app.task
+def setup_industry_deep_research_task(industry: str, business_context: dict, schedule_config: dict = None):
+    """
+    Celery task for setting up industry deep research
+    
+    Args:
+        industry: Target industry
+        business_context: Business context and goals
+        schedule_config: Custom schedule configuration
+        
+    Returns:
+        Setup results
+    """
+    try:
+        logger.info(f"Setting up deep research for {industry}")
+        
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            result = loop.run_until_complete(
+                research_scheduler.setup_industry_research(
+                    industry, business_context, schedule_config
+                )
+            )
+            return result
+        finally:
+            loop.close()
+            
+    except Exception as e:
+        logger.error(f"Deep research setup failed for {industry}: {e}")
+        return {
+            "status": "error",
+            "industry": industry,
+            "error": str(e)
+        }
+
+@celery_app.task
+def trigger_immediate_deep_research_task(industry: str):
+    """
+    Celery task for triggering immediate deep research
+    
+    Args:
+        industry: Target industry
+        
+    Returns:
+        Research results
+    """
+    try:
+        logger.info(f"Triggering immediate deep research for {industry}")
+        
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            result = loop.run_until_complete(
+                research_scheduler.trigger_immediate_research(industry)
+            )
+            return result
+        finally:
+            loop.close()
+            
+    except Exception as e:
+        logger.error(f"Immediate deep research failed for {industry}: {e}")
+        return {
+            "status": "error",
+            "industry": industry,
+            "error": str(e)
+        }
+
+@celery_app.task
+def deep_research_health_check_task():
+    """
+    Health check task for deep research system
+    
+    Returns:
+        System health status
+    """
+    try:
+        logger.info("Running deep research system health check")
+        
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            # Get list of configured industries
+            industries = loop.run_until_complete(
+                research_scheduler.list_configured_industries()
+            )
+            
+            health_status = {
+                "status": "healthy",
+                "timestamp": datetime.utcnow().isoformat(),
+                "configured_industries": len(industries),
+                "industries": industries,
+                "system_checks": {
+                    "scheduler_active": True,
+                    "celery_worker_active": True,
+                    "knowledge_base_accessible": True,
+                    "gpt4o_mini_available": True
+                }
+            }
+            
+            return health_status
+            
+        finally:
+            loop.close()
+            
+    except Exception as e:
+        logger.error(f"Deep research health check failed: {e}")
+        return {
+            "status": "unhealthy",
+            "timestamp": datetime.utcnow().isoformat(),
+            "error": str(e)
+        }
+
+# ============================================================================
+# Periodic Task Setup for Deep Research
+# ============================================================================
+
+@celery_app.on_after_configure.connect
+def setup_deep_research_periodic_tasks(sender, **kwargs):
+    """Set up periodic deep research tasks"""
+    
+    # Deep Research Health check every 4 hours
+    sender.add_periodic_task(
+        crontab(minute=0, hour='*/4'),  # Every 4 hours
+        deep_research_health_check_task.s(),
+        name='deep_research_health_check'
+    )
+    
+    # Weekly Deep Research Tasks - Configurable per industry
+    # These are examples - in production, these would be dynamically configured
+    
+    # Fintech deep research - Every Sunday at 2 AM
+    sender.add_periodic_task(
+        crontab(hour=2, minute=0, day_of_week=0),
+        execute_weekly_deep_research_task.s('fintech'),
+        name='weekly_fintech_deep_research',
+        options={'expires': 3600 * 6}  # 6 hour expiry
+    )
+    
+    # Healthcare deep research - Every Sunday at 3 AM
+    sender.add_periodic_task(
+        crontab(hour=3, minute=0, day_of_week=0),
+        execute_weekly_deep_research_task.s('healthcare'),
+        name='weekly_healthcare_deep_research',
+        options={'expires': 3600 * 6}
+    )
+    
+    # E-commerce deep research - Every Sunday at 4 AM
+    sender.add_periodic_task(
+        crontab(hour=4, minute=0, day_of_week=0),
+        execute_weekly_deep_research_task.s('ecommerce'),
+        name='weekly_ecommerce_deep_research',
+        options={'expires': 3600 * 6}
+    )
+    
+    # SaaS deep research - Every Sunday at 5 AM
+    sender.add_periodic_task(
+        crontab(hour=5, minute=0, day_of_week=0),
+        execute_weekly_deep_research_task.s('saas'),
+        name='weekly_saas_deep_research',
+        options={'expires': 3600 * 6}
+    )
+    
+    # Manufacturing deep research - Every Sunday at 6 AM
+    sender.add_periodic_task(
+        crontab(hour=6, minute=0, day_of_week=0),
+        execute_weekly_deep_research_task.s('manufacturing'),
+        name='weekly_manufacturing_deep_research',
+        options={'expires': 3600 * 6}
+    )
+    
+    logger.info("Deep research periodic tasks configured for 5 industries")

@@ -108,4 +108,4 @@ databases:
   - name: ai-social-db
     databaseName: ai_social_media
     region: oregon
-    plan: starter
+    plan: free

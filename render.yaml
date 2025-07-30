@@ -87,7 +87,6 @@ services:
     startCommand: |
       cd frontend &&
       npm run preview -- --host 0.0.0.0 --port $PORT
-    staticPublishPath: ./frontend/dist
     envVars:
       - key: VITE_API_URL
         value: https://ai-social-backend.onrender.com
@@ -100,6 +99,9 @@ services:
     region: oregon
     plan: starter
     maxmemoryPolicy: allkeys-lru
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: Allow all connections
 
 # Database Service
 databases:

@@ -10,7 +10,7 @@ echo "Python version: $(python --version)"
 echo "📦 Setting up backend..."
 cd backend
 python -m pip install --upgrade pip setuptools wheel
-pip install --prefer-binary --no-compile -r requirements.txt
+pip install --only-binary=:all: -r requirements.txt
 
 echo "✅ Build completed successfully!"
 echo "🌐 Ready for deployment on Render"

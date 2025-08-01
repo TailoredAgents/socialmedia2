@@ -5,15 +5,10 @@ services:
   # Backend API Service
   - type: web
     name: ai-social-backend
-    env: python
+    env: docker
     region: oregon
     plan: free
-    runtime: python-3.11.9
-    buildCommand: bash build.sh
-    startCommand: |
-      cd backend &&
-      python -c "import sys; print(f'Python version: {sys.version}')" &&
-      uvicorn main_minimal:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION

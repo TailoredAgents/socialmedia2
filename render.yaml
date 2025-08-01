@@ -2,9 +2,9 @@
 # Deploy with: render-cli deploy --blueprint render.yaml
 
 services:
-  # Backend API Service
+  # Backend API Service (New Standalone Version)
   - type: web
-    name: ai-social-backend
+    name: ai-social-backend-standalone
     env: python
     region: oregon
     plan: free

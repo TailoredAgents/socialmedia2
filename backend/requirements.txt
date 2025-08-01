@@ -4,7 +4,7 @@ wheel>=0.40.0
 
 # Core Framework
 fastapi==0.68.0
-uvicorn[standard]==0.15.0
+uvicorn==0.15.0
 pydantic==1.10.12
 
 # Database & ORM
@@ -17,8 +17,8 @@ redis==5.0.1
 celery==5.3.4
 
 # Authentication & Security
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
+python-jose==3.3.0
+passlib==1.7.4
 python-multipart==0.0.6
 
 # HTTP & API Clients

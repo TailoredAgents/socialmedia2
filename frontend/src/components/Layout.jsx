@@ -13,11 +13,13 @@ import {
   CpuChipIcon,
   CheckCircleIcon,
   ArrowRightOnRectangleIcon,
-  BoltIcon
+  BoltIcon,
+  PlusIcon
 } from '@heroicons/react/24/outline'
 
 const navigation = [
   { name: 'Overview', href: '/', icon: HomeIcon },
+  { name: 'Create Post', href: '/create-post', icon: PlusIcon },
   { name: 'Calendar', href: '/calendar', icon: CalendarDaysIcon },
   { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },
   { name: 'Performance', href: '/performance', icon: BoltIcon },

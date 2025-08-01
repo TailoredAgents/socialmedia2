@@ -301,6 +301,18 @@ class ApiService {
     })
   }
 
+  async generateImage(prompt, contentContext, platform, industryContext) {
+    return this.request('/api/content/generate-image', {
+      method: 'POST',
+      body: { 
+        prompt, 
+        content_context: contentContext,
+        platform,
+        industry_context: industryContext
+      }
+    })
+  }
+
   // Workflow endpoints (v2)
   async executeWorkflow(workflowData) {
     return this.request('/api/workflow/execute', {

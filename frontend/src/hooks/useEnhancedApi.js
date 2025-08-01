@@ -278,6 +278,11 @@ export const useEnhancedApi = () => {
       generate: (prompt, contentType) => makeEnhancedRequest(
         apiService.generateContent.bind(apiService),
         { requestArgs: [prompt, contentType], retries: 1, retryDelay: 2000 }
+      ),
+      
+      generateImage: (prompt, contentContext, platform, industryContext) => makeEnhancedRequest(
+        apiService.generateImage.bind(apiService),
+        { requestArgs: [prompt, contentContext, platform, industryContext], retries: 1, retryDelay: 3000 }
       )
     },
 

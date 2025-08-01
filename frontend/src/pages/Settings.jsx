@@ -16,7 +16,7 @@ import {
 
 export default function Settings() {
   const { user } = useAuth()
-  const { api, connectionStatus, checkApiHealth } = useEnhancedApi()
+  const { api, connectionStatus, checkApiHealth, clearCache } = useEnhancedApi()
   const { showSuccess, showError } = useNotifications()
   
   const [isLoading, setIsLoading] = useState(false)
@@ -90,10 +90,104 @@ export default function Settings() {
   const handleClearCache = async () => {
     try {
       setIsLoading(true)
-      await api.clearCache?.()
+      clearCache()
       showSuccess('Cache cleared successfully')
     } catch (error) {
       showError('Failed to clear cache')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleExportData = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Gather all data for export
+      const [
+        memoryData,
+        goalsData,
+        contentData,
+        analyticsData
+      ] = await Promise.allSettled([
+        api.memory.getAll(1, 1000),
+        api.goals.getAll(),
+        api.content.getAll(1, 1000),
+        api.analytics.getAnalytics()
+      ])
+
+      const exportData = {
+        timestamp: new Date().toISOString(),
+        user: user,
+        memory: memoryData.status === 'fulfilled' ? memoryData.value : [],
+        goals: goalsData.status === 'fulfilled' ? goalsData.value : [],
+        content: contentData.status === 'fulfilled' ? contentData.value : [],
+        analytics: analyticsData.status === 'fulfilled' ? analyticsData.value : {}
+      }
+
+      // Create and download file
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
+        type: 'application/json' 
+      })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `ai-social-agent-export-${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      showSuccess('Data exported successfully')
+    } catch (error) {
+      showError('Failed to export data')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleExportCSV = async () => {
+    try {
+      setIsLoading(true)
+      
+      const contentData = await api.content.getAll(1, 1000)
+      
+      if (!contentData || contentData.length === 0) {
+        showError('No content data to export')
+        return
+      }
+
+      // Create CSV content
+      const headers = ['ID', 'Title', 'Content', 'Platform', 'Status', 'Created Date', 'Scheduled Date']
+      const csvRows = [headers.join(',')]
+      
+      contentData.forEach(item => {
+        const row = [
+          item.id || '',
+          `"${(item.title || '').replace(/"/g, '""')}"`,
+          `"${(item.content || '').replace(/"/g, '""')}"`,
+          item.platform || '',
+          item.status || '',
+          item.created_at || '',
+          item.scheduled_at || ''
+        ]
+        csvRows.push(row.join(','))
+      })
+
+      const csvContent = csvRows.join('\n')
+      const blob = new Blob([csvContent], { type: 'text/csv' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `ai-social-agent-content-${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      showSuccess('CSV exported successfully')
+    } catch (error) {
+      showError('Failed to export CSV')
     } finally {
       setIsLoading(false)
     }
@@ -393,11 +487,24 @@ export default function Settings() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium text-gray-900">Export Data</p>
-                <p className="text-sm text-gray-600">Download all your data as JSON</p>
+                <p className="text-sm text-gray-600">Download all your data as JSON or CSV</p>
               </div>
-              <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">
-                Export
-              </button>
+              <div className="flex space-x-2">
+                <button 
+                  onClick={handleExportCSV}
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors disabled:opacity-50"
+                >
+                  Export CSV
+                </button>
+                <button 
+                  onClick={handleExportData}
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  Export JSON
+                </button>
+              </div>
             </div>
             
             <div className="flex items-center justify-between">

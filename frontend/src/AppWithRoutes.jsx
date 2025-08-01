@@ -1,7 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Auth0Provider } from '@auth0/auth0-react'
+import { Auth0Provider, useAuth0 } from '@auth0/auth0-react'
 
 // Context Providers
 import { AuthProvider } from './contexts/AuthContext'

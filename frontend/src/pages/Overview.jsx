@@ -219,11 +219,24 @@ export default function Overview() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">🤖 Autonomous Workflow</h2>
           <button 
-            onClick={() => api.workflow.executeDailyWorkflow()}
+            onClick={async () => {
+              try {
+                const response = await fetch('/api/autonomous/execute-cycle', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' }
+                })
+                const result = await response.json()
+                if (result.status === 'initiated') {
+                  alert('Autonomous posting cycle initiated!')
+                }
+              } catch (error) {
+                alert('Failed to trigger autonomous cycle')
+              }
+            }}
             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
             <PlayIcon className="h-4 w-4 mr-2" />
-            Trigger Cycle
+            Trigger Autonomous Cycle
           </button>
         </div>
         

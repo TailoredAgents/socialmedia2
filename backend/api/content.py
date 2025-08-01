@@ -13,6 +13,7 @@ from backend.db.database import get_db
 from backend.db.models import ContentLog, User
 from backend.auth.dependencies import get_current_active_user
 from backend.services.cache_decorators import cached, cache_invalidate
+from backend.agents.tools import openai_tool
 
 router = APIRouter(prefix="/api/content", tags=["content"])
 
@@ -44,6 +45,12 @@ class UpdateContentRequest(BaseModel):
 class PublishContentRequest(BaseModel):
     platform_post_id: Optional[str] = None
     engagement_data: Optional[Dict[str, Any]] = Field(default_factory=dict)
+
+class GenerateImageRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=500)
+    content_context: Optional[str] = Field(None, max_length=2000)
+    platform: str = Field(..., regex="^(twitter|linkedin|instagram|facebook|tiktok)$")
+    industry_context: Optional[str] = Field(None, max_length=1000)
 
 class ContentResponse(BaseModel):
     id: int
@@ -419,3 +426,61 @@ async def generate_content_ideas(
         "suggestions": suggestions[:3],  # Return top 3
         "generated_at": datetime.utcnow()
     }
+
+@router.post("/generate-image")
+async def generate_image(
+    request: GenerateImageRequest,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Generate an image using AI for social media content"""
+    
+    try:
+        # Create enhanced prompt with context
+        enhanced_prompt = request.prompt
+        
+        if request.content_context:
+            enhanced_prompt += f" Content context: {request.content_context[:200]}"
+        
+        if request.industry_context:
+            enhanced_prompt += f" Industry: {request.industry_context[:100]}"
+        
+        # Add platform-specific styling
+        platform_styles = {
+            "twitter": "modern, clean, minimalist design suitable for Twitter",
+            "linkedin": "professional, corporate, business-appropriate design",
+            "instagram": "vibrant, visually appealing, Instagram-optimized design",
+            "facebook": "engaging, social media friendly, Facebook-style design",
+            "tiktok": "trendy, youthful, dynamic design for TikTok"
+        }
+        
+        platform_style = platform_styles.get(request.platform, "professional social media design")
+        enhanced_prompt += f" Style: {platform_style}"
+        
+        # Generate image using OpenAI tool
+        result = openai_tool.create_image(enhanced_prompt)
+        
+        if result.get("status") == "success":
+            return {
+                "status": "success",
+                "image_url": result.get("image_url"),
+                "prompt": enhanced_prompt,
+                "original_prompt": request.prompt,
+                "platform": request.platform,
+                "model": result.get("model", "dall-e-3"),
+                "generated_at": datetime.utcnow()
+            }
+        else:
+            return {
+                "status": "error",
+                "error": result.get("error", "Unknown error occurred"),
+                "prompt": enhanced_prompt,
+                "generated_at": datetime.utcnow()
+            }
+            
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": f"Image generation failed: {str(e)}",
+            "prompt": request.prompt,
+            "generated_at": datetime.utcnow()
+        }

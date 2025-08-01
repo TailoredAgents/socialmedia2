@@ -13,6 +13,13 @@ export default defineConfig({
       brotliSize: true,
     }),
   ],
+  preview: {
+    allowedHosts: [
+      'ai-social-frontend.onrender.com',
+      'localhost',
+      '127.0.0.1'
+    ]
+  },
   build: {
     rollupOptions: {
       output: {

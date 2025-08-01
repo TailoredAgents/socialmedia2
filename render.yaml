@@ -7,11 +7,12 @@ services:
     name: ai-social-backend
     env: python
     region: oregon
-    plan: starter
+    plan: free
     runtime: python-3.11.9
     buildCommand: bash build.sh
     startCommand: |
       cd backend &&
+      python -c "import sys; print(f'Python version: {sys.version}')" &&
       uvicorn main_minimal:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
@@ -79,7 +80,7 @@ services:
     name: ai-social-frontend
     env: node
     region: oregon
-    plan: starter
+    plan: free
     buildCommand: |
       cd frontend &&
       npm ci &&
@@ -97,7 +98,7 @@ services:
   - type: redis
     name: ai-social-redis
     region: oregon
-    plan: starter
+    plan: free
     maxmemoryPolicy: allkeys-lru
     ipAllowList:
       - source: 0.0.0.0/0

@@ -29,7 +29,7 @@ import {
   PlusIcon,
   ClockIcon,
   FireIcon,
-  TrendingUpIcon,
+  ChartBarIcon,
   TrashIcon,
   DocumentDuplicateIcon,
   PencilIcon,
@@ -114,7 +114,7 @@ const DraggablePostItem = React.memo(function DraggablePostItem({ post, isDraggi
       {/* Optimality indicator */}
       <div className="absolute top-1 right-1 flex items-center space-x-1">
         {optimalityScore >= 90 && <FireIcon className="h-3 w-3 text-red-500" />}
-        {optimalityScore >= 80 && optimalityScore < 90 && <TrendingUpIcon className="h-3 w-3 text-orange-500" />}
+        {optimalityScore >= 80 && optimalityScore < 90 && <ChartBarIcon className="h-3 w-3 text-orange-500" />}
         {optimalityScore < 80 && <ClockIcon className="h-3 w-3 text-gray-400" />}
         <span className="text-xs font-medium text-gray-600">{optimalityScore}%</span>
       </div>
@@ -283,7 +283,7 @@ const DroppableDay = React.memo(function DroppableDay({ day, date, posts, curren
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium text-gray-700">{slot.time}</span>
                   {slot.isOptimal && (
-                    <TrendingUpIcon className="h-3 w-3 text-orange-500" title="Optimal time" />
+                    <ChartBarIcon className="h-3 w-3 text-orange-500" title="Optimal time" />
                   )}
                 </div>
                 <SortableContext items={slot.posts.map(p => p.id)} strategy={verticalListSortingStrategy}>

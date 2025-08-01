@@ -4,22 +4,13 @@
 set -e
 
 echo "🚀 Starting Render build process..."
+echo "Python version: $(python --version)"
 
 # Backend setup
 echo "📦 Setting up backend..."
 cd backend
-pip install --upgrade pip
-pip install -r requirements.txt
-
-# Run database migrations (if needed)
-echo "🗄️ Running database migrations..."
-# alembic upgrade head  # Uncomment when you have migrations
-
-# Frontend setup
-echo "🎨 Setting up frontend..."
-cd ../frontend
-npm ci
-npm run build
+python -m pip install --upgrade pip setuptools wheel
+pip install --prefer-binary --no-compile -r requirements.txt
 
 echo "✅ Build completed successfully!"
 echo "🌐 Ready for deployment on Render"

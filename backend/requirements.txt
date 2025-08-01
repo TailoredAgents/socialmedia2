@@ -3,14 +3,14 @@ setuptools>=68.0.0
 wheel>=0.40.0
 
 # Core Framework
-fastapi==0.109.0
-uvicorn==0.25.0
-pydantic==2.5.3
-pydantic-core==2.14.6
+fastapi==0.104.1
+uvicorn==0.24.0.post1
+pydantic==2.4.2
+pydantic-settings==2.0.3
 
 # Database & ORM
-sqlalchemy==2.0.25
-alembic==1.13.1
+sqlalchemy==2.0.23
+alembic==1.12.1
 psycopg2-binary==2.9.9
 
 # Redis & Caching
@@ -29,7 +29,6 @@ tweepy==4.14.0
 
 # AI & ML
 openai==1.3.7
-pydantic-settings==2.1.0
 
 # Web Scraping
 beautifulsoup4==4.12.2
@@ -41,12 +40,12 @@ python-dateutil==2.8.2
 python-dotenv==1.0.0
 
 # Testing
-pytest==7.4.4
+pytest==7.4.3
 pytest-asyncio==0.21.1
 
 # Development
-black==23.12.1
-flake8==7.0.0
+black==23.11.0
+flake8==6.1.0
 
 # Production
 gunicorn==21.2.0

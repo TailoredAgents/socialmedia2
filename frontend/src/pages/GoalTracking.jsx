@@ -47,7 +47,7 @@ export default function GoalTracking() {
     queryFn: api.goals.getAll,
     staleTime: 2 * 60 * 1000, // 2 minutes
     retry: 2,
-    fallbackData: mockGoals // Use mock data as fallback
+    fallbackData: emptyGoals // Use empty data as fallback
   })
 
   // Fetch goals dashboard data

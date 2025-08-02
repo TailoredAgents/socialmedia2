@@ -128,7 +128,10 @@ class Logger {
 // Export singleton instance
 export const logger = new Logger()
 
-// Export logger methods for convenience
-export const { info, warn, error, debug } = logger
+// Export logger methods for convenience - defensive destructuring
+export const info = (...args) => logger?.info?.(...args) || console.log(...args)
+export const warn = (...args) => logger?.warn?.(...args) || console.warn(...args)
+export const error = (...args) => logger?.error?.(...args) || console.error(...args)
+export const debug = (...args) => logger?.debug?.(...args) || console.log(...args)
 
 export default logger

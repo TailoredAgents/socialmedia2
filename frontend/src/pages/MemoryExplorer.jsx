@@ -53,6 +53,8 @@ export default function MemoryExplorer() {
   const [currentPage, setCurrentPage] = useState(1)
   const [editingContent, setEditingContent] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
+  const [filteredContent, setFilteredContent] = useState([])
   
   const { api, connectionStatus, makeAuthenticatedRequest } = useEnhancedApi()
   const queryClient = useQueryClient()
@@ -130,6 +132,13 @@ export default function MemoryExplorer() {
     }
   })
 
+  // Initialize filtered content when memory data loads
+  useEffect(() => {
+    if (allMemoryContent && allMemoryContent.length > 0) {
+      setFilteredContent(allMemoryContent)
+    }
+  }, [allMemoryContent])
+
   // Filter content based on search and filters
   useEffect(() => {
     const performSearch = async () => {
@@ -178,8 +187,8 @@ export default function MemoryExplorer() {
           }
         }
         
-        // Fallback to local filtering
-        let filtered = mockMemoryContent
+        // Fallback to local filtering using actual memory data
+        let filtered = allMemoryContent || []
 
         // Search filter
         if (searchQuery) {
@@ -217,7 +226,7 @@ export default function MemoryExplorer() {
         setFilteredContent(filtered)
       } catch (error) {
         logError('Search failed:', error)
-        setFilteredContent(mockMemoryContent)
+        setFilteredContent(allMemoryContent || [])
       } finally {
         setIsSearching(false)
       }

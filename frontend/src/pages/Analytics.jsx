@@ -39,31 +39,31 @@ ChartJS.register(
   ArcElement
 )
 
-// Mock analytics data
-const mockAnalytics = {
+// Empty analytics data - real data should come from API
+const emptyAnalytics = {
   overview: {
-    totalViews: 125000,
-    totalEngagement: 8500,
-    totalFollowers: 15200,
-    engagementRate: 6.8,
-    viewsChange: 12.5,
-    engagementChange: -2.3,
-    followersChange: 8.2,
-    engagementRateChange: 1.4
+    totalViews: 0,
+    totalEngagement: 0,
+    totalFollowers: 0,
+    engagementRate: 0,
+    viewsChange: 0,
+    engagementChange: 0,
+    followersChange: 0,
+    engagementRateChange: 0
   },
   timeRange: '7d',
   platforms: {
-    twitter: { name: 'Twitter', followers: 5200, engagement: 3200, color: '#1DA1F2' },
-    linkedin: { name: 'LinkedIn', followers: 3800, engagement: 2800, color: '#0077B5' },
-    instagram: { name: 'Instagram', followers: 4200, engagement: 1800, color: '#E4405F' },
-    facebook: { name: 'Facebook', followers: 2000, engagement: 700, color: '#1877F2' }
+    twitter: { name: 'Twitter', followers: 0, engagement: 0, color: '#1DA1F2' },
+    linkedin: { name: 'LinkedIn', followers: 0, engagement: 0, color: '#0077B5' },
+    instagram: { name: 'Instagram', followers: 0, engagement: 0, color: '#E4405F' },
+    facebook: { name: 'Facebook', followers: 0, engagement: 0, color: '#1877F2' }
   },
   engagementTrend: {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     datasets: [
       {
         label: 'Engagement Rate',
-        data: [6.2, 7.1, 5.8, 8.2, 6.9, 7.5, 6.8],
+        data: [0, 0, 0, 0, 0, 0, 0],
         borderColor: 'rgb(59, 130, 246)',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         fill: true,
@@ -76,7 +76,7 @@ const mockAnalytics = {
     datasets: [
       {
         label: 'Avg Engagement',
-        data: [245, 380, 520, 410, 180],
+        data: [0, 0, 0, 0, 0],
         backgroundColor: [
           'rgba(59, 130, 246, 0.8)',
           'rgba(16, 185, 129, 0.8)',
@@ -88,44 +88,7 @@ const mockAnalytics = {
       }
     ]
   },
-  topContent: [
-    {
-      id: 1,
-      title: "5 AI Tools That Will Transform Your Social Media Strategy",
-      platform: "linkedin",
-      type: "text",
-      views: 15200,
-      likes: 340,
-      comments: 28,
-      shares: 45,
-      engagement_rate: 2.7,
-      posted_at: "2025-07-20"
-    },
-    {
-      id: 2,
-      title: "Behind the scenes of our content creation process",
-      platform: "instagram",
-      type: "video",
-      views: 8900,
-      likes: 520,
-      comments: 67,
-      shares: 32,
-      engagement_rate: 6.9,
-      posted_at: "2025-07-19"
-    },
-    {
-      id: 3,
-      title: "Quick tips for better engagement on social media",
-      platform: "twitter",
-      type: "image",
-      views: 4200,
-      likes: 180,
-      comments: 23,
-      shares: 45,
-      engagement_rate: 5.9,
-      posted_at: "2025-07-18"
-    }
-  ]
+  topContent: []
 }
 
 const timeRanges = [
@@ -139,7 +102,7 @@ export default function Analytics() {
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d')
   const [selectedPlatform, setSelectedPlatform] = useState('all')
   const [showRealTime, setShowRealTime] = useState(true)
-  const [analyticsData, setAnalyticsData] = useState(mockAnalytics)
+  const [analyticsData, setAnalyticsData] = useState(emptyAnalytics)
   const [isLoading, setIsLoading] = useState(false)
   
   const { apiService, makeAuthenticatedRequest } = useApi()
@@ -257,7 +220,7 @@ export default function Analytics() {
             className="text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">All Platforms</option>
-            {Object.entries(mockAnalytics.platforms).map(([key, platform]) => (
+            {Object.entries(emptyAnalytics.platforms).map(([key, platform]) => (
               <option key={key} value={key}>
                 {platform.name}
               </option>
@@ -458,7 +421,12 @@ export default function Analytics() {
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Top Performing Content</h3>
           <div className="space-y-4">
-            {mockAnalytics.topContent.map((content, index) => (
+            {emptyAnalytics.topContent.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>No content data available</p>
+                <p className="text-sm">Content performance metrics will appear here once you start posting</p>
+              </div>
+            ) : emptyAnalytics.topContent.map((content, index) => (
               <div key={content.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-sm font-medium text-blue-600">#{index + 1}</span>
@@ -492,7 +460,7 @@ export default function Analytics() {
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Object.entries(mockAnalytics.platforms).map(([key, platform]) => (
+            {Object.entries(emptyAnalytics.platforms).map(([key, platform]) => (
               <div key={key} className="text-center p-4 border rounded-lg">
                 <div 
                   className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center text-white font-bold"

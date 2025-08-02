@@ -23,57 +23,7 @@ import {
 import SimilarityChart from '../components/Memory/SimilarityChart'
 import ContentDetailModal from '../components/Memory/ContentDetailModal'
 
-// Mock data for memory content
-const mockMemoryContent = [
-  {
-    id: 1,
-    type: 'research',
-    title: 'AI Marketing Trends Analysis',
-    content: 'AI marketing automation is seeing 300% growth in 2025, with personalization being the key driver...',
-    platform: 'web',
-    engagement: { likes: 0, shares: 0, views: 145 },
-    created_at: '2025-07-22T08:00:00Z',
-    tags: ['AI', 'Marketing', 'Trends'],
-    similarity_score: 0.92,
-    repurpose_suggestions: 3
-  },
-  {
-    id: 2,
-    type: 'content',
-    title: 'LinkedIn Post: Future of Social Media',
-    content: 'The future of social media is autonomous. AI agents will handle 80% of content creation by 2026...',
-    platform: 'linkedin',
-    engagement: { likes: 45, shares: 12, views: 890 },
-    created_at: '2025-07-21T15:30:00Z',
-    tags: ['Social Media', 'AI', 'Future'],
-    similarity_score: 0.88,
-    repurpose_suggestions: 5
-  },
-  {
-    id: 3,
-    type: 'image',
-    title: 'AI Infographic - Social Media Stats',
-    content: 'Visual representation of social media engagement statistics across platforms',
-    platform: 'instagram',
-    engagement: { likes: 234, shares: 56, views: 1250 },
-    created_at: '2025-07-20T12:15:00Z',
-    tags: ['Infographic', 'Statistics', 'Visual'],
-    similarity_score: 0.85,
-    repurpose_suggestions: 2
-  },
-  {
-    id: 4,
-    type: 'competitor_analysis',
-    title: 'Buffer Content Strategy Analysis',
-    content: 'Analysis of Buffer\'s recent content shows focus on educational carousels and quick tips format...',
-    platform: 'research',
-    engagement: { likes: 0, shares: 0, views: 67 },
-    created_at: '2025-07-19T09:45:00Z',
-    tags: ['Competitor', 'Strategy', 'Analysis'],
-    similarity_score: 0.82,
-    repurpose_suggestions: 4
-  }
-]
+// Content types for filtering
 
 const contentTypes = [
   { value: 'all', label: 'All Content', icon: DocumentTextIcon },

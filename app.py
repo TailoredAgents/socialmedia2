@@ -76,12 +76,12 @@ async def execute_autonomous_cycle():
 async def get_autonomous_status():
     """Get autonomous agent status"""
     return {
-        "status": "active",
-        "last_cycle": "2025-08-01T06:00:00Z",
-        "next_cycle": "2025-08-01T18:00:00Z",
-        "posts_created_today": 5,
-        "platforms_connected": ["twitter", "linkedin"],
-        "research_status": "completed"
+        "status": "inactive",
+        "last_cycle": "N/A",
+        "next_cycle": "N/A",
+        "posts_created_today": 0,
+        "platforms_connected": [],
+        "research_status": "none"
     }
 
 @app.post("/api/content/generate-image")
@@ -124,17 +124,8 @@ async def get_content():
     """Get content list"""
     return {
         "status": "success",
-        "content": [
-            {
-                "id": "1",
-                "title": "AI Social Media Demo",
-                "content": "Demo content for AI social media agent",
-                "platform": "twitter",
-                "status": "published",
-                "created_at": "2025-08-01T12:00:00Z"
-            }
-        ],
-        "total": 1
+        "content": [],
+        "total": 0
     }
 
 @app.get("/api/memory/")
@@ -142,33 +133,8 @@ async def get_memory():
     """Get memory/research data"""
     return {
         "status": "success",
-        "memories": [
-            {
-                "id": "1",
-                "type": "research",
-                "title": "AI Social Media Trends Research",
-                "content": "Industry research on AI trends in social media automation",
-                "platform": "research",
-                "engagement": {"likes": 0, "shares": 0, "views": 45},
-                "created_at": "2025-08-01T12:00:00Z",
-                "tags": ["AI", "Research", "Trends"],
-                "similarity_score": 0.95,
-                "repurpose_suggestions": 3
-            },
-            {
-                "id": "2", 
-                "type": "content",
-                "title": "Successful Twitter Thread",
-                "content": "Thread about AI automation that got 500+ likes",
-                "platform": "twitter",
-                "engagement": {"likes": 523, "shares": 45, "views": 2340},
-                "created_at": "2025-07-30T10:00:00Z",
-                "tags": ["Twitter", "Thread", "AI"],
-                "similarity_score": 0.88,
-                "repurpose_suggestions": 5
-            }
-        ],
-        "total": 2
+        "memories": [],
+        "total": 0
     }
 
 @app.post("/api/memory/search")
@@ -176,17 +142,8 @@ async def search_memory():
     """Search memory content"""
     return {
         "status": "success",
-        "results": [
-            {
-                "id": "1",
-                "type": "research",
-                "title": "AI Social Media Trends Research",
-                "content": "Industry research on AI trends in social media automation",
-                "relevance_score": 0.95,
-                "created_at": "2025-08-01T12:00:00Z"
-            }
-        ],
-        "total": 1
+        "results": [],
+        "total": 0
     }
 
 @app.get("/api/memory/analytics")
@@ -195,18 +152,18 @@ async def get_memory_analytics():
     return {
         "status": "success",
         "analytics": {
-            "total_memories": 15,
+            "total_memories": 0,
             "content_distribution": {
-                "research": 5,
-                "content": 8,
-                "competitor_analysis": 2
+                "research": 0,
+                "content": 0,
+                "competitor_analysis": 0
             },
             "engagement_stats": {
-                "avg_likes": 156,
-                "avg_shares": 23,
-                "avg_views": 890
+                "avg_likes": 0,
+                "avg_shares": 0,
+                "avg_views": 0
             },
-            "repurpose_opportunities": 12
+            "repurpose_opportunities": 0
         }
     }
 
@@ -216,18 +173,12 @@ async def get_dashboard():
     return {
         "status": "success",
         "metrics": {
-            "total_posts": 42,
-            "engagement_rate": 3.5,
-            "followers_growth": 12,
-            "reach": 1250
+            "total_posts": 0,
+            "engagement_rate": 0,
+            "followers_growth": 0,
+            "reach": 0
         },
-        "recent_activity": [
-            {
-                "id": "1",
-                "action": "Published post on Twitter",
-                "timestamp": "2025-08-01T12:00:00Z"
-            }
-        ]
+        "recent_activity": []
     }
 
 @app.get("/api/metrics")
@@ -236,14 +187,14 @@ async def get_metrics():
     return {
         "status": "success",
         "metrics": {
-            "total_posts": 42,
-            "engagement_rate": 3.5,
-            "followers_growth": 12,
-            "reach": 1250,
-            "impressions": 5420,
-            "clicks": 180,
-            "shares": 25,
-            "comments": 15
+            "total_posts": 0,
+            "engagement_rate": 0,
+            "followers_growth": 0,
+            "reach": 0,
+            "impressions": 0,
+            "clicks": 0,
+            "shares": 0,
+            "comments": 0
         },
         "time_period": "last_30_days",
         "last_updated": "2025-08-01T12:00:00Z"
@@ -253,18 +204,10 @@ async def get_metrics():
 async def get_latest_research():
     """Get latest industry research"""
     return {
-        "industry": "AI Agent Products",
-        "research_date": "2025-08-01T06:00:00Z",
-        "trends": [
-            "Autonomous AI agents for business automation",
-            "Multi-platform social media management",
-            "AI-driven content generation and optimization"
-        ],
-        "insights": [
-            "Businesses are increasingly adopting AI agents for social media automation",
-            "ROI from AI social media tools averages 300% improvement in engagement",
-            "Multi-platform posting is becoming essential for brand visibility"
-        ]
+        "industry": "N/A",
+        "research_date": "N/A",
+        "trends": [],
+        "insights": []
     }
 
 if __name__ == "__main__":

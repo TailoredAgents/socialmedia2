@@ -61,39 +61,33 @@ export default function CreatePost() {
   const conductIndustryResearch = async () => {
     setIsResearching(true)
     try {
-      // Simulate industry research for AI Agent products
-      const mockResearch = {
-        industry: 'AI Agent Products',
-        trends: [
-          'Autonomous AI agents for business automation',
-          'Multi-platform social media management',
-          'AI-driven content generation and optimization',
-          'Real-time analytics and performance tracking',
-          'Integration with major social platforms'
-        ],
-        keyTopics: [
-          'AI automation', 'Social media strategy', 'Content optimization', 
-          'Brand consistency', 'Engagement analytics', 'Multi-channel posting'
-        ],
-        contentSuggestions: [
-          'Share insights about AI automation in social media',
-          'Highlight success stories from automated posting',
-          'Discuss the future of AI in content creation',
-          'Show before/after analytics improvements'
-        ],
-        competitorInsights: [
-          'Focus on ROI and time-saving benefits',
-          'Emphasize ease of use and setup',
-          'Highlight unique AI capabilities',
-          'Show real performance metrics'
-        ]
+      // Call actual research API
+      const response = await api.autonomous.getLatestResearch()
+      
+      const researchData = {
+        industry: response.industry || 'N/A',
+        trends: response.trends || [],
+        keyTopics: [],
+        contentSuggestions: [],
+        competitorInsights: response.insights || []
       }
       
-      setResearchData(mockResearch)
-      setIndustryContext(`Based on current trends in ${mockResearch.industry}, focusing on AI automation and social media efficiency.`)
+      setResearchData(researchData)
+      setIndustryContext(researchData.industry !== 'N/A' ? 
+        `Based on current trends in ${researchData.industry}` : 
+        'No research data available')
     } catch (error) {
       logError('Research failed:', error)
       showError('Failed to conduct industry research')
+      // Set empty state
+      setResearchData({
+        industry: 'N/A',
+        trends: [],
+        keyTopics: [],
+        contentSuggestions: [],
+        competitorInsights: []
+      })
+      setIndustryContext('No research data available')
     } finally {
       setIsResearching(false)
     }

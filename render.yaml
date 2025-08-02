@@ -98,6 +98,7 @@ services:
         value: https://ai-social-backend.onrender.com
       - key: VITE_ENVIRONMENT
         value: production
+        # Force rebuild to ensure environment variables take effect
       - key: VITE_AUTH0_DOMAIN
         sync: false
       - key: VITE_AUTH0_CLIENT_ID

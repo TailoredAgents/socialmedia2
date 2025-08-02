@@ -40,36 +40,9 @@ class Logger {
   }
 
   _sendToMonitoring(level, message, data) {
-    // In production, integrate with monitoring service like Sentry, LogRocket, etc.
-    if (!isDevelopment && !isTest) {
-      // Production monitoring integration
-      try {
-        // Check if Sentry is available
-        if (typeof window !== 'undefined' && window.Sentry) {
-          const severity = this._mapLevelToSentryLevel(level)
-          window.Sentry.captureMessage(message, severity)
-          
-          // Add context data for better debugging
-          if (data && Object.keys(data).length > 0) {
-            window.Sentry.addBreadcrumb({
-              message: message,
-              level: severity,
-              data: data,
-              timestamp: Date.now()
-            })
-          }
-        } else {
-          // Fallback: Send to custom monitoring endpoint
-          this._sendToCustomEndpoint(level, message, data)
-        }
-      } catch (error) {
-        // Silently fail in production to avoid breaking the app
-        // In development, show the error for debugging
-        if (isDevelopment) {
-          console.error('Logger monitoring integration failed:', error)
-        }
-      }
-    }
+    // Temporarily disabled to prevent 404 spam
+    // TODO: Implement proper monitoring endpoint in backend
+    return
   }
 
   _mapLevelToSentryLevel(level) {
@@ -83,32 +56,8 @@ class Logger {
   }
 
   _sendToCustomEndpoint(level, message, data) {
-    // Custom monitoring endpoint for production logging
-    const logData = {
-      level,
-      message,
-      data,
-      timestamp: new Date().toISOString(),
-      url: window.location.href,
-      userAgent: navigator.userAgent,
-      sessionId: this._getSessionId()
-    }
-
-    // Use beacon API for reliability, fallback to fetch
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon('/api/logs', JSON.stringify(logData))
-    } else {
-      fetch('/api/logs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(logData),
-        keepalive: true
-      }).catch(() => {
-        // Silently fail in production
-      })
-    }
+    // Temporarily disabled - no logging endpoint available
+    return
   }
 
   _getSessionId() {

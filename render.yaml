@@ -94,6 +94,12 @@ services:
         value: https://ai-social-backend.onrender.com
       - key: VITE_ENVIRONMENT
         value: production
+      - key: VITE_AUTH0_DOMAIN
+        sync: false
+      - key: VITE_AUTH0_CLIENT_ID
+        sync: false
+      - key: VITE_AUTH0_AUDIENCE
+        sync: false
 
   # Redis Cache Service
   - type: redis

@@ -95,6 +95,160 @@ async def generate_image():
         "generated_at": "2025-08-01T12:00:00Z"
     }
 
+@app.post("/api/content/generate")
+async def generate_content():
+    """Generate AI content for social media"""
+    return {
+        "status": "success",
+        "content": "🚀 Exciting news! AI agents are revolutionizing how businesses manage their social media presence. From automated content creation to real-time engagement analysis, the future of social media is here! #AI #SocialMedia #Innovation",
+        "suggestions": [
+            "Add trending hashtags",
+            "Include call-to-action",
+            "Optimize for platform"
+        ],
+        "generated_at": "2025-08-01T12:00:00Z"
+    }
+
+@app.post("/api/content/")
+async def create_content():
+    """Create new content item"""
+    return {
+        "status": "success",
+        "id": "content_12345",
+        "message": "Content created successfully",
+        "created_at": "2025-08-01T12:00:00Z"
+    }
+
+@app.get("/api/content/")
+async def get_content():
+    """Get content list"""
+    return {
+        "status": "success",
+        "content": [
+            {
+                "id": "1",
+                "title": "AI Social Media Demo",
+                "content": "Demo content for AI social media agent",
+                "platform": "twitter",
+                "status": "published",
+                "created_at": "2025-08-01T12:00:00Z"
+            }
+        ],
+        "total": 1
+    }
+
+@app.get("/api/memory/")
+async def get_memory():
+    """Get memory/research data"""
+    return {
+        "status": "success",
+        "memories": [
+            {
+                "id": "1",
+                "type": "research",
+                "title": "AI Social Media Trends Research",
+                "content": "Industry research on AI trends in social media automation",
+                "platform": "research",
+                "engagement": {"likes": 0, "shares": 0, "views": 45},
+                "created_at": "2025-08-01T12:00:00Z",
+                "tags": ["AI", "Research", "Trends"],
+                "similarity_score": 0.95,
+                "repurpose_suggestions": 3
+            },
+            {
+                "id": "2", 
+                "type": "content",
+                "title": "Successful Twitter Thread",
+                "content": "Thread about AI automation that got 500+ likes",
+                "platform": "twitter",
+                "engagement": {"likes": 523, "shares": 45, "views": 2340},
+                "created_at": "2025-07-30T10:00:00Z",
+                "tags": ["Twitter", "Thread", "AI"],
+                "similarity_score": 0.88,
+                "repurpose_suggestions": 5
+            }
+        ],
+        "total": 2
+    }
+
+@app.post("/api/memory/search")
+async def search_memory():
+    """Search memory content"""
+    return {
+        "status": "success",
+        "results": [
+            {
+                "id": "1",
+                "type": "research",
+                "title": "AI Social Media Trends Research",
+                "content": "Industry research on AI trends in social media automation",
+                "relevance_score": 0.95,
+                "created_at": "2025-08-01T12:00:00Z"
+            }
+        ],
+        "total": 1
+    }
+
+@app.get("/api/memory/analytics")
+async def get_memory_analytics():
+    """Get memory analytics"""
+    return {
+        "status": "success",
+        "analytics": {
+            "total_memories": 15,
+            "content_distribution": {
+                "research": 5,
+                "content": 8,
+                "competitor_analysis": 2
+            },
+            "engagement_stats": {
+                "avg_likes": 156,
+                "avg_shares": 23,
+                "avg_views": 890
+            },
+            "repurpose_opportunities": 12
+        }
+    }
+
+@app.get("/api/dashboard")
+async def get_dashboard():
+    """Get dashboard data"""
+    return {
+        "status": "success",
+        "metrics": {
+            "total_posts": 42,
+            "engagement_rate": 3.5,
+            "followers_growth": 12,
+            "reach": 1250
+        },
+        "recent_activity": [
+            {
+                "id": "1",
+                "action": "Published post on Twitter",
+                "timestamp": "2025-08-01T12:00:00Z"
+            }
+        ]
+    }
+
+@app.get("/api/metrics")
+async def get_metrics():
+    """Get metrics data"""
+    return {
+        "status": "success",
+        "metrics": {
+            "total_posts": 42,
+            "engagement_rate": 3.5,
+            "followers_growth": 12,
+            "reach": 1250,
+            "impressions": 5420,
+            "clicks": 180,
+            "shares": 25,
+            "comments": 15
+        },
+        "time_period": "last_30_days",
+        "last_updated": "2025-08-01T12:00:00Z"
+    }
+
 @app.get("/api/autonomous/research/latest")
 async def get_latest_research():
     """Get latest industry research"""

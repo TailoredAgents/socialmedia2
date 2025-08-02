@@ -90,7 +90,7 @@ services:
       cd frontend &&
       npm run preview -- --host 0.0.0.0 --port $PORT
     envVars:
-      - key: VITE_API_URL
+      - key: VITE_API_BASE_URL
         value: https://ai-social-backend.onrender.com
       - key: VITE_ENVIRONMENT
         value: production

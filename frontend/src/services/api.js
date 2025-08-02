@@ -427,7 +427,7 @@ class ApiService {
 
   // Health and system endpoints
   async getHealth() {
-    return this.request('/api/health')
+    return this.request('/health')
   }
 
   async getAuthStatus() {

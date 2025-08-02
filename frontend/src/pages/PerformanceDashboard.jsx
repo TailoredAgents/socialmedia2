@@ -17,8 +17,8 @@ import { Line, Bar, Doughnut, Radar } from 'react-chartjs-2'
 import { 
   ArrowUpIcon, 
   ArrowDownIcon,
-  TrendingUpIcon,
-  TrendingDownIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
   FireIcon,
   LightBulbIcon,
   ChartBarIcon,
@@ -177,7 +177,7 @@ export default function PerformanceDashboard() {
   const getTierBadge = (tier) => {
     const badges = {
       viral: { color: 'bg-red-500', icon: FireIcon, text: 'Viral' },
-      high: { color: 'bg-orange-500', icon: TrendingUpIcon, text: 'High' },
+      high: { color: 'bg-orange-500', icon: ArrowTrendingUpIcon, text: 'High' },
       medium: { color: 'bg-yellow-500', icon: ChartBarIcon, text: 'Medium' },
       low: { color: 'bg-gray-500', icon: null, text: 'Low' }
     }
@@ -420,9 +420,9 @@ export default function PerformanceDashboard() {
                     </p>
                   </div>
                   {livePerformance.viralTrend > 0 ? (
-                    <TrendingUpIcon className="h-8 w-8 text-green-500" />
+                    <ArrowTrendingUpIcon className="h-8 w-8 text-green-500" />
                   ) : (
-                    <TrendingDownIcon className="h-8 w-8 text-red-500" />
+                    <ArrowTrendingDownIcon className="h-8 w-8 text-red-500" />
                   )}
                 </div>
                 

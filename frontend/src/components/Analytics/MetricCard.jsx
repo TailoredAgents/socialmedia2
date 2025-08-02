@@ -3,8 +3,8 @@ import {
   ArrowUpIcon, 
   ArrowDownIcon,
   MinusIcon,
-  TrendingUpIcon,
-  TrendingDownIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
   SparklesIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon
@@ -248,9 +248,9 @@ export default function MetricCard({
               {trend && trend.length > 1 && (
                 <div className="ml-2 flex items-center space-x-1">
                   {trend[trend.length - 1] > trend[trend.length - 2] ? (
-                    <TrendingUpIcon className="h-3 w-3 text-green-500" />
+                    <ArrowTrendingUpIcon className="h-3 w-3 text-green-500" />
                   ) : (
-                    <TrendingDownIcon className="h-3 w-3 text-red-500" />
+                    <ArrowTrendingDownIcon className="h-3 w-3 text-red-500" />
                   )}
                   <span className="text-xs text-gray-500">trending</span>
                 </div>

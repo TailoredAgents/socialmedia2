@@ -9,11 +9,15 @@ services:
     region: oregon
     plan: free
     runtime: python-3.11.9
+    rootDirectory: .
     buildCommand: |
-      echo "Installing dependencies..."
-      pip install fastapi uvicorn python-dotenv
+      echo "Current directory: $(pwd)"
+      echo "Directory contents: $(ls -la)"
+      echo "Installing dependencies from requirements.txt..."
+      pip install -r requirements.txt
     startCommand: |
-      echo "Starting application..."
+      echo "Starting application from: $(pwd)"
+      echo "App.py exists: $(ls -la app.py)"
       python app.py
     healthCheckPath: /health
     envVars:

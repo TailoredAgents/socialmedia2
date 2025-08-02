@@ -9,9 +9,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-print(f"🐍 Python version: {sys.version}")
-print(f"📁 Working directory: {os.getcwd()}")
-print(f"📂 Directory contents: {os.listdir('.')}")
+print("Python version:", sys.version)
+print("Working directory:", os.getcwd())
+print("Directory contents:", os.listdir('.'))
 
 # Create FastAPI app
 app = FastAPI(
@@ -210,6 +210,32 @@ async def get_latest_research():
         "insights": []
     }
 
+@app.get("/api/goals/dashboard/summary")
+async def get_goals_dashboard():
+    """Get goals dashboard summary"""
+    return {
+        "status": "success",
+        "total_goals": 0,
+        "active_goals": 0,
+        "completed_goals": 0,
+        "on_track": 0,
+        "behind_schedule": 0,
+        "completion_rate": 0
+    }
+
+@app.get("/api/workflow/status/summary")
+async def get_workflow_status():
+    """Get workflow status summary"""
+    return {
+        "status": "inactive",
+        "last_execution": "N/A",
+        "next_execution": "N/A",
+        "success_rate": 0,
+        "active_workflows": 0,
+        "failed_workflows": 0
+    }
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -334,31 +334,37 @@ export default function Analytics() {
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Engagement Trend</h3>
           <div className="h-64">
-            <Line 
-              data={analyticsData.engagementTrend}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    display: false,
-                  },
-                },
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    grid: {
-                      color: 'rgba(0, 0, 0, 0.05)',
-                    },
-                  },
-                  x: {
-                    grid: {
+            {analyticsData?.engagementTrend?.datasets ? (
+              <Line 
+                data={analyticsData.engagementTrend}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
                       display: false,
                     },
                   },
-                },
-              }}
-            />
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                      },
+                    },
+                    x: {
+                      grid: {
+                        display: false,
+                      },
+                    },
+                  },
+                }}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-64 text-gray-500">
+                <p>No engagement data available</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -366,12 +372,13 @@ export default function Analytics() {
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Platform Distribution</h3>
           <div className="h-64">
-            <Bar 
-              data={platformData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
+            {platformData?.datasets?.length > 0 ? (
+              <Bar 
+                data={platformData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
                   legend: {
                     display: false,
                   },
@@ -391,6 +398,11 @@ export default function Analytics() {
                 },
               }}
             />
+            ) : (
+              <div className="flex items-center justify-center h-64 text-gray-500">
+                <p>No platform data available</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -398,22 +410,28 @@ export default function Analytics() {
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Content Performance by Type</h3>
           <div className="h-64">
-            <Doughnut 
-              data={mockAnalytics.contentPerformance}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: 'bottom',
-                    labels: {
-                      padding: 20,
-                      usePointStyle: true,
+            {emptyAnalytics?.contentPerformance?.datasets?.length > 0 ? (
+              <Doughnut 
+                data={emptyAnalytics.contentPerformance}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'bottom',
+                      labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                      },
                     },
                   },
-                },
-              }}
-            />
+                }}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-64 text-gray-500">
+                <p>No content performance data available</p>
+              </div>
+            )}
           </div>
         </div>
 

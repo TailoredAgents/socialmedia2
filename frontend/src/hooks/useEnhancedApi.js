@@ -358,6 +358,24 @@ export const useEnhancedApi = () => {
         apiService.markAllNotificationsRead.bind(apiService),
         { retries: 2 }
       )
+    },
+
+    // Autonomous operations
+    autonomous: {
+      getLatestResearch: () => makeEnhancedRequest(
+        apiService.getLatestResearch.bind(apiService),
+        { cache: true, cacheKey: 'autonomous_research', cacheTTL: 300000 }
+      ),
+      
+      getStatus: () => makeEnhancedRequest(
+        apiService.getAutonomousStatus.bind(apiService),
+        { cache: true, cacheKey: 'autonomous_status', cacheTTL: 60000 }
+      ),
+      
+      executeeCycle: () => makeEnhancedRequest(
+        apiService.executeAutonomousCycle.bind(apiService),
+        { retries: 1, retryDelay: 3000 }
+      )
     }
   }
 

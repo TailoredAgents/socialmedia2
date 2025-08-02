@@ -145,7 +145,7 @@ export default function CreatePost() {
       const prompt = imagePrompt || `Create a professional social media image for: ${formData.content.substring(0, 200)}`
       
       // Call image generation API
-      const imageData = await api.generateImage(
+      const imageData = await api.content.generateImage(
         prompt,
         formData.content,
         formData.platform,

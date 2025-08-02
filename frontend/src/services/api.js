@@ -127,7 +127,7 @@ class ApiService {
   }
 
   async getMemoryAnalytics() {
-    return this.request('/api/memory/analytics/summary')
+    return this.request('/api/memory/analytics')
   }
 
   async getPopularTags() {
@@ -318,6 +318,25 @@ class ApiService {
     return this.request('/api/workflow/execute', {
       method: 'POST',
       body: workflowData
+    })
+  }
+
+  async getWorkflowStatusSummary() {
+    return this.request('/api/workflow/status/summary')
+  }
+
+  // Autonomous endpoints
+  async getLatestResearch() {
+    return this.request('/api/autonomous/research/latest')
+  }
+
+  async getAutonomousStatus() {
+    return this.request('/api/autonomous/status')
+  }
+
+  async executeAutonomousCycle() {
+    return this.request('/api/autonomous/execute-cycle', {
+      method: 'POST'
     })
   }
 

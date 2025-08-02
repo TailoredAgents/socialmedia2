@@ -149,7 +149,7 @@ export default function Overview() {
     return (
       <div className="rounded-md bg-red-50 p-4">
         <div className="text-sm text-red-800">
-          Failed to load dashboard data. Make sure the backend is running on http://localhost:8000
+          Failed to load dashboard data. Please check your internet connection and try again.
         </div>
       </div>
     )

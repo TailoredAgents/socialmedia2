@@ -68,7 +68,7 @@ export default function MemoryExplorer() {
     queryFn: () => api.memory.getAll(currentPage, 20),
     staleTime: 2 * 60 * 1000,
     retry: 2,
-    fallbackData: mockMemoryContent
+    fallbackData: []
   })
 
   // Search memory content

@@ -231,8 +231,8 @@ Format your response as JSON with keys: content, title, hashtags"""
         """
         Generate image using GPT Image 1
         
-        GPT Image 1 is OpenAI's latest image generation model that provides
-        high-quality, consistent image generation optimized for social media content.
+        GPT Image 1 is OpenAI's latest and most advanced image generation model
+        with superior instruction following and social media optimization.
         """
         try:
             response = self.client.images.generate(
@@ -250,6 +250,7 @@ Format your response as JSON with keys: content, title, hashtags"""
                 "model": "gpt-image-1"
             }
         except Exception as e:
+            logger.error(f"Image generation failed: {e}")
             return {
                 "status": "error",
                 "error": f"Failed to generate image with GPT Image 1: {str(e)}"

@@ -129,6 +129,10 @@ export default function Content() {
   })
 
   const filteredContent = useMemo(() => {
+    if (!content || !Array.isArray(content)) {
+      return []
+    }
+    
     return content.filter(item => {
       const matchesSearch = !searchQuery || 
         item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||

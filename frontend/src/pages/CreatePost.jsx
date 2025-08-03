@@ -68,7 +68,7 @@ export default function CreatePost() {
         industry: response.industry || 'N/A',
         trends: Array.isArray(response.trends) ? response.trends : [],
         keyTopics: [],
-        contentSuggestions: [],
+        contentSuggestions: Array.isArray(response.content_opportunities) ? response.content_opportunities : [],
         competitorInsights: Array.isArray(response.insights) ? response.insights : []
       }
       
@@ -156,8 +156,17 @@ export default function CreatePost() {
         industryContext
       )
       
-      setGeneratedImage(imageData)
-      showSuccess('Image generated successfully!')
+      console.log('Image generation response:', imageData) // Debug log
+      
+      if (imageData && imageData.status === 'success' && imageData.image_url) {
+        setGeneratedImage(imageData)
+        showSuccess('Image generated successfully!')
+      } else if (imageData && imageData.error) {
+        setGeneratedImage(imageData) // Show error state
+        showError(`Image generation failed: ${imageData.error}`)
+      } else {
+        showError('Image generation failed: No image returned')
+      }
     } catch (error) {
       logError('Image generation failed:', error)
       showError('Failed to generate image')
@@ -529,6 +538,18 @@ export default function CreatePost() {
                       </span>
                     ))}
                   </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Market Insights</h4>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    {(researchData?.competitorInsights || []).map((insight, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="mr-2">📊</span>
+                        <span>{insight}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
                 <div className="border-t pt-4">

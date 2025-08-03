@@ -95,7 +95,7 @@ export default function CreatePost() {
 
   const handleChange = (field, value) => {
     setFormData(prev => ({
-      ...prev,
+      ...(prev || {}),
       [field]: value
     }))
     
@@ -118,13 +118,17 @@ export default function CreatePost() {
 
       const response = await api.content.generate(prompt, formData.contentType)
       
-      if (response.content) {
+      if (response && response.content) {
         setFormData(prev => ({
-          ...prev,
+          ...(prev || {}),
           content: response.content,
           title: response.title || `AI Generated ${formData.platform} Post`
         }))
         showSuccess('AI content generated successfully!')
+      } else if (response && response.error) {
+        showError(`AI content generation failed: ${response.error}`)
+      } else {
+        showError('AI content generation failed: No content returned')
       }
     } catch (error) {
       logError('AI content generation failed:', error)

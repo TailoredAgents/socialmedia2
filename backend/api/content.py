@@ -46,6 +46,12 @@ class PublishContentRequest(BaseModel):
     platform_post_id: Optional[str] = None
     engagement_data: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
+class GenerateContentRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=2000)
+    content_type: str = Field(..., regex="^(text|image|video|carousel)$")
+    platform: Optional[str] = Field(None, regex="^(twitter|linkedin|instagram|facebook|tiktok)$")
+    tone: Optional[str] = Field("professional", regex="^(professional|casual|humorous|inspiring|educational)$")
+
 class GenerateImageRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=500)
     content_context: Optional[str] = Field(None, max_length=2000)
@@ -381,6 +387,48 @@ async def get_content_analytics(
     )
 
 @router.post("/generate")
+async def generate_content(
+    request: GenerateContentRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Generate AI content based on prompt"""
+    
+    try:
+        # Use OpenAI tool to generate content
+        result = openai_tool.generate_content(
+            prompt=request.prompt,
+            content_type=request.content_type,
+            platform=request.platform,
+            tone=request.tone
+        )
+        
+        if result.get("status") == "success":
+            return {
+                "status": "success",
+                "content": result.get("content"),
+                "title": result.get("title"),
+                "hashtags": result.get("hashtags", []),
+                "platform": request.platform,
+                "content_type": request.content_type,
+                "tone": request.tone,
+                "generated_at": datetime.utcnow()
+            }
+        else:
+            return {
+                "status": "error",
+                "error": result.get("error", "Content generation failed"),
+                "generated_at": datetime.utcnow()
+            }
+            
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": f"Content generation failed: {str(e)}",
+            "generated_at": datetime.utcnow()
+        }
+
+@router.post("/generate-ideas")
 async def generate_content_ideas(
     platform: str = Query(..., regex="^(twitter|linkedin|instagram|facebook|tiktok)$"),
     topic: Optional[str] = Query(None),

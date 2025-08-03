@@ -153,6 +153,66 @@ class OpenAITool:
         except Exception as e:
             return f"Error generating text: {str(e)}"
     
+    def generate_content(self, prompt: str, content_type: str = "text", platform: str = None, tone: str = "professional") -> Dict[str, Any]:
+        """Generate social media content using OpenAI"""
+        try:
+            # Build context-aware prompt
+            context_prompt = f"""Create engaging {content_type} content for social media with the following specifications:
+
+Platform: {platform or 'general social media'}
+Tone: {tone}
+Content Type: {content_type}
+
+User Request: {prompt}
+
+Requirements:
+- Keep it engaging and appropriate for {platform or 'social media'}
+- Use a {tone} tone
+- Include relevant hashtags if appropriate
+- Make it actionable and valuable
+- Ensure it follows best practices for {platform or 'social media'}
+
+Please provide:
+1. Main content (text)
+2. A catchy title/headline
+3. Suggested hashtags (if applicable)
+
+Format your response as JSON with keys: content, title, hashtags"""
+
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": context_prompt}],
+                max_tokens=800,
+                temperature=0.7
+            )
+            
+            content_text = response.choices[0].message.content.strip()
+            
+            # Try to parse as JSON, fallback to text parsing
+            try:
+                result = json.loads(content_text)
+                return {
+                    "status": "success",
+                    "content": result.get("content", content_text),
+                    "title": result.get("title", "Generated Content"),
+                    "hashtags": result.get("hashtags", [])
+                }
+            except json.JSONDecodeError:
+                # Fallback: treat entire response as content
+                return {
+                    "status": "success",
+                    "content": content_text,
+                    "title": f"Generated {content_type.title()} Content",
+                    "hashtags": []
+                }
+                
+        except Exception as e:
+            logger.error(f"Content generation failed: {e}")
+            return {
+                "status": "error",
+                "error": f"Content generation failed: {str(e)}"
+            }
+
     def generate_image_prompt(self, content_description: str) -> str:
         """Generate an image prompt based on content description"""
         prompt = f"""Create a detailed image prompt for generating a social media visual based on this content: {content_description}

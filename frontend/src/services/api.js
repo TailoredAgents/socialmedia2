@@ -354,10 +354,6 @@ class ApiService {
     })
   }
 
-  async getWorkflowStatusSummary() {
-    return this.request('/api/workflow/status/summary')
-  }
-
   async executeDailyWorkflow() {
     return this.request('/api/workflow/templates/daily', {
       method: 'POST'

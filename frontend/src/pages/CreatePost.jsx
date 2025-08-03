@@ -66,10 +66,10 @@ export default function CreatePost() {
       
       const researchData = {
         industry: response.industry || 'N/A',
-        trends: response.trends || [],
+        trends: Array.isArray(response.trends) ? response.trends : [],
         keyTopics: [],
         contentSuggestions: [],
-        competitorInsights: response.insights || []
+        competitorInsights: Array.isArray(response.insights) ? response.insights : []
       }
       
       setResearchData(researchData)
@@ -491,7 +491,7 @@ export default function CreatePost() {
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">Current Trends</h4>
                   <ul className="text-sm text-gray-600 space-y-1">
-                    {researchData.trends.map((trend, index) => (
+                    {(researchData?.trends || []).map((trend, index) => (
                       <li key={index} className="flex items-start">
                         <span className="mr-2">•</span>
                         <span>{trend}</span>
@@ -503,7 +503,7 @@ export default function CreatePost() {
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">Content Suggestions</h4>
                   <ul className="text-sm text-gray-600 space-y-1">
-                    {researchData.contentSuggestions.map((suggestion, index) => (
+                    {(researchData?.contentSuggestions || []).map((suggestion, index) => (
                       <li key={index} className="flex items-start">
                         <span className="mr-2">💡</span>
                         <span>{suggestion}</span>
@@ -515,7 +515,7 @@ export default function CreatePost() {
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">Key Topics</h4>
                   <div className="flex flex-wrap gap-2">
-                    {researchData.keyTopics.map((topic, index) => (
+                    {(researchData?.keyTopics || []).map((topic, index) => (
                       <span
                         key={index}
                         className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full cursor-pointer hover:bg-blue-200"

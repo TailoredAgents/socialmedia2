@@ -52,7 +52,7 @@ export const useEnhancedApi = () => {
       showNotification = true,
       onSuccess = null,
       onError = null,
-      ...requestArgs
+      requestArgs = []
     } = options
 
     // Check cache first

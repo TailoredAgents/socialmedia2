@@ -18,7 +18,7 @@ class ApiService {
     const config = {
       headers: {
         'Content-Type': 'application/json',
-        ...options.headers,
+        ...(options.headers || {}),
       },
       ...options,
     }

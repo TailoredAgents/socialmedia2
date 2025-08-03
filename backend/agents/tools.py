@@ -240,12 +240,17 @@ Format your response as JSON with keys: content, title, hashtags"""
                 prompt=prompt,
                 size=size,
                 quality="standard",
+                response_format="b64_json",
                 n=1,
             )
             
+            # GPT Image 1 returns base64 data, convert to data URL for frontend
+            image_b64 = response.data[0].b64_json
+            image_data_url = f"data:image/png;base64,{image_b64}"
+            
             return {
                 "status": "success",
-                "image_url": response.data[0].url,
+                "image_url": image_data_url,
                 "prompt": prompt,
                 "model": "gpt-image-1"
             }

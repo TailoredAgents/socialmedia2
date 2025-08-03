@@ -72,6 +72,13 @@ try:
 except ImportError as e:
     logger.warning(f"⚠️ Could not import auth router: {e}")
 
+try:
+    from backend.api.notifications import router as notifications_router
+    app.include_router(notifications_router)
+    logger.info("✅ Notifications router included")
+except ImportError as e:
+    logger.warning(f"⚠️ Could not import notifications router: {e}")
+
 @app.get("/")
 async def root():
     """Root endpoint"""

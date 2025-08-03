@@ -63,6 +63,7 @@ export default function CreatePost() {
     try {
       // Call actual research API
       const response = await api.autonomous.getLatestResearch()
+      console.log('Research API response:', response) // Debug log
       
       const researchData = {
         industry: response.industry || 'N/A',
@@ -71,6 +72,8 @@ export default function CreatePost() {
         contentSuggestions: Array.isArray(response.content_opportunities) ? response.content_opportunities : [],
         competitorInsights: Array.isArray(response.insights) ? response.insights : []
       }
+      
+      console.log('Processed research data:', researchData) // Debug log
       
       setResearchData(researchData)
       setIndustryContext(researchData.industry !== 'N/A' ? 

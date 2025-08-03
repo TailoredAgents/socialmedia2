@@ -514,7 +514,7 @@ async def generate_image(
                 "prompt": enhanced_prompt,
                 "original_prompt": request.prompt,
                 "platform": request.platform,
-                "model": result.get("model", "dall-e-3"),
+                "model": result.get("model", "gpt-image-1"),
                 "generated_at": datetime.utcnow()
             }
         else:

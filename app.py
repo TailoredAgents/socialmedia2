@@ -1,241 +1,59 @@
 #!/usr/bin/env python3
 """
-Standalone FastAPI app for Render deployment
-No dependencies on backend module structure
+Production FastAPI app for Render deployment
+Uses the complete backend implementation
 """
 import sys
 import os
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 print("Python version:", sys.version)
 print("Working directory:", os.getcwd())
 print("Directory contents:", os.listdir('.'))
 
-# Create FastAPI app
-app = FastAPI(
-    title="AI Social Media Content Agent",
-    description="Standalone deployment version",
-    version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
-)
+# Add backend to path
+backend_path = os.path.join(os.getcwd(), 'backend')
+if backend_path not in sys.path:
+    sys.path.insert(0, backend_path)
+print(f"Added backend path: {backend_path}")
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.get("/")
-async def root():
-    """Root endpoint"""
-    return {
-        "message": "AI Social Media Content Agent API is running",
-        "status": "success",
-        "python_version": sys.version,
-        "working_dir": os.getcwd()
-    }
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "timestamp": "2025-08-01",
-        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-    }
-
-@app.get("/api/status")
-async def api_status():
-    """API status endpoint"""
-    return {
-        "status": "operational",
-        "version": "2.0.0",
-        "environment": os.getenv("ENVIRONMENT", "development"),
-        "autonomous_agent": "active",
-        "features": ["autonomous_posting", "image_generation", "industry_research"],
-        "python_version": sys.version
-    }
-
-@app.post("/api/autonomous/execute-cycle")
-async def execute_autonomous_cycle():
-    """Trigger autonomous posting cycle"""
-    return {
-        "status": "initiated",
-        "message": "Autonomous posting cycle started",
-        "cycle_id": "cycle_001",
-        "initiated_at": "2025-08-01T12:00:00Z"
-    }
-
-@app.get("/api/autonomous/status")
-async def get_autonomous_status():
-    """Get autonomous agent status"""
-    return {
-        "status": "inactive",
-        "last_cycle": "N/A",
-        "next_cycle": "N/A",
-        "posts_created_today": 0,
-        "platforms_connected": [],
-        "research_status": "none"
-    }
-
-@app.post("/api/content/generate-image")
-async def generate_image():
-    """Generate image for social media content"""
-    return {
-        "status": "success",
-        "image_url": "https://example.com/generated-image.jpg",
-        "prompt": "Professional AI social media image",
-        "model": "dall-e-3",
-        "generated_at": "2025-08-01T12:00:00Z"
-    }
-
-@app.post("/api/content/generate")
-async def generate_content():
-    """Generate AI content for social media"""
-    return {
-        "status": "success",
-        "content": "🚀 Exciting news! AI agents are revolutionizing how businesses manage their social media presence. From automated content creation to real-time engagement analysis, the future of social media is here! #AI #SocialMedia #Innovation",
-        "suggestions": [
-            "Add trending hashtags",
-            "Include call-to-action",
-            "Optimize for platform"
-        ],
-        "generated_at": "2025-08-01T12:00:00Z"
-    }
-
-@app.post("/api/content/")
-async def create_content():
-    """Create new content item"""
-    return {
-        "status": "success",
-        "id": "content_12345",
-        "message": "Content created successfully",
-        "created_at": "2025-08-01T12:00:00Z"
-    }
-
-@app.get("/api/content/")
-async def get_content():
-    """Get content list"""
-    return {
-        "status": "success",
-        "content": [],
-        "total": 0
-    }
-
-@app.get("/api/memory/")
-async def get_memory():
-    """Get memory/research data"""
-    return {
-        "status": "success",
-        "memories": [],
-        "total": 0
-    }
-
-@app.post("/api/memory/search")
-async def search_memory():
-    """Search memory content"""
-    return {
-        "status": "success",
-        "results": [],
-        "total": 0
-    }
-
-@app.get("/api/memory/analytics")
-async def get_memory_analytics():
-    """Get memory analytics"""
-    return {
-        "status": "success",
-        "analytics": {
-            "total_memories": 0,
-            "content_distribution": {
-                "research": 0,
-                "content": 0,
-                "competitor_analysis": 0
-            },
-            "engagement_stats": {
-                "avg_likes": 0,
-                "avg_shares": 0,
-                "avg_views": 0
-            },
-            "repurpose_opportunities": 0
+# Import the complete app
+try:
+    from backend.app_complete import app
+    print("✅ Successfully imported complete backend app")
+except ImportError as e:
+    print(f"❌ Failed to import complete app: {e}")
+    # Fallback: create a minimal app
+    from fastapi import FastAPI
+    from fastapi.middleware.cors import CORSMiddleware
+    
+    app = FastAPI(
+        title="AI Social Media Content Agent - Fallback",
+        description="Fallback deployment version", 
+        version="1.0.0",
+        docs_url="/docs",
+        redoc_url="/redoc"
+    )
+    
+    # Add CORS middleware for fallback
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    
+    @app.get("/")
+    async def fallback_root():
+        return {
+            "message": "AI Social Media Content Agent API (Fallback Mode)",
+            "status": "limited_functionality",
+            "error": "Could not load complete backend"
         }
-    }
+    
+    @app.get("/health")
+    async def fallback_health():
+        return {"status": "healthy", "mode": "fallback"}
 
-@app.get("/api/dashboard")
-async def get_dashboard():
-    """Get dashboard data"""
-    return {
-        "status": "success",
-        "metrics": {
-            "total_posts": 0,
-            "engagement_rate": 0,
-            "followers_growth": 0,
-            "reach": 0
-        },
-        "recent_activity": []
-    }
-
-@app.get("/api/metrics")
-async def get_metrics():
-    """Get metrics data"""
-    return {
-        "status": "success",
-        "metrics": {
-            "total_posts": 0,
-            "engagement_rate": 0,
-            "followers_growth": 0,
-            "reach": 0,
-            "impressions": 0,
-            "clicks": 0,
-            "shares": 0,
-            "comments": 0
-        },
-        "time_period": "last_30_days",
-        "last_updated": "2025-08-01T12:00:00Z"
-    }
-
-@app.get("/api/autonomous/research/latest")
-async def get_latest_research():
-    """Get latest industry research"""
-    return {
-        "industry": "N/A",
-        "research_date": "N/A",
-        "trends": [],
-        "insights": []
-    }
-
-@app.get("/api/goals/dashboard/summary")
-async def get_goals_dashboard():
-    """Get goals dashboard summary"""
-    return {
-        "status": "success",
-        "total_goals": 0,
-        "active_goals": 0,
-        "completed_goals": 0,
-        "on_track": 0,
-        "behind_schedule": 0,
-        "completion_rate": 0
-    }
-
-@app.get("/api/workflow/status/summary")
-async def get_workflow_status():
-    """Get workflow status summary"""
-    return {
-        "status": "inactive",
-        "last_execution": "N/A",
-        "next_execution": "N/A",
-        "success_rate": 0,
-        "active_workflows": 0,
-        "failed_workflows": 0
-    }
-
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+# Export the app so uvicorn can find it
+__all__ = ["app"]

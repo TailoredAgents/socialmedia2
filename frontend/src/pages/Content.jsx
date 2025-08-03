@@ -72,7 +72,7 @@ export default function Content() {
   })
 
   // Fetch upcoming content
-  const { data: upcomingContent } = useQuery({
+  const { data: upcomingContent = [] } = useQuery({
     queryKey: ['upcoming-content'],
     queryFn: () => api.content.getUpcoming(),
     staleTime: 60 * 1000, // 1 minute
@@ -80,7 +80,7 @@ export default function Content() {
   })
 
   // Get content analytics
-  const { data: contentAnalytics } = useQuery({
+  const { data: contentAnalytics = {} } = useQuery({
     queryKey: ['content-analytics'],
     queryFn: () => api.content.getAnalytics ? api.content.getAnalytics() : Promise.resolve({}),
     staleTime: 5 * 60 * 1000,
@@ -277,19 +277,19 @@ export default function Content() {
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-2xl font-bold text-blue-600">
-            {content.filter(c => c.status === 'scheduled').length}
+            {Array.isArray(content) ? content.filter(c => c?.status === 'scheduled').length : 0}
           </div>
           <div className="text-sm text-gray-600">Scheduled</div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-2xl font-bold text-green-600">
-            {content.filter(c => c.status === 'published').length}
+            {Array.isArray(content) ? content.filter(c => c?.status === 'published').length : 0}
           </div>
           <div className="text-sm text-gray-600">Published</div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-2xl font-bold text-gray-600">
-            {content.filter(c => c.status === 'draft').length}
+            {Array.isArray(content) ? content.filter(c => c?.status === 'draft').length : 0}
           </div>
           <div className="text-sm text-gray-600">Drafts</div>
         </div>

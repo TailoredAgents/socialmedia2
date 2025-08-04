@@ -11,15 +11,19 @@ services:
     runtime: python-3.11.9
     rootDirectory: .
     buildCommand: |
+      echo "🏗️ Building AI Social Media Content Agent..."
       echo "Current directory: $(pwd)"
       echo "Directory contents: $(ls -la)"
       echo "Installing dependencies from requirements.txt..."
+      pip install --upgrade pip
       pip install -r requirements.txt
+      echo "✅ Build completed successfully"
     startCommand: |
-      echo "Starting application from: $(pwd)"
-      echo "App.py exists: $(ls -la app.py)"
-      python app.py
-    healthCheckPath: /health
+      echo "🚀 Starting AI Social Media Content Agent..."
+      echo "Working directory: $(pwd)"
+      echo "Python version: $(python --version)"
+      uvicorn app:app --host 0.0.0.0 --port $PORT --log-level info
+    healthCheckPath: /render-health
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
@@ -95,7 +99,7 @@ services:
       npm run preview -- --host 0.0.0.0 --port $PORT
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://ai-social-backend.onrender.com
+        value: https://ai-social-backend-standalone.onrender.com
       - key: VITE_ENVIRONMENT
         value: production
         # Force rebuild to ensure environment variables take effect

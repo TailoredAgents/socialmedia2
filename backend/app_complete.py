@@ -8,6 +8,17 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import logging
+import os
+
+# Import production config for graceful degradation
+try:
+    from backend.core.production_config import production_config
+except ImportError:
+    # Fallback if production config fails
+    class MockProductionConfig:
+        def get_feature_status(self):
+            return {"status": "minimal", "error": "Production config failed"}
+    production_config = MockProductionConfig()
 
 # Add backend to path
 backend_path = os.path.join(os.path.dirname(__file__))
@@ -88,33 +99,37 @@ except ImportError as e:
 
 @app.get("/")
 async def root():
-    """Root endpoint"""
+    """Root endpoint with production status"""
+    feature_status = production_config.get_feature_status()
     return {
         "message": "AI Social Media Content Agent API is running",
         "status": "success",
         "version": "2.0.0",
-        "features": [
-            "Autonomous posting",
-            "Industry research",
-            "Image generation",
-            "Multi-platform support",
-            "Content analytics",
-            "Memory management"
-        ]
+        "environment": feature_status.get("environment", "unknown"),
+        "available_features": feature_status.get("available_features", []),
+        "feature_count": feature_status.get("total_features", 0),
+        "deployment_status": feature_status.get("status", "unknown")
     }
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
+    """Enhanced health check endpoint for Render"""
+    feature_status = production_config.get_feature_status()
     return {
         "status": "healthy",
         "version": "2.0.0",
         "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "environment": os.getenv("ENVIRONMENT", "development"),
         "uptime": "Running",
+        "features": feature_status,
+        "endpoints": {
+            "total_routes": len(app.routes),
+            "api_routes": len([r for r in app.routes if hasattr(r, 'methods') and any('/api/' in str(r.path) for r in [r])]),
+        },
         "services": {
-            "database": "connected",
-            "ai_services": "available",
-            "social_platforms": "ready"
+            "openai": "available" if os.getenv("OPENAI_API_KEY") else "missing_key",
+            "database": "configured" if os.getenv("DATABASE_URL") else "not_configured",
+            "redis": "configured" if os.getenv("REDIS_URL") else "not_configured"
         }
     }
 

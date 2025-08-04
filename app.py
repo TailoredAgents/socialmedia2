@@ -70,17 +70,13 @@ failed_routers = []
 # Define all routers to load (routers define their own prefixes)
 routers_config = [
     ("system_logs", "backend.api.system_logs"),
-    ("content", "backend.api.content"),
-    ("autonomous", "backend.api.autonomous"),
+    ("content_stub", "backend.api.content_stub"),
+    ("autonomous_stub", "backend.api.autonomous_stub"),
     ("memory", "backend.api.memory"),
     ("goals", "backend.api.goals"),
-    ("auth", "backend.api.auth"),
-    ("notifications", "backend.api.notifications"),
-    ("image_streaming", "backend.api.image_streaming"),
-    ("workflow", "backend.api.workflow"),
-    ("memory_v2", "backend.api.memory_v2"),
-    ("goals_v2", "backend.api.goals_v2"),
-    ("workflow_v2", "backend.api.workflow_v2"),
+    ("notifications_stub", "backend.api.notifications_stub"),
+    ("workflow_stub", "backend.api.workflow_stub"),
+    ("metrics_stub", "backend.api.metrics_stub"),
 ]
 
 # Load routers with detailed error handling

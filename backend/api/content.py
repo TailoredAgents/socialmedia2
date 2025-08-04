@@ -14,6 +14,7 @@ from backend.db.models import ContentLog, User
 from backend.auth.dependencies import get_current_active_user
 from backend.services.cache_decorators import cached, cache_invalidate
 from backend.agents.tools import openai_tool
+from backend.services.image_generation_service import image_generation_service
 
 router = APIRouter(prefix="/api/content", tags=["content"])
 
@@ -56,6 +57,21 @@ class GenerateImageRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=500)
     content_context: Optional[str] = Field(None, max_length=2000)
     platform: str = Field(..., pattern="^(twitter|linkedin|instagram|facebook|tiktok)$")
+    industry_context: Optional[str] = Field(None, max_length=1000)
+    quality_preset: str = Field("standard", pattern="^(draft|standard|premium|story|banner)$")
+    tone: str = Field("professional", pattern="^(professional|casual|humorous|inspiring|educational)$")
+
+class EditImageRequest(BaseModel):
+    edit_prompt: str = Field(..., min_length=1, max_length=300)
+    previous_response_id: Optional[str] = None
+    previous_image_id: Optional[str] = None
+    platform: str = Field(..., pattern="^(twitter|linkedin|instagram|facebook|tiktok)$")
+    quality_preset: str = Field("standard", pattern="^(draft|standard|premium|story|banner)$")
+
+class GenerateContentImagesRequest(BaseModel):
+    content_text: str = Field(..., min_length=1, max_length=2000)
+    platforms: List[str] = Field(..., min_items=1)
+    image_count: int = Field(1, ge=1, le=3)
     industry_context: Optional[str] = Field(None, max_length=1000)
 
 class ContentResponse(BaseModel):
@@ -480,55 +496,69 @@ async def generate_image(
     request: GenerateImageRequest,
     current_user: User = Depends(get_current_active_user)
 ):
-    """Generate an image using AI for social media content"""
+    """Generate an image using enhanced OpenAI Responses API with image_generation tool"""
     
-    try:
-        # Create enhanced prompt with context
-        enhanced_prompt = request.prompt
-        
-        if request.content_context:
-            enhanced_prompt += f" Content context: {request.content_context[:200]}"
-        
-        if request.industry_context:
-            enhanced_prompt += f" Industry: {request.industry_context[:100]}"
-        
-        # Add platform-specific styling
-        platform_styles = {
-            "twitter": "modern, clean, minimalist design suitable for Twitter",
-            "linkedin": "professional, corporate, business-appropriate design",
-            "instagram": "vibrant, visually appealing, Instagram-optimized design",
-            "facebook": "engaging, social media friendly, Facebook-style design",
-            "tiktok": "trendy, youthful, dynamic design for TikTok"
-        }
-        
-        platform_style = platform_styles.get(request.platform, "professional social media design")
-        enhanced_prompt += f" Style: {platform_style}"
-        
-        # Generate image using OpenAI tool
-        result = openai_tool.create_image(enhanced_prompt)
-        
-        if result.get("status") == "success":
-            return {
-                "status": "success",
-                "image_url": result.get("image_url"),
-                "prompt": enhanced_prompt,
-                "original_prompt": request.prompt,
-                "platform": request.platform,
-                "model": result.get("model", "gpt-image-1"),
-                "generated_at": datetime.utcnow()
-            }
-        else:
-            return {
-                "status": "error",
-                "error": result.get("error", "Unknown error occurred"),
-                "prompt": enhanced_prompt,
-                "generated_at": datetime.utcnow()
-            }
-            
-    except Exception as e:
+    result = await image_generation_service.generate_image(
+        prompt=request.prompt,
+        platform=request.platform,
+        quality_preset=request.quality_preset,
+        content_context=request.content_context,
+        industry_context=request.industry_context,
+        tone=request.tone
+    )
+    
+    return result
+
+@router.post("/edit-image")
+async def edit_image(
+    request: EditImageRequest,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Edit an existing image using multi-turn capabilities"""
+    
+    if not request.previous_response_id and not request.previous_image_id:
         return {
             "status": "error",
-            "error": f"Image generation failed: {str(e)}",
-            "prompt": request.prompt,
-            "generated_at": datetime.utcnow()
+            "error": "Either previous_response_id or previous_image_id must be provided"
         }
+    
+    result = await image_generation_service.edit_image(
+        edit_prompt=request.edit_prompt,
+        previous_response_id=request.previous_response_id,
+        previous_image_id=request.previous_image_id,
+        platform=request.platform,
+        quality_preset=request.quality_preset
+    )
+    
+    return result
+
+@router.post("/generate-content-images")
+async def generate_content_images(
+    request: GenerateContentImagesRequest,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Generate multiple images optimized for different platforms based on content"""
+    
+    # Validate platforms
+    valid_platforms = {"twitter", "linkedin", "instagram", "facebook", "tiktok"}
+    invalid_platforms = set(request.platforms) - valid_platforms
+    if invalid_platforms:
+        return {
+            "status": "error",
+            "error": f"Invalid platforms: {list(invalid_platforms)}"
+        }
+    
+    result = await image_generation_service.generate_content_images(
+        content_text=request.content_text,
+        platforms=request.platforms,
+        image_count=request.image_count,
+        industry_context=request.industry_context
+    )
+    
+    return {
+        "status": "success",
+        "content_text": request.content_text,
+        "platforms": request.platforms,
+        "images": result,
+        "generated_at": datetime.utcnow().isoformat()
+    }

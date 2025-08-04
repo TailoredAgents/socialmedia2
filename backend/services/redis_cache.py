@@ -142,10 +142,16 @@ class RedisCache:
         # Metrics tracking
         self.metrics = CacheMetrics()
         
-        # Initialize connection
-        asyncio.create_task(self._initialize_connection())
+        # Initialize connection will be done lazily when first accessed
+        self._connection_initialized = False
         
         logger.info(f"Redis cache initialized: fallback_enabled=True, compression_threshold={self.compression_threshold}")
+    
+    async def _ensure_connection(self):
+        """Ensure Redis connection is initialized"""
+        if not self._connection_initialized:
+            await self._initialize_connection()
+            self._connection_initialized = True
     
     async def _initialize_connection(self):
         """Initialize Redis connection with error handling"""
@@ -254,6 +260,9 @@ class RedisCache:
         key = self._create_cache_key(platform, operation, user_id, resource_id, **kwargs)
         
         try:
+            # Ensure connection is initialized
+            await self._ensure_connection()
+            
             # Try Redis first if connected
             if self.is_connected and self.redis_client:
                 try:

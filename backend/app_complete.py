@@ -79,6 +79,13 @@ try:
 except ImportError as e:
     logger.warning(f"⚠️ Could not import notifications router: {e}")
 
+try:
+    from backend.api.image_streaming import router as image_streaming_router
+    app.include_router(image_streaming_router)
+    logger.info("✅ Image streaming router included")
+except ImportError as e:
+    logger.warning(f"⚠️ Could not import image streaming router: {e}")
+
 @app.get("/")
 async def root():
     """Root endpoint"""

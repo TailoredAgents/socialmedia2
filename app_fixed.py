@@ -15,7 +15,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-logger.info("🚀 Starting AI Social Media Content Agent (Production)")
+logger.info("Starting AI Social Media Content Agent (Production)")
 logger.info(f"Python version: {sys.version}")
 logger.info(f"Working directory: {os.getcwd()}")
 
@@ -30,9 +30,9 @@ try:
     from fastapi import FastAPI
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse
-    logger.info("✅ FastAPI imported successfully")
+    logger.info("FastAPI imported successfully")
 except ImportError as e:
-    logger.error(f"❌ Failed to import FastAPI: {e}")
+    logger.error(f"Failed to import FastAPI: {e}")
     logger.error("Please ensure FastAPI is installed: pip install fastapi")
     sys.exit(1)
 
@@ -59,9 +59,9 @@ try:
     from backend.middleware.error_tracking import error_tracking_middleware, log_404_errors
     app.middleware("http")(error_tracking_middleware)
     app.middleware("http")(log_404_errors)
-    logger.info("✅ Error tracking middleware added")
+    logger.info("Error tracking middleware added")
 except Exception as e:
-    logger.warning(f"⚠️ Could not add error tracking middleware: {e}")
+    logger.warning(f"Could not add error tracking middleware: {e}")
 
 # Track loaded routers
 loaded_routers = []
@@ -91,16 +91,16 @@ for router_name, module_path in routers_config:
         if router:
             app.include_router(router, tags=[router_name])
             loaded_routers.append(router_name)
-            logger.info(f"✅ {router_name} router loaded successfully")
+            logger.info(f"{router_name} router loaded successfully")
         else:
             failed_routers.append((router_name, "No router attribute"))
-            logger.warning(f"⚠️  {router_name}: No router attribute found")
+            logger.warning(f"{router_name}: No router attribute found")
     except ImportError as e:
         failed_routers.append((router_name, str(e)))
-        logger.warning(f"⚠️  {router_name} router failed to load: {e}")
+        logger.warning(f"{router_name} router failed to load: {e}")
     except Exception as e:
         failed_routers.append((router_name, str(e)))
-        logger.error(f"❌ {router_name} router error: {type(e).__name__} - {e}")
+        logger.error(f"{router_name} router error: {type(e).__name__} - {e}")
 
 # Root endpoints
 @app.get("/")
@@ -185,9 +185,9 @@ async def not_found_handler(request, exc):
 
 # Log startup summary
 logger.info("=" * 50)
-logger.info(f"✅ Loaded {len(loaded_routers)} routers successfully")
-logger.info(f"⚠️  Failed to load {len(failed_routers)} routers")
-logger.info(f"📊 Total routes: {len(app.routes)}")
+logger.info(f"Loaded {len(loaded_routers)} routers successfully")
+logger.info(f"Failed to load {len(failed_routers)} routers")
+logger.info(f"Total routes: {len(app.routes)}")
 logger.info("=" * 50)
 
 # Export the app

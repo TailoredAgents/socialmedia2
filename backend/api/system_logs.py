@@ -31,8 +31,12 @@ class ErrorLogStore:
         error_data['id'] = len(self.errors)
         self.errors.appendleft(error_data)
         
-        # Notify all connected WebSocket clients
-        asyncio.create_task(self._notify_clients('error', error_data))
+        # Notify all connected WebSocket clients (only if event loop is running)
+        try:
+            asyncio.create_task(self._notify_clients('error', error_data))
+        except RuntimeError:
+            # No event loop running (during startup) - skip notification
+            pass
         
     def add_warning(self, warning_data: Dict[str, Any]):
         """Add warning to store"""
@@ -40,8 +44,12 @@ class ErrorLogStore:
         warning_data['id'] = len(self.warnings)
         self.warnings.appendleft(warning_data)
         
-        # Notify all connected WebSocket clients
-        asyncio.create_task(self._notify_clients('warning', warning_data))
+        # Notify all connected WebSocket clients (only if event loop is running)
+        try:
+            asyncio.create_task(self._notify_clients('warning', warning_data))
+        except RuntimeError:
+            # No event loop running (during startup) - skip notification
+            pass
         
     def add_info(self, info_data: Dict[str, Any]):
         """Add info log to store"""

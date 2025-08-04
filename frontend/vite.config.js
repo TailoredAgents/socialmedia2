@@ -27,7 +27,6 @@ export default defineConfig({
           vendor: ['react', 'react-dom'],
           charts: ['chart.js', 'react-chartjs-2'],
           query: ['@tanstack/react-query'],
-          auth: ['@auth0/auth0-react'],
           dnd: ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
           virtualization: ['react-window', 'react-window-infinite-loader']
         }

@@ -76,12 +76,12 @@ class FacebookInsights:
     comments: int
     shares: int
     clicks: int
+    fetched_at: datetime
     video_views: Optional[int] = None
     story_completions: Optional[int] = None
     post_consumptions: int = 0
     post_engaged_users: int = 0
     negative_feedback: int = 0
-    fetched_at: datetime
 
 @dataclass
 class FacebookEvent:

@@ -19,9 +19,9 @@ router = APIRouter(prefix="/api/content", tags=["content"])
 
 # Pydantic models
 class CreateContentRequest(BaseModel):
-    platform: str = Field(..., regex="^(twitter|linkedin|instagram|facebook|tiktok)$")
+    platform: str = Field(..., pattern="^(twitter|linkedin|instagram|facebook|tiktok)$")
     content: str = Field(..., min_length=1, max_length=10000)
-    content_type: str = Field(..., regex="^(text|image|video|carousel)$")
+    content_type: str = Field(..., pattern="^(text|image|video|carousel)$")
     scheduled_for: Optional[datetime] = None
     engagement_data: Optional[Dict[str, Any]] = Field(default_factory=dict)
     
@@ -48,14 +48,14 @@ class PublishContentRequest(BaseModel):
 
 class GenerateContentRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=2000)
-    content_type: str = Field(..., regex="^(text|image|video|carousel)$")
-    platform: Optional[str] = Field(None, regex="^(twitter|linkedin|instagram|facebook|tiktok)$")
-    tone: Optional[str] = Field("professional", regex="^(professional|casual|humorous|inspiring|educational)$")
+    content_type: str = Field(..., pattern="^(text|image|video|carousel)$")
+    platform: Optional[str] = Field(None, pattern="^(twitter|linkedin|instagram|facebook|tiktok)$")
+    tone: Optional[str] = Field("professional", pattern="^(professional|casual|humorous|inspiring|educational)$")
 
 class GenerateImageRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=500)
     content_context: Optional[str] = Field(None, max_length=2000)
-    platform: str = Field(..., regex="^(twitter|linkedin|instagram|facebook|tiktok)$")
+    platform: str = Field(..., pattern="^(twitter|linkedin|instagram|facebook|tiktok)$")
     industry_context: Optional[str] = Field(None, max_length=1000)
 
 class ContentResponse(BaseModel):
@@ -115,9 +115,9 @@ async def create_content(
 async def get_user_content(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
-    platform: Optional[str] = Query(None, regex="^(twitter|linkedin|instagram|facebook|tiktok)$"),
-    status: Optional[str] = Query(None, regex="^(draft|scheduled|published|failed)$"),
-    content_type: Optional[str] = Query(None, regex="^(text|image|video|carousel)$"),
+    platform: Optional[str] = Query(None, pattern="^(twitter|linkedin|instagram|facebook|tiktok)$"),
+    status: Optional[str] = Query(None, pattern="^(draft|scheduled|published|failed)$"),
+    content_type: Optional[str] = Query(None, pattern="^(text|image|video|carousel)$"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0)
 ):
@@ -430,9 +430,9 @@ async def generate_content(
 
 @router.post("/generate-ideas")
 async def generate_content_ideas(
-    platform: str = Query(..., regex="^(twitter|linkedin|instagram|facebook|tiktok)$"),
+    platform: str = Query(..., pattern="^(twitter|linkedin|instagram|facebook|tiktok)$"),
     topic: Optional[str] = Query(None),
-    tone: str = Query("professional", regex="^(professional|casual|humorous|inspiring|educational)$"),
+    tone: str = Query("professional", pattern="^(professional|casual|humorous|inspiring|educational)$"),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):

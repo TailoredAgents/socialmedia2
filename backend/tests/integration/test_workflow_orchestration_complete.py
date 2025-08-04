@@ -16,7 +16,7 @@ from backend.db.models import User, ContentItem, WorkflowExecution, ResearchData
 from backend.services.workflow_orchestration import workflow_orchestrator
 from backend.services.research_automation import research_service
 from backend.services.content_automation import content_automation_service
-from backend.integrations.twitter_client import TwitterClient
+from backend.integrations.twitter_client import TwitterAPIClient as TwitterClient
 from backend.integrations.linkedin_client import LinkedInClient
 
 

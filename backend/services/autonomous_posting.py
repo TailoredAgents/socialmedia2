@@ -9,10 +9,10 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
 from backend.db.models import ContentLog, User
-from backend.integrations.twitter_client import TwitterClient
-from backend.integrations.linkedin_client import LinkedInClient
-from backend.integrations.instagram_client import InstagramClient
-from backend.integrations.facebook_client import FacebookClient
+from backend.integrations.twitter_client import TwitterAPIClient as TwitterClient
+from backend.integrations.linkedin_client import LinkedInAPIClient as LinkedInClient
+from backend.integrations.instagram_client import InstagramAPIClient as InstagramClient
+from backend.integrations.facebook_client import FacebookAPIClient as FacebookClient
 from backend.services.research_automation_service import ResearchAutomationService
 from backend.agents.tools import openai_tool
 from backend.core.config import get_settings

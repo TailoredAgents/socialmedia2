@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { AlertTriangle, AlertCircle, Info, RefreshCw, Download, Activity } from 'lucide-react';
+import { AlertTriangle, AlertCircle, Info, RefreshCw, Download, Activity, Wifi, WifiOff } from 'lucide-react';
 import apiService from '../services/api';
+import errorReporter from '../utils/errorReporter.jsx';
 
 const ErrorLogs = () => {
   const [logs, setLogs] = useState([]);
@@ -9,6 +10,8 @@ const ErrorLogs = () => {
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [wsConnected, setWsConnected] = useState(false);
+  const [backendAvailable, setBackendAvailable] = useState(true);
+  const [showingLocalLogs, setShowingLocalLogs] = useState(false);
   const wsRef = useRef(null);
   const refreshIntervalRef = useRef(null);
 
@@ -17,8 +20,15 @@ const ErrorLogs = () => {
     try {
       const response = await apiService.request(`/api/system/logs?log_type=${filter}&limit=100`);
       setLogs(response.logs || []);
+      setBackendAvailable(true);
+      setShowingLocalLogs(false);
     } catch (error) {
       console.error('Failed to fetch logs:', error);
+      setBackendAvailable(false);
+      // Fallback to local logs
+      const localLogs = errorReporter.getLocalErrors(100);
+      setLogs(localLogs);
+      setShowingLocalLogs(true);
     }
   };
 
@@ -29,6 +39,21 @@ const ErrorLogs = () => {
       setStats(response);
     } catch (error) {
       console.error('Failed to fetch stats:', error);
+      // Generate local stats
+      const localLogs = errorReporter.getLocalErrors();
+      const localStats = {
+        total_errors: localLogs.filter(log => log.severity === 'error' || log.type === 'network-error').length,
+        total_warnings: localLogs.filter(log => log.severity === 'warning').length,
+        errors_last_hour: localLogs.filter(log => {
+          const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+          return new Date(log.timestamp) > hourAgo;
+        }).length,
+        errors_last_day: localLogs.filter(log => {
+          const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+          return new Date(log.timestamp) > dayAgo;
+        }).length
+      };
+      setStats(localStats);
     }
   };
 
@@ -174,6 +199,20 @@ const ErrorLogs = () => {
         </div>
         
         <div className="flex items-center gap-2">
+          {/* Backend Status */}
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+            backendAvailable ? 'bg-green-100' : 'bg-red-100'
+          }`}>
+            {backendAvailable ? (
+              <Wifi className="text-green-500" size={16} />
+            ) : (
+              <WifiOff className="text-red-500" size={16} />
+            )}
+            <span className="text-sm">
+              {backendAvailable ? 'Backend Connected' : 'Backend Down'}
+            </span>
+          </div>
+
           {/* WebSocket Status */}
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100">
             <Activity 
@@ -248,6 +287,22 @@ const ErrorLogs = () => {
               {stats.errors_last_day || 0}
             </div>
             <div className="text-sm text-gray-600">Errors (Last 24h)</div>
+          </div>
+        </div>
+      )}
+
+      {/* Backend Status Banner */}
+      {showingLocalLogs && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="text-yellow-600" size={20} />
+            <div>
+              <h3 className="font-medium text-yellow-800">Showing Local Error Logs</h3>
+              <p className="text-sm text-yellow-700 mt-1">
+                Backend is unavailable. Displaying {logs.length} errors stored locally in your browser.
+                These errors are automatically captured from your console.
+              </p>
+            </div>
           </div>
         </div>
       )}

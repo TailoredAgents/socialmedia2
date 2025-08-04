@@ -5,7 +5,9 @@ class ErrorReporter {
   constructor() {
     this.setupErrorHandlers();
     this.errorQueue = [];
+    this.localErrors = this.loadLocalErrors();
     this.isOnline = navigator.onLine;
+    this.maxLocalErrors = 1000;
     
     // Listen for online/offline events
     window.addEventListener('online', () => {
@@ -16,6 +18,39 @@ class ErrorReporter {
     window.addEventListener('offline', () => {
       this.isOnline = false;
     });
+  }
+
+  // Load errors from localStorage
+  loadLocalErrors() {
+    try {
+      const stored = localStorage.getItem('aiSocial_errorLogs');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      console.warn('Failed to load local errors:', e);
+      return [];
+    }
+  }
+
+  // Save errors to localStorage
+  saveLocalErrors() {
+    try {
+      // Keep only the most recent errors
+      const errors = this.localErrors.slice(0, this.maxLocalErrors);
+      localStorage.setItem('aiSocial_errorLogs', JSON.stringify(errors));
+    } catch (e) {
+      console.warn('Failed to save local errors:', e);
+    }
+  }
+
+  // Get local errors (for displaying when backend is down)
+  getLocalErrors(limit = 100) {
+    return this.localErrors.slice(0, limit);
+  }
+
+  // Clear local errors
+  clearLocalErrors() {
+    this.localErrors = [];
+    localStorage.removeItem('aiSocial_errorLogs');
   }
 
   setupErrorHandlers() {
@@ -56,7 +91,8 @@ class ErrorReporter {
       screen: {
         width: window.screen.width,
         height: window.screen.height
-      }
+      },
+      id: Date.now() + Math.random()
     };
 
     // Add stack trace if available
@@ -64,13 +100,20 @@ class ErrorReporter {
       error.stack = errorData.error.stack;
     }
 
-    // Add to queue
+    // Always store locally first
+    this.localErrors.unshift(error);
+    this.saveLocalErrors();
+
+    // Also add to queue for backend
     this.errorQueue.push(error);
 
     // Try to send immediately if online
     if (this.isOnline) {
       this.flushErrorQueue();
     }
+
+    // Log to console as well
+    console.error('Error captured:', error);
   }
 
   async flushErrorQueue() {

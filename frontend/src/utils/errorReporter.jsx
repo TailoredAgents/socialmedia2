@@ -119,6 +119,13 @@ class ErrorReporter {
   async flushErrorQueue() {
     if (this.errorQueue.length === 0) return;
 
+    // Circuit breaker - if we've failed too many times, stop trying
+    if (this.failureCount > 10) {
+      console.warn('Error reporting disabled - too many failures');
+      this.errorQueue = []; // Clear queue to prevent memory leak
+      return;
+    }
+
     const errors = [...this.errorQueue];
     this.errorQueue = [];
 
@@ -128,10 +135,19 @@ class ErrorReporter {
           method: 'POST',
           body: error
         });
+        this.failureCount = 0; // Reset on success
       } catch (e) {
-        // If failed, add back to queue
-        this.errorQueue.push(error);
-        console.error('Failed to report error:', e);
+        this.failureCount = (this.failureCount || 0) + 1;
+        
+        // Don't re-queue if we're failing too much
+        if (this.failureCount <= 5) {
+          this.errorQueue.push(error);
+        }
+        
+        // Don't log errors about error reporting (prevents loops)
+        if (!e.message.includes('/api/system/logs/error')) {
+          console.error('Failed to report error:', e);
+        }
       }
     }
   }

@@ -13,6 +13,23 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }) => {
+  // Check if Auth0 is available
+  let auth0Data
+  try {
+    auth0Data = useAuth0()
+  } catch (error) {
+    // Auth0 not available, provide mock data for development
+    auth0Data = {
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      loginWithRedirect: () => console.log('Auth0 not configured'),
+      logout: () => console.log('Auth0 not configured'),
+      getAccessTokenSilently: () => Promise.resolve(null),
+      getIdTokenClaims: () => Promise.resolve(null)
+    }
+  }
+  
   const {
     user,
     isAuthenticated,
@@ -21,7 +38,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     getAccessTokenSilently,
     getIdTokenClaims
-  } = useAuth0()
+  } = auth0Data
   
   const [accessToken, setAccessToken] = useState(null)
   const [userProfile, setUserProfile] = useState(null)

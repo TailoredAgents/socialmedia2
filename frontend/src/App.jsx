@@ -1,7 +1,6 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Auth0Provider } from '@auth0/auth0-react'
 
 // Context Providers
 import { AuthProvider } from './contexts/AuthContext'
@@ -39,17 +38,7 @@ const queryClient = new QueryClient({
   }
 })
 
-// Auth0 Configuration with error handling
-const auth0Config = {
-  domain: import.meta.env.VITE_AUTH0_DOMAIN || 'placeholder.auth0.com',
-  clientId: import.meta.env.VITE_AUTH0_CLIENT_ID || 'placeholder-client-id',
-  authorizationParams: {
-    redirect_uri: window.location.origin,
-    audience: import.meta.env.VITE_AUTH0_AUDIENCE || 'https://placeholder.com/api',
-    scope: 'openid profile email'
-  },
-  skipRedirectCallback: true, // Prevent Auth0 from breaking on invalid config
-}
+// No authentication configuration needed
 
 function AppRoutes() {
   return (
@@ -165,33 +154,16 @@ function AppRoutes() {
   )
 }
 
-// Safe Auth0 wrapper component
-function SafeAuth0Provider({ children }) {
-  const hasValidAuth0Config = import.meta.env.VITE_AUTH0_DOMAIN && 
-                              import.meta.env.VITE_AUTH0_CLIENT_ID &&
-                              import.meta.env.VITE_AUTH0_DOMAIN !== 'placeholder.auth0.com'
-
-  if (!hasValidAuth0Config) {
-    console.warn('Auth0 configuration missing or invalid, running in development mode')
-    // Return children without Auth0 provider in development
-    return children
-  }
-
-  return <Auth0Provider {...auth0Config}>{children}</Auth0Provider>
-}
-
 function App() {
   return (
     <ErrorBoundary>
-      <SafeAuth0Provider>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <Router>
-              <AppRoutes />
-            </Router>
-          </AuthProvider>
-        </QueryClientProvider>
-      </SafeAuth0Provider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Router>
+            <AppRoutes />
+          </Router>
+        </AuthProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   )
 }

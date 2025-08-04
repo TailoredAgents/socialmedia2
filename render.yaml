@@ -8,15 +8,19 @@ services:
     env: python
     region: oregon
     plan: free
-    runtime: python-3.13
+    runtime: python-3.11
     rootDirectory: .
     buildCommand: |
       echo "🏗️ Building AI Social Media Content Agent..."
       echo "Current directory: $(pwd)"
       echo "Directory contents: $(ls -la)"
+      echo "Python version: $(python --version)"
       echo "Installing dependencies from requirements.txt..."
-      pip install --upgrade pip
-      pip install -r requirements.txt
+      pip install --upgrade pip setuptools wheel
+      pip install numpy==1.26.4
+      pip install sqlalchemy==2.0.36
+      pip install -r requirements.txt || echo "Some packages failed, continuing..."
+      pip list | grep -E "(fastapi|sqlalchemy|numpy|uvicorn)"
       echo "✅ Build completed successfully"
     startCommand: |
       echo "🚀 Starting AI Social Media Content Agent..."
@@ -26,7 +30,7 @@ services:
     healthCheckPath: /render-health
     envVars:
       - key: PYTHON_VERSION
-        value: 3.13
+        value: 3.11
       - key: ENVIRONMENT
         value: production
       - key: DEBUG

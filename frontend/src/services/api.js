@@ -1,5 +1,5 @@
 import { error as logError } from '../utils/logger.js'
-import errorReporter from '../utils/errorReporter.js'
+import errorReporter from '../utils/errorReporter.jsx'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 

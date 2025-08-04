@@ -7,7 +7,7 @@ import { Auth0Provider } from '@auth0/auth0-react'
 import { AuthProvider } from './contexts/AuthContext'
 
 // Error handling
-import { ErrorBoundary } from './utils/errorReporter'
+import { ErrorBoundary } from './utils/errorReporter.jsx'
 
 // Components
 import Layout from './components/Layout'

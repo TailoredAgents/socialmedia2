@@ -160,7 +160,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     if args.render:
-        base_url = "https://ai-social-backend-standalone.onrender.com"
+        base_url = "https://ai-social-backend.onrender.com"
     else:
         base_url = args.url
     

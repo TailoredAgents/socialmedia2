@@ -11,8 +11,8 @@
 **Solution**: ✅ **FIXED** - Proper uvicorn configuration with `$PORT` variable
 
 ### **Issue #3: Frontend Can't Connect to Backend**
-**Problem**: Wrong API URL in frontend config
-**Solution**: ✅ **FIXED** - Updated to `ai-social-backend-standalone.onrender.com`
+**Problem**: Wrong API URL in frontend config  
+**Solution**: ✅ **FIXED** - Using existing service `ai-social-backend.onrender.com`
 
 ### **Issue #4: Missing Dependencies Crash**
 **Problem**: Optional dependencies like CrewAI causing import errors
@@ -29,7 +29,7 @@ git push origin master
 
 ### **2. Redeploy on Render**
 1. Go to your Render dashboard
-2. Find "ai-social-backend-standalone" service
+2. Find "ai-social-backend" service  
 3. Click "Manual Deploy" or wait for auto-deploy
 4. Monitor build logs for errors
 
@@ -43,9 +43,9 @@ python verify_deployment.py --render
 ```
 
 ### **4. Check Health Endpoints**
-- **Health Check**: https://ai-social-backend-standalone.onrender.com/render-health
-- **API Status**: https://ai-social-backend-standalone.onrender.com/health
-- **Documentation**: https://ai-social-backend-standalone.onrender.com/docs
+- **Health Check**: https://ai-social-backend.onrender.com/render-health
+- **API Status**: https://ai-social-backend.onrender.com/health  
+- **Documentation**: https://ai-social-backend.onrender.com/docs
 
 ## 📊 **Diagnostic Endpoints**
 
@@ -110,18 +110,18 @@ Interactive Swagger UI for testing all endpoints.
 
 ### **Check Server Status**
 ```bash
-curl https://ai-social-backend-standalone.onrender.com/render-health
+curl https://ai-social-backend.onrender.com/render-health
 ```
 
 ### **Test Image Endpoint**
 ```bash
-curl -X GET https://ai-social-backend-standalone.onrender.com/api/content/generate-image
+curl -X GET https://ai-social-backend.onrender.com/api/content/generate-image
 # Should return 403 (auth required), not 404
 ```
 
 ### **Verify Environment**
 ```bash
-curl https://ai-social-backend-standalone.onrender.com/health
+curl https://ai-social-backend.onrender.com/health
 # Check environment variables and services status
 ```
 
@@ -138,7 +138,7 @@ curl https://ai-social-backend-standalone.onrender.com/health
 - `TWITTER_API_KEY`, `LINKEDIN_CLIENT_ID`, etc. (Social media APIs)
 
 ### **Frontend Variables**
-- ✅ `VITE_API_BASE_URL=https://ai-social-backend-standalone.onrender.com`
+- ✅ `VITE_API_BASE_URL=https://ai-social-backend.onrender.com`
 - `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID` (Authentication)
 
 ## 🚀 **Performance Optimizations**

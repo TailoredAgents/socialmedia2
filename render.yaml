@@ -2,9 +2,9 @@
 # Deploy with: render-cli deploy --blueprint render.yaml
 
 services:
-  # Backend API Service (New Standalone Version)
+  # Backend API Service
   - type: web
-    name: ai-social-backend-standalone
+    name: ai-social-backend
     env: python
     region: oregon
     plan: free
@@ -82,7 +82,7 @@ services:
       - key: CORS_ORIGINS
         value: https://ai-social-frontend.onrender.com,http://localhost:5173
       - key: ALLOWED_HOSTS
-        value: ai-social-backend-standalone.onrender.com,localhost,127.0.0.1
+        value: ai-social-backend.onrender.com,localhost,127.0.0.1
 
   # Frontend Service
   - type: web
@@ -99,7 +99,7 @@ services:
       npm run preview -- --host 0.0.0.0 --port $PORT
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://ai-social-backend-standalone.onrender.com
+        value: https://ai-social-backend.onrender.com
       - key: VITE_ENVIRONMENT
         value: production
         # Force rebuild to ensure environment variables take effect

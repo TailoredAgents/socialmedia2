@@ -6,6 +6,9 @@ import { Auth0Provider } from '@auth0/auth0-react'
 // Context Providers
 import { AuthProvider } from './contexts/AuthContext'
 
+// Error handling
+import { ErrorBoundary } from './utils/errorReporter'
+
 // Components
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -22,6 +25,7 @@ import Content from './pages/Content'
 import MemoryExplorer from './pages/MemoryExplorer'
 import GoalTracking from './pages/GoalTracking'
 import Settings from './pages/Settings'
+import ErrorLogs from './components/ErrorLogs'
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -141,6 +145,16 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/error-logs"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <ErrorLogs />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       
@@ -152,15 +166,17 @@ function AppRoutes() {
 
 function App() {
   return (
-    <Auth0Provider {...auth0Config}>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Router>
-            <AppRoutes />
-          </Router>
-        </AuthProvider>
-      </QueryClientProvider>
-    </Auth0Provider>
+    <ErrorBoundary>
+      <Auth0Provider {...auth0Config}>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <Router>
+              <AppRoutes />
+            </Router>
+          </AuthProvider>
+        </QueryClientProvider>
+      </Auth0Provider>
+    </ErrorBoundary>
   )
 }
 

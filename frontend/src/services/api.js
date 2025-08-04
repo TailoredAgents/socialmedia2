@@ -1,4 +1,5 @@
 import { error as logError } from '../utils/logger.js'
+import errorReporter from '../utils/errorReporter.js'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -36,6 +37,15 @@ class ApiService {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
+        
+        // Report API errors
+        errorReporter.logNetworkError(
+          endpoint,
+          config.method || 'GET',
+          response.status,
+          errorData.detail || `HTTP error! status: ${response.status}`
+        )
+        
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`)
       }
 

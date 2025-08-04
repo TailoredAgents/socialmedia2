@@ -14,7 +14,8 @@ import {
   CheckCircleIcon,
   ArrowRightOnRectangleIcon,
   BoltIcon,
-  PlusIcon
+  PlusIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 
 const navigation = [
@@ -26,6 +27,7 @@ const navigation = [
   { name: 'Content', href: '/content', icon: DocumentTextIcon },
   { name: 'Memory', href: '/memory', icon: CpuChipIcon },
   { name: 'Goals', href: '/goals', icon: CheckCircleIcon },
+  { name: 'Error Logs', href: '/error-logs', icon: ExclamationTriangleIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ]
 

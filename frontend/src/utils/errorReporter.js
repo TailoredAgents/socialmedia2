@@ -1,0 +1,180 @@
+import React from 'react';
+import apiService from '../services/api';
+
+class ErrorReporter {
+  constructor() {
+    this.setupErrorHandlers();
+    this.errorQueue = [];
+    this.isOnline = navigator.onLine;
+    
+    // Listen for online/offline events
+    window.addEventListener('online', () => {
+      this.isOnline = true;
+      this.flushErrorQueue();
+    });
+    
+    window.addEventListener('offline', () => {
+      this.isOnline = false;
+    });
+  }
+
+  setupErrorHandlers() {
+    // Global error handler
+    window.addEventListener('error', (event) => {
+      this.reportError({
+        message: event.message,
+        source: event.filename,
+        line: event.lineno,
+        column: event.colno,
+        error: event.error,
+        type: 'javascript-error'
+      });
+    });
+
+    // Promise rejection handler
+    window.addEventListener('unhandledrejection', (event) => {
+      this.reportError({
+        message: event.reason?.message || event.reason || 'Unhandled Promise Rejection',
+        error: event.reason,
+        type: 'unhandled-rejection'
+      });
+    });
+
+    // React Error Boundary errors are handled separately
+  }
+
+  reportError(errorData) {
+    const error = {
+      ...errorData,
+      timestamp: new Date().toISOString(),
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      viewport: {
+        width: window.innerWidth,
+        height: window.innerHeight
+      },
+      screen: {
+        width: window.screen.width,
+        height: window.screen.height
+      }
+    };
+
+    // Add stack trace if available
+    if (errorData.error && errorData.error.stack) {
+      error.stack = errorData.error.stack;
+    }
+
+    // Add to queue
+    this.errorQueue.push(error);
+
+    // Try to send immediately if online
+    if (this.isOnline) {
+      this.flushErrorQueue();
+    }
+  }
+
+  async flushErrorQueue() {
+    if (this.errorQueue.length === 0) return;
+
+    const errors = [...this.errorQueue];
+    this.errorQueue = [];
+
+    for (const error of errors) {
+      try {
+        await apiService.request('/api/system/logs/error', {
+          method: 'POST',
+          body: error
+        });
+      } catch (e) {
+        // If failed, add back to queue
+        this.errorQueue.push(error);
+        console.error('Failed to report error:', e);
+      }
+    }
+  }
+
+  // Manual error reporting
+  logError(message, details = {}) {
+    this.reportError({
+      message,
+      ...details,
+      type: 'manual-log'
+    });
+  }
+
+  // Network error reporting
+  logNetworkError(url, method, status, error) {
+    this.reportError({
+      message: `Network error: ${method} ${url} - ${status}`,
+      endpoint: url,
+      method,
+      status,
+      error: error?.message || error,
+      type: 'network-error'
+    });
+  }
+
+  // Performance issue reporting
+  logPerformanceIssue(metric, value, threshold) {
+    if (value > threshold) {
+      this.reportError({
+        message: `Performance issue: ${metric} exceeded threshold`,
+        metric,
+        value,
+        threshold,
+        type: 'performance-issue',
+        severity: 'warning'
+      });
+    }
+  }
+}
+
+// Create singleton instance
+const errorReporter = new ErrorReporter();
+
+// Export for use in React components
+export default errorReporter;
+
+// React Error Boundary
+export class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    errorReporter.reportError({
+      message: error.toString(),
+      componentStack: errorInfo.componentStack,
+      error,
+      type: 'react-error-boundary'
+    });
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+            <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
+            <p className="text-gray-600 mb-4">
+              An error occurred while rendering this component. The error has been logged.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}

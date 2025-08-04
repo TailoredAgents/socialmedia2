@@ -53,12 +53,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add error tracking middleware
+try:
+    from backend.middleware.error_tracking import error_tracking_middleware, log_404_errors
+    app.middleware("http")(error_tracking_middleware)
+    app.middleware("http")(log_404_errors)
+    logger.info("✅ Error tracking middleware added")
+except Exception as e:
+    logger.warning(f"⚠️ Could not add error tracking middleware: {e}")
+
 # Track loaded routers
 loaded_routers = []
 failed_routers = []
 
 # Define all routers to load
 routers_config = [
+    ("system_logs", "backend.api.system_logs", "/api/system"),
     ("content", "backend.api.content", "/api/content"),
     ("autonomous", "backend.api.autonomous", "/api/autonomous"),
     ("memory", "backend.api.memory", "/api/memory"),

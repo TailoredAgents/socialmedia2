@@ -115,27 +115,27 @@ class ImageGenerationService:
             if custom_options:
                 tool_options.update(custom_options)
             
-            # Create image generation request
-            response = await asyncio.to_thread(
-                self.client.responses.create,
-                model="gpt-4.1-mini",
-                input=enhanced_prompt,
-                tools=[{
-                    "type": "image_generation",
-                    **tool_options
-                }]
+            # Create image generation request using real OpenAI Images API
+            image_response = await asyncio.to_thread(
+                self.client.images.generate,
+                model="dall-e-3",
+                prompt=enhanced_prompt,
+                size=tool_options.get("size", "1024x1024"),
+                quality=tool_options.get("quality", "standard"),
+                n=1
             )
             
-            # Extract image data
-            image_calls = [
-                output for output in response.output
-                if output.type == "image_generation_call"
-            ]
-            
-            if not image_calls:
+            # Extract image data from real OpenAI Images API response
+            if not image_response.data:
                 raise Exception("No image was generated")
             
-            image_call = image_calls[0]
+            image_data = image_response.data[0]
+            
+            # Download the image and convert to base64
+            import requests
+            image_url = image_data.url
+            image_content = requests.get(image_url).content
+            image_base64 = base64.b64encode(image_content).decode('utf-8')
             
             # Generate unique filename
             image_id = str(uuid.uuid4())
@@ -144,15 +144,15 @@ class ImageGenerationService:
             
             return {
                 "status": "success",
-                "image_id": image_call.id,
-                "response_id": response.id,
-                "image_base64": image_call.result,
-                "image_data_url": f"data:image/png;base64,{image_call.result}",
+                "image_id": image_id,
+                "image_url": image_url,
+                "image_base64": image_base64,
+                "image_data_url": f"data:image/png;base64,{image_base64}",
                 "filename": filename,
                 "prompt": {
                     "original": prompt,
                     "enhanced": enhanced_prompt,
-                    "revised": getattr(image_call, 'revised_prompt', enhanced_prompt)
+                    "revised": getattr(image_data, 'revised_prompt', enhanced_prompt)
                 },
                 "metadata": {
                     "platform": platform,

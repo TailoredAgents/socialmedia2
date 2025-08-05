@@ -28,7 +28,7 @@ services:
       echo "Python version: $(python3 --version)"
       echo "Python3 location: $(which python3)"
       echo "Uvicorn location: $(which uvicorn)"
-      python3 -m uvicorn app_fallback:app --host 0.0.0.0 --port $PORT --log-level info
+      python3 -m uvicorn app:app --host 0.0.0.0 --port $PORT --log-level info
     healthCheckPath: /render-health
     envVars:
       - key: PYTHON_VERSION

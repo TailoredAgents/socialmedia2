@@ -45,13 +45,30 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Add CORS middleware
+# Add CORS middleware with specific configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://ai-social-frontend.onrender.com",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:4173",
+        "*"  # Allow all as fallback
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Origin",
+        "Cache-Control"
+    ],
+    expose_headers=["*"],
+    max_age=86400,  # 24 hours
 )
 
 # Add error tracking middleware
@@ -79,24 +96,27 @@ routers_config = [
     ("metrics", "backend.api.metrics_stub"),
 ]
 
-# Load routers with detailed error handling
+# Load routers with detailed error handling - app will start even if routers fail
 for router_name, module_path in routers_config:
     try:
+        logger.info("Attempting to load {} router from {}".format(router_name, module_path))
         module = __import__(module_path, fromlist=['router'])
         router = getattr(module, 'router', None)
         if router:
             app.include_router(router, tags=[router_name])
             loaded_routers.append(router_name)
-            logger.info("{} router loaded successfully".format(router_name))
+            logger.info("✅ {} router loaded successfully".format(router_name))
         else:
             failed_routers.append((router_name, "No router attribute"))
-            logger.warning("{}: No router attribute found".format(router_name))
+            logger.warning("⚠️ {}: No router attribute found".format(router_name))
     except ImportError as e:
         failed_routers.append((router_name, str(e)))
-        logger.warning("{} router failed to load: {}".format(router_name, e))
+        logger.warning("⚠️ {} router failed to load (ImportError): {}".format(router_name, e))
     except Exception as e:
         failed_routers.append((router_name, str(e)))
-        logger.error("{} router error: {} - {}".format(router_name, type(e).__name__, e))
+        logger.error("❌ {} router error: {} - {}".format(router_name, type(e).__name__, e))
+        # Continue loading other routers even if one fails
+        continue
 
 # Root endpoints
 @app.get("/")
@@ -152,6 +172,72 @@ async def render_health():
         "loaded_modules": loaded_routers,
         "failed_modules": len(failed_routers)
     }
+
+# Fallback endpoints to prevent 404s if routers don't load
+@app.get("/api/notifications/")
+@app.options("/api/notifications/")
+async def notifications_fallback():
+    """Fallback for notifications endpoint"""
+    return {
+        "notifications": [],
+        "total": 0,
+        "message": "Notifications service not available - using fallback"
+    }
+
+@app.get("/api/system/logs")
+@app.options("/api/system/logs")
+async def system_logs_fallback():
+    """Fallback for system logs endpoint"""
+    return {
+        "logs": [],
+        "total": 0,
+        "message": "System logs service not available - using fallback"
+    }
+
+@app.get("/api/system/logs/stats")
+@app.options("/api/system/logs/stats")
+async def system_logs_stats_fallback():
+    """Fallback for system logs stats endpoint"""
+    return {
+        "total_errors": 0,
+        "total_warnings": 0,
+        "errors_last_hour": 0,
+        "errors_last_day": 0,
+        "message": "System logs service not available - using fallback"
+    }
+
+@app.get("/api/workflow/status/summary")
+@app.options("/api/workflow/status/summary")
+async def workflow_status_fallback():
+    """Fallback for workflow status endpoint"""
+    return {
+        "status": "unavailable",
+        "message": "Workflow service not available - using fallback"
+    }
+
+@app.get("/api/metrics")
+@app.options("/api/metrics")
+async def metrics_fallback():
+    """Fallback for metrics endpoint"""
+    return {
+        "metrics": {},
+        "message": "Metrics service not available - using fallback"
+    }
+
+@app.get("/api/autonomous/research/latest")
+@app.options("/api/autonomous/research/latest")
+async def autonomous_research_fallback():
+    """Fallback for autonomous research endpoint"""
+    return {
+        "research": [],
+        "message": "Autonomous research service not available - using fallback"
+    }
+
+# Handle all OPTIONS requests (CORS preflight)
+@app.options("/{full_path:path}")
+async def options_handler(full_path: str):
+    """Handle CORS preflight requests for any path"""
+    return {"message": "CORS preflight OK"}
 
 @app.exception_handler(404)
 async def not_found_handler(request, exc):

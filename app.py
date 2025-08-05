@@ -15,24 +15,24 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-logger.info("🚀 Starting AI Social Media Content Agent (Production)")
-logger.info(f"Python version: {sys.version}")
-logger.info(f"Working directory: {os.getcwd()}")
+logger.info("Starting AI Social Media Content Agent (Production)")
+logger.info("Python version: {}".format(sys.version))
+logger.info("Working directory: {}".format(os.getcwd()))
 
 # Add backend to Python path
 backend_path = Path(__file__).parent / "backend"
 if str(backend_path) not in sys.path:
     sys.path.insert(0, str(backend_path))
-    logger.info(f"Added backend path: {backend_path}")
+    logger.info("Added backend path: {}".format(backend_path))
 
 # Import FastAPI with fallback
 try:
     from fastapi import FastAPI
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse
-    logger.info("✅ FastAPI imported successfully")
+    logger.info("FastAPI imported successfully")
 except ImportError as e:
-    logger.error(f"❌ Failed to import FastAPI: {e}")
+    logger.error("Failed to import FastAPI: {}".format(e))
     logger.error("Please ensure FastAPI is installed: pip install fastapi")
     sys.exit(1)
 
@@ -59,9 +59,9 @@ try:
     from backend.middleware.error_tracking import error_tracking_middleware, log_404_errors
     app.middleware("http")(error_tracking_middleware)
     app.middleware("http")(log_404_errors)
-    logger.info("✅ Error tracking middleware added")
+    logger.info("Error tracking middleware added")
 except Exception as e:
-    logger.warning(f"⚠️ Could not add error tracking middleware: {e}")
+    logger.warning("Could not add error tracking middleware: {}".format(e))
 
 # Track loaded routers
 loaded_routers = []
@@ -87,16 +87,16 @@ for router_name, module_path in routers_config:
         if router:
             app.include_router(router, tags=[router_name])
             loaded_routers.append(router_name)
-            logger.info(f"✅ {router_name} router loaded successfully")
+            logger.info("{} router loaded successfully".format(router_name))
         else:
             failed_routers.append((router_name, "No router attribute"))
-            logger.warning(f"⚠️  {router_name}: No router attribute found")
+            logger.warning("{}: No router attribute found".format(router_name))
     except ImportError as e:
         failed_routers.append((router_name, str(e)))
-        logger.warning(f"⚠️  {router_name} router failed to load: {e}")
+        logger.warning("{} router failed to load: {}".format(router_name, e))
     except Exception as e:
         failed_routers.append((router_name, str(e)))
-        logger.error(f"❌ {router_name} router error: {type(e).__name__} - {e}")
+        logger.error("{} router error: {} - {}".format(router_name, type(e).__name__, e))
 
 # Root endpoints
 @app.get("/")
@@ -119,13 +119,13 @@ async def health_check():
     return {
         "status": "healthy",
         "version": "2.0.0",
-        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "python_version": "{}.{}.{}".format(sys.version_info.major, sys.version_info.minor, sys.version_info.micro),
         "environment": os.getenv("ENVIRONMENT", "production"),
         "uptime": "Running",
         "features": {
             "environment": os.getenv("ENVIRONMENT", "production"),
             "available_features": loaded_routers,
-            "missing_dependencies": [f"{name}: {error}" for name, error in failed_routers],
+            "missing_dependencies": ["{}: {}".format(name, error) for name, error in failed_routers],
             "total_features": len(loaded_routers),
             "status": "healthy" if len(loaded_routers) > 0 else "degraded"
         },
@@ -166,7 +166,7 @@ async def not_found_handler(request, exc):
     # Add loaded router endpoints
     for router_name in loaded_routers:
         if router_name in ["content", "auth", "memory", "goals"]:
-            available_endpoints.append(f"/api/{router_name}/")
+            available_endpoints.append("/api/{}/".format(router_name))
     
     return JSONResponse(
         status_code=404,
@@ -181,9 +181,9 @@ async def not_found_handler(request, exc):
 
 # Log startup summary
 logger.info("=" * 50)
-logger.info(f"✅ Loaded {len(loaded_routers)} routers successfully")
-logger.info(f"⚠️  Failed to load {len(failed_routers)} routers")
-logger.info(f"📊 Total routes: {len(app.routes)}")
+logger.info("Loaded {} routers successfully".format(len(loaded_routers)))
+logger.info("Failed to load {} routers".format(len(failed_routers)))
+logger.info("Total routes: {}".format(len(app.routes)))
 logger.info("=" * 50)
 
 # Export the app

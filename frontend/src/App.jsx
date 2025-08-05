@@ -30,10 +30,13 @@ import ErrorLogs from './components/ErrorLogs'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 2 * 60 * 1000, // 2 minutes
-      cacheTime: 10 * 60 * 1000, // 10 minutes
-      retry: 2,
-      refetchOnWindowFocus: false
+      staleTime: 10 * 60 * 1000, // 10 minutes - keep cached longer
+      cacheTime: 30 * 60 * 1000, // 30 minutes
+      retry: 0, // Disable retries to prevent CORS cascades
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false, // Don't refetch when reconnecting
+      refetchInterval: false, // Disable automatic refetching
+      enabled: true // Can be controlled per query
     }
   }
 })

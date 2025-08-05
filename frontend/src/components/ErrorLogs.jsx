@@ -8,7 +8,7 @@ const ErrorLogs = () => {
   const [stats, setStats] = useState(null);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(false); // Disabled to prevent CORS cascades
   const [wsConnected, setWsConnected] = useState(false);
   const [backendAvailable, setBackendAvailable] = useState(true);
   const [showingLocalLogs, setShowingLocalLogs] = useState(false);

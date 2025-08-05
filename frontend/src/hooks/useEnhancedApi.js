@@ -44,12 +44,12 @@ export const useEnhancedApi = () => {
     options = {}
   ) => {
     const {
-      retries = 3,
-      retryDelay = 1000,
+      retries = 0, // Disable retries to prevent cascading
+      retryDelay = 5000, // Longer delays if retries happen
       cache: shouldCache = false,
       cacheKey = null,
       cacheTTL = 300000, // 5 minutes
-      showNotification = true,
+      showNotification = false, // Disable notifications to reduce noise
       onSuccess = null,
       onError = null,
       requestArgs = []
@@ -65,6 +65,11 @@ export const useEnhancedApi = () => {
 
     const executeRequest = async (attempt = 1) => {
       try {
+        // Skip request if backend is known to be down
+        if (connectionStatus === 'disconnected') {
+          throw new Error('Backend is down - skipping request to prevent CORS errors')
+        }
+        
         setConnectionStatus('connected')
         const result = await requestFn(...requestArgs)
         

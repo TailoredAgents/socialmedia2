@@ -79,6 +79,17 @@ class ErrorReporter {
   }
 
   reportError(errorData) {
+    // Skip CORS errors to prevent infinite loops
+    if (errorData.message && (
+      errorData.message.includes('CORS') ||
+      errorData.message.includes('Cross-Origin') ||
+      errorData.message.includes('blocked by CORS') ||
+      errorData.message.includes('Access-Control-Allow-Origin')
+    )) {
+      console.warn('CORS error detected, skipping error reporting to prevent loops');
+      return;
+    }
+
     const error = {
       ...errorData,
       timestamp: new Date().toISOString(),
@@ -120,7 +131,7 @@ class ErrorReporter {
     if (this.errorQueue.length === 0) return;
 
     // Circuit breaker - if we've failed too many times, stop trying
-    if (this.failureCount > 10) {
+    if (this.failureCount > 3) {  // Reduced threshold to prevent CORS loops
       console.warn('Error reporting disabled - too many failures');
       this.errorQueue = []; // Clear queue to prevent memory leak
       return;
@@ -139,8 +150,8 @@ class ErrorReporter {
       } catch (e) {
         this.failureCount = (this.failureCount || 0) + 1;
         
-        // Don't re-queue if we're failing too much
-        if (this.failureCount <= 5) {
+        // Don't re-queue if we're failing too much (reduced to prevent CORS loops)
+        if (this.failureCount <= 2) {
           this.errorQueue.push(error);
         }
         

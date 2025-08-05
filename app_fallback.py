@@ -45,13 +45,30 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Add CORS middleware
+# Add CORS middleware with specific configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://ai-social-frontend.onrender.com",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:4173",
+        "*"  # Allow all as fallback
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Origin",
+        "Cache-Control"
+    ],
+    expose_headers=["*"],
+    max_age=86400,  # 24 hours
 )
 
 # Track loaded routers
@@ -165,6 +182,7 @@ async def render_health():
 
 # Basic error handling endpoints to prevent 404s
 @app.get("/api/notifications/")
+@app.options("/api/notifications/")
 async def notifications_fallback():
     """Fallback for notifications endpoint"""
     return {
@@ -174,6 +192,7 @@ async def notifications_fallback():
     }
 
 @app.get("/api/system/logs")
+@app.options("/api/system/logs")
 async def system_logs_fallback():
     """Fallback for system logs endpoint"""
     return {
@@ -183,6 +202,7 @@ async def system_logs_fallback():
     }
 
 @app.get("/api/system/logs/stats")
+@app.options("/api/system/logs/stats")
 async def system_logs_stats_fallback():
     """Fallback for system logs stats endpoint"""
     return {
@@ -194,6 +214,7 @@ async def system_logs_stats_fallback():
     }
 
 @app.get("/api/workflow/status/summary")
+@app.options("/api/workflow/status/summary")
 async def workflow_status_fallback():
     """Fallback for workflow status endpoint"""
     return {
@@ -202,6 +223,7 @@ async def workflow_status_fallback():
     }
 
 @app.get("/api/metrics")
+@app.options("/api/metrics")
 async def metrics_fallback():
     """Fallback for metrics endpoint"""
     return {
@@ -210,12 +232,19 @@ async def metrics_fallback():
     }
 
 @app.get("/api/autonomous/research/latest")
+@app.options("/api/autonomous/research/latest")
 async def autonomous_research_fallback():
     """Fallback for autonomous research endpoint"""
     return {
         "research": [],
         "message": "Autonomous research service not available - using fallback"
     }
+
+# Handle all OPTIONS requests (CORS preflight)
+@app.options("/{full_path:path}")
+async def options_handler(full_path: str):
+    """Handle CORS preflight requests for any path"""
+    return {"message": "CORS preflight OK"}
 
 @app.exception_handler(404)
 async def not_found_handler(request, exc):

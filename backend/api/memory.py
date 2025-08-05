@@ -14,6 +14,38 @@ class SearchRequest(BaseModel):
     top_k: int = 5
     threshold: float = 0.7
 
+@router.get("/")
+async def get_all_memory(
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=100)
+):
+    """Get all stored memory content with pagination"""
+    try:
+        # Get all metadata entries (simplified pagination for now)
+        all_entries = list(memory_system.metadata.values())
+        
+        # Calculate pagination
+        total = len(all_entries)
+        start_idx = (page - 1) * limit
+        end_idx = start_idx + limit
+        
+        # Get paginated results
+        paginated_entries = all_entries[start_idx:end_idx]
+        
+        return {
+            "status": "success",
+            "content": paginated_entries,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "pages": (total + limit - 1) // limit
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving memory content: {str(e)}")
+
 @router.post("/store")
 async def store_content(request: ContentRequest):
     """Store content in memory system"""

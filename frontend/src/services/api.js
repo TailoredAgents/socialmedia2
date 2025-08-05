@@ -109,14 +109,18 @@ class ApiService {
   }
 
   async searchMemory(query, limit = 5) {
-    return this.request('/api/memory/search', {
+    const response = await this.request('/api/memory/search', {
       method: 'POST',
-      body: { query, limit }
+      body: { query, top_k: limit }
     })
+    // Extract results array from response object
+    return response.results || []
   }
 
   async getAllMemory(page = 1, limit = 20) {
-    return this.request(`/api/memory/?page=${page}&limit=${limit}`)
+    const response = await this.request(`/api/memory/?page=${page}&limit=${limit}`)
+    // Extract content array from response object
+    return response.content || []
   }
 
   async getMemoryById(contentId) {
@@ -263,7 +267,9 @@ class ApiService {
   }
 
   async getContent(page = 1, limit = 20) {
-    return this.request(`/api/content/?page=${page}&limit=${limit}`)
+    const response = await this.request(`/api/content/?page=${page}&limit=${limit}`)
+    // Extract content array from response object
+    return response.content || []
   }
 
   async getContentById(contentId) {
@@ -297,7 +303,9 @@ class ApiService {
   }
 
   async getUpcomingContent() {
-    return this.request('/api/content/scheduled/upcoming')
+    const response = await this.request('/api/content/scheduled/upcoming')
+    // Extract scheduled_content array from response object
+    return response.scheduled_content || []
   }
 
   async getContentAnalytics() {

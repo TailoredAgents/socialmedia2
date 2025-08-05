@@ -25,8 +25,10 @@ services:
     startCommand: |
       echo "🚀 Starting AI Social Media Content Agent..."
       echo "Working directory: $(pwd)"
-      echo "Python version: $(python --version)"
-      uvicorn app:app --host 0.0.0.0 --port $PORT --log-level info
+      echo "Python version: $(python3 --version)"
+      echo "Python3 location: $(which python3)"
+      echo "Uvicorn location: $(which uvicorn)"
+      python3 -m uvicorn app_fallback:app --host 0.0.0.0 --port $PORT --log-level info
     healthCheckPath: /render-health
     envVars:
       - key: PYTHON_VERSION

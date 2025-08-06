@@ -55,24 +55,61 @@ export default function CreatePost() {
   const conductIndustryResearch = async () => {
     setIsResearching(true)
     try {
-      // Call actual research API
-      const response = await api.autonomous.getLatestResearch()
-      console.log('Research API response:', response) // Debug log
+      // Get settings from localStorage to use for personalized research
+      const savedSettings = localStorage.getItem('userSettings')
+      const settings = savedSettings ? JSON.parse(savedSettings) : null
+      const industryContext = settings?.industryContext
       
-      const researchData = {
-        industry: response.industry || 'N/A',
-        trends: Array.isArray(response.trends) ? response.trends : [],
-        keyTopics: [],
-        contentSuggestions: Array.isArray(response.content_opportunities) ? response.content_opportunities : [],
-        competitorInsights: Array.isArray(response.insights) ? response.insights : []
+      console.log('Using industry context from settings:', industryContext) // Debug log
+      
+      // If we have company name, do personalized research
+      if (industryContext?.companyName?.trim()) {
+        console.log('Conducting personalized research for:', industryContext.companyName)
+        
+        // Call personalized research API
+        const response = await api.autonomous.researchCompany(industryContext.companyName)
+        
+        if (response && response.success) {
+          const researchData = {
+            industry: response.industry || industryContext.industry || 'N/A',
+            trends: [], // Will be populated from insights
+            keyTopics: industryContext.keyTopics ? industryContext.keyTopics.split(',').map(t => t.trim()) : [],
+            contentSuggestions: [],
+            competitorInsights: []
+          }
+          
+          // Extract insights from the response
+          const insights = response.insights || {}
+          if (insights.content_themes) {
+            researchData.contentSuggestions = insights.content_themes.map(theme => theme.content_opportunity || theme.insight).filter(Boolean)
+          }
+          if (insights.recent_news) {
+            researchData.competitorInsights = insights.recent_news.map(news => news.insight).filter(Boolean)
+          }
+          
+          setResearchData(researchData)
+          setIndustryContext(`Based on research for ${industryContext.companyName} in ${researchData.industry}`)
+          
+          console.log('Personalized research data:', researchData) // Debug log
+        } else {
+          throw new Error('Company research failed')
+        }
+      } else {
+        // Fallback to generic industry research if no company name
+        console.log('No company name found, using generic research')
+        const response = await api.autonomous.getLatestResearch()
+        
+        const researchData = {
+          industry: industryContext?.industry || response.industry || 'AI Agent Products',
+          trends: Array.isArray(response.trends) ? response.trends : [],
+          keyTopics: industryContext?.keyTopics ? industryContext.keyTopics.split(',').map(t => t.trim()) : [],
+          contentSuggestions: Array.isArray(response.content_opportunities) ? response.content_opportunities : [],
+          competitorInsights: Array.isArray(response.insights) ? response.insights : []
+        }
+        
+        setResearchData(researchData)
+        setIndustryContext(`Based on current trends in ${researchData.industry}`)
       }
-      
-      console.log('Processed research data:', researchData) // Debug log
-      
-      setResearchData(researchData)
-      setIndustryContext(researchData.industry !== 'N/A' ? 
-        `Based on current trends in ${researchData.industry}` : 
-        'No research data available')
     } catch (error) {
       logError('Research failed:', error)
       showError('Failed to conduct industry research')
@@ -112,12 +149,22 @@ export default function CreatePost() {
       // Phase 1: Generate Caption First
       showProgress("Creating your caption with industry insights... ✍️", null)
       
-      // Step 1: Get company research data for enhanced context
+      // Step 1: Get company research data for enhanced context using settings
       let companyResearchData = null
       try {
-        const researchResponse = await api.autonomous.researchCompany('Your Company')
-        if (researchResponse && researchResponse.success) {
-          companyResearchData = researchResponse
+        // Get company name from settings
+        const savedSettings = localStorage.getItem('userSettings')
+        const settings = savedSettings ? JSON.parse(savedSettings) : null
+        const companyName = settings?.industryContext?.companyName?.trim()
+        
+        if (companyName) {
+          console.log('Using company from settings for content generation:', companyName)
+          const researchResponse = await api.autonomous.researchCompany(companyName)
+          if (researchResponse && researchResponse.success) {
+            companyResearchData = researchResponse
+          }
+        } else {
+          console.log('No company name in settings, skipping personalized research')
         }
       } catch (error) {
         console.warn('Company research failed, using fallback:', error)
@@ -157,19 +204,13 @@ export default function CreatePost() {
       )
       
       if (response && response.content) {
-        // Validate character count
+        // Get the content from backend (which should already respect character limits)
         let content = response.content.trim()
+        
+        // Log if content exceeds limit (this shouldn't happen with improved backend)
         if (content.length > maxLength) {
-          // Truncate if too long, preserving hashtags at the end
-          const hashtagMatch = content.match(/(#\w+\s*)+$/);
-          const hashtags = hashtagMatch ? hashtagMatch[0] : '';
-          const contentWithoutHashtags = content.replace(/(#\w+\s*)+$/, '').trim();
-          const availableLength = maxLength - hashtags.length - 1; // -1 for space before hashtags
-          
-          if (contentWithoutHashtags.length > availableLength) {
-            const truncated = contentWithoutHashtags.substring(0, availableLength - 3).trim() + '...';
-            content = hashtags ? `${truncated} ${hashtags}` : truncated;
-          }
+          console.warn('⚠️ Backend returned content exceeding character limit:', content.length, '>', maxLength)
+          console.warn('Content preview:', content.substring(0, 100) + '...')
         }
         
         // Update form with generated content
@@ -510,11 +551,33 @@ export default function CreatePost() {
                   </div>
                   
                   {generatedImage.image_url && (
-                    <img
-                      src={generatedImage.image_url}
-                      alt="Generated content"
-                      className="w-full max-w-md rounded-lg shadow-sm"
-                    />
+                    <div className="mt-4">
+                      <div 
+                        className="cursor-pointer group relative overflow-hidden rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200"
+                        onClick={() => window.open(generatedImage.image_url, '_blank')}
+                      >
+                        <img
+                          src={generatedImage.image_url}
+                          alt="Generated content"
+                          className="w-full h-auto object-contain bg-gray-50"
+                          style={{ 
+                            maxWidth: 'none',
+                            minHeight: '200px',
+                            maxHeight: '500px'
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity duration-200 flex items-center justify-center">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2 text-center">
+                        Click image to view full size in new tab
+                      </p>
+                    </div>
                   )}
                   
                   {generatedImage.error && (

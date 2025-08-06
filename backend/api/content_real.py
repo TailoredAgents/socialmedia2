@@ -48,6 +48,7 @@ class ContentUpdateRequest(BaseModel):
     platform: str = None
     status: str = None
     scheduled_at: str = None
+    scheduled_date: str = None
 
 class ContentCreateRequest(BaseModel):
     title: str
@@ -190,21 +191,27 @@ async def generate_content(request: ContentGenerationRequest):
         instructions = request.specific_instructions or f"Create content about {request.topic}"
         
         prompt = f"""
-        Create engaging {request.platform} content with these specifications:
+        You are Lily, an expert social media content creator. Create engaging {request.platform} content with these MANDATORY specifications:
         
         Instructions: {instructions}
         Context: {enhanced_context}
         
-        STRICT Requirements:
+        🚨 CRITICAL CHARACTER LIMIT: {max_chars} characters maximum
+        - COUNT EVERY CHARACTER including spaces, punctuation, hashtags
+        - YOUR RESPONSE MUST BE UNDER {max_chars} CHARACTERS
+        - This is for {request.platform} - exceeding the limit will break the post
+        - If you exceed {max_chars} characters, the content will be rejected
+        
+        Requirements:
         - Platform: {request.platform}
-        - Maximum characters: {max_chars} (CRITICAL - DO NOT EXCEED)
         - Tone: {request.tone}
         - Include hashtags: {request.include_hashtags}
         - Use the context to make content specific and valuable
         - Focus on actionable insights and benefits
         - Make it engaging and authentic
         
-        Return ONLY the final content text, ready to post. Do not include explanations or meta-text.
+        IMPORTANT: Count your characters carefully. Write concisely. Quality over quantity.
+        Return ONLY the final content text under {max_chars} characters. No explanations.
         """
         
         response = await client.chat.completions.create(
@@ -216,18 +223,48 @@ async def generate_content(request: ContentGenerationRequest):
         
         generated_content = response.choices[0].message.content.strip()
         
-        # Ensure character limit compliance
+        # Check character limit compliance
         if len(generated_content) > max_chars:
-            # Truncate preserving hashtags
-            hashtag_match = generated_content[-100:].find('#')
-            if hashtag_match > 0:
-                hashtags = generated_content[len(generated_content) - 100 + hashtag_match:]
-                content_without_hashtags = generated_content[:len(generated_content) - 100 + hashtag_match].strip()
-                if len(content_without_hashtags) + len(hashtags) + 1 > max_chars:
-                    truncated_length = max_chars - len(hashtags) - 4  # -4 for "... "
-                    generated_content = content_without_hashtags[:truncated_length].strip() + "... " + hashtags
-            else:
-                generated_content = generated_content[:max_chars - 3] + "..."
+            logger.warning(f"⚠️ GPT-4 exceeded character limit: {len(generated_content)} > {max_chars} for {request.platform}")
+            logger.warning(f"Generated content that exceeded limit: {generated_content[:100]}...")
+            
+            # Instead of truncating, try one more time with an even stricter prompt
+            stricter_prompt = f"""
+            EMERGENCY: Create {request.platform} content UNDER {max_chars - 20} characters.
+            
+            Topic: {instructions}
+            Context: {enhanced_context[:200]}
+            
+            🚨 ABSOLUTE LIMIT: {max_chars - 20} characters (leaving safety buffer)
+            Write SHORT, impactful content. No fluff. Quality over quantity.
+            Include hashtags if under limit.
+            
+            Return ONLY the content, nothing else.
+            """
+            
+            retry_response = await client.chat.completions.create(
+                model="gpt-4",
+                messages=[{"role": "user", "content": stricter_prompt}],
+                temperature=0.5,
+                max_tokens=200  # Reduced tokens for shorter content
+            )
+            
+            generated_content = retry_response.choices[0].message.content.strip()
+            logger.info(f"Retry generated content length: {len(generated_content)}")
+            
+            # Final fallback: truncate if still too long
+            if len(generated_content) > max_chars:
+                logger.error(f"❌ Even retry exceeded limit. Truncating as last resort.")
+                # Truncate preserving hashtags
+                hashtag_match = generated_content[-100:].find('#')
+                if hashtag_match > 0:
+                    hashtags = generated_content[len(generated_content) - 100 + hashtag_match:]
+                    content_without_hashtags = generated_content[:len(generated_content) - 100 + hashtag_match].strip()
+                    if len(content_without_hashtags) + len(hashtags) + 1 > max_chars:
+                        truncated_length = max_chars - len(hashtags) - 4  # -4 for "... "
+                        generated_content = content_without_hashtags[:truncated_length].strip() + "... " + hashtags
+                else:
+                    generated_content = generated_content[:max_chars - 3] + "..."
         
         result = {
             "success": True,

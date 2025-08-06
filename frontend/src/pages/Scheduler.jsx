@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
-import { ChevronLeftIcon, ChevronRightIcon, ViewColumnsIcon, Squares2X2Icon } from '@heroicons/react/24/outline'
+import { Link } from 'react-router-dom'
+import { ChevronLeftIcon, ChevronRightIcon, ViewColumnsIcon, Squares2X2Icon, PlusIcon, FolderIcon } from '@heroicons/react/24/outline'
 import DragDropCalendar from '../components/Calendar/DragDropCalendar'
 import CreatePostModal from '../components/Calendar/CreatePostModal'
+import ScheduleFromLibraryModal from '../components/Calendar/ScheduleFromLibraryModal'
 import { useApi } from '../hooks/useApi'
 import { useRealTimeContent } from '../hooks/useRealTimeData'
 import { error as logError, debug as logDebug } from '../utils/logger.js'
@@ -49,6 +51,7 @@ export default function Scheduler() {
   const [viewMode, setViewMode] = useState('week') // 'month' or 'week'
   const [posts, setPosts] = useState([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   
@@ -254,7 +257,22 @@ export default function Scheduler() {
 
   const handleAddPost = (dateStr) => {
     setSelectedDate(dateStr)
+    setIsLibraryModalOpen(true) // Changed to show library modal by default
+  }
+
+  const handleCreateNewPost = (dateStr) => {
+    setSelectedDate(dateStr)
     setIsCreateModalOpen(true)
+  }
+
+  const handleScheduleFromLibrary = (dateStr) => {
+    setSelectedDate(dateStr)
+    setIsLibraryModalOpen(true)
+  }
+
+  const handleSchedulePost = (scheduledPost) => {
+    // Add the scheduled post to the posts list
+    setPosts(prev => [...prev, scheduledPost])
   }
 
   const monthNames = [
@@ -398,12 +416,22 @@ export default function Scheduler() {
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-medium text-gray-900">Upcoming Posts</h3>
-          <button
-            onClick={() => handleAddPost(new Date().toISOString().split('T')[0])}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Create Post
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => handleScheduleFromLibrary(new Date().toISOString().split('T')[0])}
+              className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors flex items-center space-x-2"
+            >
+              <FolderIcon className="h-4 w-4" />
+              <span>Schedule from Library</span>
+            </button>
+            <Link
+              to="/create-post"
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
+            >
+              <PlusIcon className="h-4 w-4" />
+              <span>Create New Post</span>
+            </Link>
+          </div>
         </div>
         <div className="space-y-3">
           {posts
@@ -435,12 +463,21 @@ export default function Scheduler() {
           {posts.filter(post => new Date(post.date + 'T' + post.time) >= new Date()).length === 0 && (
             <div className="text-center py-8 text-gray-500">
               <p>No upcoming posts scheduled</p>
-              <button
-                onClick={() => handleAddPost(new Date().toISOString().split('T')[0])}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm mt-2"
-              >
-                Create your first post
-              </button>
+              <div className="flex justify-center space-x-4 mt-4">
+                <button
+                  onClick={() => handleScheduleFromLibrary(new Date().toISOString().split('T')[0])}
+                  className="text-blue-600 hover:text-blue-700 font-medium text-sm underline"
+                >
+                  Schedule from Library
+                </button>
+                <span className="text-gray-400">or</span>
+                <Link
+                  to="/create-post"
+                  className="text-blue-600 hover:text-blue-700 font-medium text-sm underline"
+                >
+                  Create New Post
+                </Link>
+              </div>
             </div>
           )}
         </div>
@@ -455,6 +492,17 @@ export default function Scheduler() {
         }}
         selectedDate={selectedDate}
         onCreatePost={handleCreatePost}
+      />
+
+      {/* Schedule from Library Modal */}
+      <ScheduleFromLibraryModal
+        isOpen={isLibraryModalOpen}
+        onClose={() => {
+          setIsLibraryModalOpen(false)
+          setSelectedDate(null)
+        }}
+        selectedDate={selectedDate}
+        onSchedulePost={handleSchedulePost}
       />
     </div>
   )

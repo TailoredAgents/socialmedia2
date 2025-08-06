@@ -17,12 +17,9 @@ import NotificationContainer from './components/Notifications/NotificationContai
 import Login from './pages/Login'
 import Overview from './pages/Overview'
 import CreatePost from './pages/CreatePost'
-import Calendar from './pages/Calendar'
-import Analytics from './pages/Analytics'
-import PerformanceDashboard from './pages/PerformanceDashboard'
+import Scheduler from './pages/Scheduler'
 import Content from './pages/Content'
 import MemoryExplorer from './pages/MemoryExplorer'
-import GoalTracking from './pages/GoalTracking'
 import Settings from './pages/Settings'
 import ErrorLogs from './components/ErrorLogs'
 
@@ -73,27 +70,7 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Layout>
-                <Calendar />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/analytics"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Analytics />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/performance"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <PerformanceDashboard />
+                <Scheduler />
               </Layout>
             </ProtectedRoute>
           }
@@ -114,16 +91,6 @@ function AppRoutes() {
             <ProtectedRoute>
               <Layout>
                 <MemoryExplorer />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/goals"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <GoalTracking />
               </Layout>
             </ProtectedRoute>
           }

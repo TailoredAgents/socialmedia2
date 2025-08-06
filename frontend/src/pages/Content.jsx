@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { useEnhancedApi } from '../hooks/useEnhancedApi'
+import { useNotifications } from '../hooks/useNotifications'
 import { error as logError } from '../utils/logger.js'
 import VirtualizedContentList, { VirtualizedContentGrid } from '../components/VirtualizedContentList'
 import { 
@@ -17,7 +19,9 @@ import {
   ExclamationTriangleIcon,
   DocumentTextIcon,
   PhotoIcon,
-  PlayIcon
+  PlayIcon,
+  SparklesIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline'
 
 const contentTypes = [
@@ -56,6 +60,7 @@ export default function Content() {
   const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
   
   const { api } = useEnhancedApi()
+  const { showSuccess, showError } = useNotifications()
   const queryClient = useQueryClient()
 
   // Fetch content with filters
@@ -67,7 +72,7 @@ export default function Content() {
   } = useQuery({
     queryKey: ['content', selectedType, selectedPlatform, selectedStatus, searchQuery],
     queryFn: () => api.content.getAll(1, 50),
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 30 * 1000, // 30 seconds
     retry: 2
   })
 
@@ -119,14 +124,26 @@ export default function Content() {
     }
   })
 
-  // Generate content mutation
-  const generateContentMutation = useMutation({
-    mutationFn: ({ prompt, contentType }) => api.content.generate(prompt, contentType),
-    onSuccess: (newContent) => {
+  // Create content mutation
+  const createContentMutation = useMutation({
+    mutationFn: (contentData) => {
+      console.log('Creating content with data:', contentData)
+      return api.content.create(contentData)
+    },
+    onSuccess: (result) => {
+      console.log('Content created successfully:', result)
       queryClient.invalidateQueries({ queryKey: ['content'] })
-      // Optionally show the generated content
+      queryClient.invalidateQueries({ queryKey: ['upcoming-content'] })
+      setShowCreateModal(false)
+      alert('Content created successfully!')
+    },
+    onError: (error) => {
+      console.error('Failed to create content:', error)
+      logError('Failed to create content:', error)
+      alert('Failed to create content: ' + error.message)
     }
   })
+
 
   const filteredContent = useMemo(() => {
     if (!content || !Array.isArray(content)) {
@@ -209,27 +226,38 @@ export default function Content() {
     }
   }
 
-  const handlePublishContent = async (contentId) => {
+  const handlePublishContent = async (contentItem) => {
+    const contentId = typeof contentItem === 'string' ? contentItem : contentItem.id
+    const content = typeof contentItem === 'object' ? contentItem : filteredContent.find(c => c.id === contentId)
+    
+    if (!content) {
+      showError('Content not found')
+      return
+    }
+    
+    // Show posting options dialog
+    const action = window.confirm(
+      `Post "${content.title || 'Untitled'}" to ${content.platform || 'all platforms'}?\n\n` +
+      `Content: ${content.content?.substring(0, 100)}...\n\n` +
+      `Click OK to post now, or Cancel to schedule for later.`
+    )
+    
     try {
-      await publishContentMutation.mutateAsync(contentId)
+      if (action) {
+        // Post immediately
+        await publishContentMutation.mutateAsync(contentId)
+        showSuccess(`Content posted to ${content.platform || 'all platforms'}!`)
+      } else {
+        // Redirect to edit page for scheduling
+        setEditingContent(content)
+        setShowEditModal(true)
+      }
     } catch (error) {
       logError('Failed to publish content:', error)
+      showError('Failed to publish content')
     }
   }
 
-  const handleGenerateContent = async () => {
-    const prompt = window.prompt('Enter a prompt for content generation:')
-    if (prompt) {
-      try {
-        await generateContentMutation.mutateAsync({ 
-          prompt, 
-          contentType: 'text' 
-        })
-      } catch (error) {
-        logError('Failed to generate content:', error)
-      }
-    }
-  }
 
   // Event handlers for virtualized list
   const handleViewContent = (item) => {
@@ -248,24 +276,13 @@ export default function Content() {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Content Library</h2>
           <p className="text-sm text-gray-600">
-            Manage your content across all platforms
+            View and manage all your saved content
           </p>
         </div>
-        <div className="flex space-x-3">
-          <button
-            onClick={handleGenerateContent}
-            className="bg-purple-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-purple-700 transition-colors"
-          >
-            <DocumentTextIcon className="h-4 w-4" />
-            <span>Generate AI Content</span>
-          </button>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-blue-700 transition-colors"
-          >
-            <PlusIcon className="h-4 w-4" />
-            <span>Create Content</span>
-          </button>
+        <div className="text-right">
+          <p className="text-sm text-gray-500">
+            Create new content in the <Link to="/create-post" className="text-blue-600 hover:text-blue-700 font-medium">Create Post</Link> tab
+          </p>
         </div>
       </div>
 
@@ -422,6 +439,12 @@ export default function Content() {
                       <span className="text-sm font-medium text-gray-600 capitalize">
                         {item.content_type || 'text'}
                       </span>
+                      {item.generated_by_ai && (
+                        <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full flex items-center">
+                          <SparklesIcon className="h-3 w-3 mr-1" />
+                          AI
+                        </span>
+                      )}
                     </div>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
                       {item.status}
@@ -464,9 +487,9 @@ export default function Content() {
                       </button>
                       {item.status === 'draft' && (
                         <button
-                          onClick={() => handlePublishContent(item.id)}
+                          onClick={() => handlePublishContent(item)}
                           className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                          title="Publish"
+                          title="Quick Post"
                         >
                           <ShareIcon className="h-4 w-4" />
                         </button>
@@ -496,15 +519,28 @@ export default function Content() {
             }
           </p>
           <div className="mt-6">
-            <button
-              onClick={() => setShowCreateModal(true)}
+            <Link
+              to="/create-post"
               className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
             >
               <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
               Create Content
-            </button>
+            </Link>
           </div>
         </div>
+      )}
+
+      {/* Create Content Modal */}
+      {showCreateModal && (
+        <ContentCreateModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSave={(contentData) => {
+            console.log('ContentCreateModal onSave called with:', contentData)
+            createContentMutation.mutate(contentData)
+          }}
+          isLoading={createContentMutation.isPending}
+        />
       )}
 
       {/* Edit Content Modal */}
@@ -689,6 +725,194 @@ function ContentEditModal({ content, isOpen, onClose, onSave, isLoading }) {
                 className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Simple Content Create Modal Component
+function ContentCreateModal({ isOpen, onClose, onSave, isLoading }) {
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    platform: 'twitter',
+    content_type: 'text',
+    status: 'draft',
+    scheduled_at: '',
+    tags: []
+  })
+
+  if (!isOpen) return null
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    console.log('Create form submitted with data:', formData)
+    
+    // Validate required fields
+    if (!formData.title.trim() || !formData.content.trim()) {
+      alert('Please fill in both title and content fields')
+      return
+    }
+    
+    console.log('Calling onSave with:', formData)
+    onSave(formData)
+  }
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        {/* Backdrop */}
+        <div 
+          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
+          onClick={onClose}
+        ></div>
+
+        {/* Modal */}
+        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+          <form onSubmit={handleSubmit}>
+            <div className="bg-white px-4 pt-5 pb-4 sm:p-6">
+              <div className="flex items-start justify-between mb-6">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Create New Content
+                </h3>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <span className="sr-only">Close</span>
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => handleChange('title', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Content title..."
+                    required
+                  />
+                </div>
+
+                {/* Content */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Content
+                  </label>
+                  <textarea
+                    value={formData.content}
+                    onChange={(e) => handleChange('content', e.target.value)}
+                    rows={6}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Write your content here..."
+                    required
+                  />
+                </div>
+
+                {/* Platform and Type */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Platform
+                    </label>
+                    <select
+                      value={formData.platform}
+                      onChange={(e) => handleChange('platform', e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="twitter">Twitter</option>
+                      <option value="linkedin">LinkedIn</option>
+                      <option value="instagram">Instagram</option>
+                      <option value="facebook">Facebook</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Content Type
+                    </label>
+                    <select
+                      value={formData.content_type}
+                      onChange={(e) => handleChange('content_type', e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="text">Text Post</option>
+                      <option value="image">Image</option>
+                      <option value="video">Video</option>
+                      <option value="carousel">Carousel</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => handleChange('status', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="published">Published</option>
+                  </select>
+                </div>
+
+                {/* Scheduled Date (only show if status is scheduled) */}
+                {formData.status === 'scheduled' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Scheduled For
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={formData.scheduled_at}
+                      onChange={(e) => handleChange('scheduled_at', e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              <button
+                type="submit"
+                disabled={isLoading}
+                onClick={() => console.log('Create button clicked, isLoading:', isLoading)}
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Creating...' : 'Create Content'}
               </button>
               <button
                 type="button"

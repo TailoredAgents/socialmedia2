@@ -196,6 +196,9 @@ const ErrorLogs = () => {
           <p className="text-gray-600 mt-1">
             Monitor live errors and system logs from your Render deployment
           </p>
+          <p className="text-sm text-pink-600 mt-2 italic">
+            💗 They make me write down everytime I hiccup 😊
+          </p>
         </div>
         
         <div className="flex items-center gap-2">

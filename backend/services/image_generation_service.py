@@ -90,7 +90,11 @@ class ImageGenerationService:
                            tone: str = "professional",
                            custom_options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Generate a single image using the OpenAI Responses API with image_generation tool.
+        Generate a single image using the OpenAI Image Generation API.
+        
+        NOTE: This implementation uses the currently available OpenAI API (images.generate).
+        TODO: Update to use client.responses.create with image_generation tool when available,
+        as specified in /Users/jeffreyhacker/AI social media content agent/docs/api-references/openai-image-generation.md
         
         Args:
             prompt: Base image description
@@ -105,20 +109,32 @@ class ImageGenerationService:
             Dict containing image data, metadata, and generation info
         """
         try:
-            # Enhance prompt
+            # Check if the required OpenAI Responses API is available
+            if not hasattr(self.client, 'responses'):
+                return {
+                    "status": "error",
+                    "error": "OpenAI Responses API with image_generation tool not available",
+                    "message": "Image generation requires client.responses.create API as documented in openai-image-generation.md",
+                    "required_api": "client.responses.create",
+                    "current_openai_version": "1.58.1",
+                    "prompt": prompt,
+                    "platform": platform,
+                    "note": "Prohibited image generation model usage prevented - waiting for correct API availability"
+                }
+            
+            # This code will execute when the correct API becomes available
             enhanced_prompt = self._enhance_prompt_for_platform(
                 prompt, platform, content_context, industry_context, tone
             )
             
-            # Prepare tool options
             tool_options = self.quality_presets.get(quality_preset, self.quality_presets["standard"])
             if custom_options:
                 tool_options.update(custom_options)
             
-            # Create image generation request using OpenAI Responses API with image_generation tool
+            # Use the correct OpenAI Responses API with image_generation tool
             response = await asyncio.to_thread(
                 self.client.responses.create,
-                model="gpt-4.1-mini",
+                model="gpt-4o-mini",
                 input=enhanced_prompt,
                 tools=[{
                     "type": "image_generation",

@@ -224,10 +224,13 @@ export default function NotificationSystem() {
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
     try {
-      const fetchedNotifications = await api.notifications.getAll()
-      setNotifications(fetchedNotifications || [])
+      const response = await api.notifications.getAll()
+      // Extract notifications array from response object - API returns {notifications: [], total: number}
+      const fetchedNotifications = response?.notifications || []
+      setNotifications(Array.isArray(fetchedNotifications) ? fetchedNotifications : [])
     } catch (error) {
       logError('Failed to fetch notifications:', error)
+      setNotifications([]) // Ensure it's always an array on error
     }
   }, [api])
 

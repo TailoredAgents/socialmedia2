@@ -112,7 +112,10 @@ export default function GoalTracking() {
     }
   })
 
-  const filteredGoals = goals.filter(goal => 
+  // Ensure goals is always an array
+  const goalsArray = Array.isArray(goals) ? goals : (goals?.goals || [])
+  
+  const filteredGoals = goalsArray.filter(goal => 
     selectedStatus === 'all' || goal.status === selectedStatus
   )
 
@@ -190,11 +193,11 @@ export default function GoalTracking() {
   }
 
   // Calculate summary stats
-  const totalGoals = goals.length
-  const activeGoals = goals.filter(g => g.status === 'active').length
-  const completedGoals = goals.filter(g => g.status === 'completed').length
-  const onTrackGoals = goals.filter(g => g.is_on_track && g.status === 'active').length
-  const avgProgress = goals.length > 0 ? goals.reduce((sum, g) => sum + g.progress_percentage, 0) / goals.length : 0
+  const totalGoals = goalsArray.length
+  const activeGoals = goalsArray.filter(g => g.status === 'active').length
+  const completedGoals = goalsArray.filter(g => g.status === 'completed').length
+  const onTrackGoals = goalsArray.filter(g => g.is_on_track && g.status === 'active').length
+  const avgProgress = goalsArray.length > 0 ? goalsArray.reduce((sum, g) => sum + g.progress_percentage, 0) / goalsArray.length : 0
 
   return (
     <div className="space-y-6">

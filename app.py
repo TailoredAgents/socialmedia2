@@ -27,7 +27,7 @@ if str(backend_path) not in sys.path:
 
 # Import FastAPI with fallback
 try:
-    from fastapi import FastAPI
+    from fastapi import FastAPI, Request, HTTPException
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse
     logger.info("FastAPI imported successfully")
@@ -51,6 +51,8 @@ app.add_middleware(
     allow_origins=[
         "https://ai-social-frontend.onrender.com",
         "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
         "http://localhost:3000",
         "http://localhost:4173",
         "*"  # Allow all as fallback
@@ -88,12 +90,13 @@ failed_routers = []
 routers_config = [
     ("system_logs", "backend.api.system_logs"),
     ("content", "backend.api.content_real"),
-    ("autonomous_stub", "backend.api.autonomous_stub"),
+    ("autonomous", "backend.api.autonomous"),
     ("memory", "backend.api.memory"),
     ("goals", "backend.api.goals"),
     ("notifications_stub", "backend.api.notifications_stub"),
     ("workflow_stub", "backend.api.workflow_stub"),
     ("metrics", "backend.api.metrics_stub"),
+    ("diagnostics", "backend.api.diagnostics_simple"),
 ]
 
 # Load routers with detailed error handling - app will start even if routers fail
@@ -175,27 +178,24 @@ async def render_health():
 
 # Fallback endpoints to prevent 404s if routers don't load
 @app.get("/api/notifications/")
-@app.options("/api/notifications/")
 async def notifications_fallback():
     """Fallback for notifications endpoint"""
     return {
         "notifications": [],
         "total": 0,
-        "message": "Notifications service not available - using fallback"
+        "message": "Sorry, my notification system is taking a little break right now! 😴 - Lily"
     }
 
 @app.get("/api/system/logs")
-@app.options("/api/system/logs")
 async def system_logs_fallback():
     """Fallback for system logs endpoint"""
     return {
         "logs": [],
         "total": 0,
-        "message": "System logs service not available - using fallback"
+        "message": "Sorry, my system logs are taking a little nap right now! 😴 - Lily"
     }
 
 @app.get("/api/system/logs/stats")
-@app.options("/api/system/logs/stats")
 async def system_logs_stats_fallback():
     """Fallback for system logs stats endpoint"""
     return {
@@ -203,34 +203,31 @@ async def system_logs_stats_fallback():
         "total_warnings": 0,
         "errors_last_hour": 0,
         "errors_last_day": 0,
-        "message": "System logs service not available - using fallback"
+        "message": "Sorry, my system logs are taking a little nap right now! 😴 - Lily"
     }
 
 @app.get("/api/workflow/status/summary")
-@app.options("/api/workflow/status/summary")
 async def workflow_status_fallback():
     """Fallback for workflow status endpoint"""
     return {
         "status": "unavailable",
-        "message": "Workflow service not available - using fallback"
+        "message": "Sorry, my workflow service is taking a little nap right now! 😴 - Lily"
     }
 
 @app.get("/api/metrics")
-@app.options("/api/metrics")
 async def metrics_fallback():
     """Fallback for metrics endpoint"""
     return {
         "metrics": {},
-        "message": "Metrics service not available - using fallback"
+        "message": "Sorry, my metrics service is taking a little nap right now! 😴 - Lily"
     }
 
 @app.get("/api/autonomous/research/latest")
-@app.options("/api/autonomous/research/latest")
 async def autonomous_research_fallback():
     """Fallback for autonomous research endpoint"""
     return {
         "research": [],
-        "message": "Autonomous research service not available - using fallback"
+        "message": "Sorry, my research service is taking a little nap right now! 😴 - Lily"
     }
 
 # Handle all OPTIONS requests (CORS preflight)
@@ -240,7 +237,7 @@ async def options_handler(full_path: str):
     return {"message": "CORS preflight OK"}
 
 @app.exception_handler(404)
-async def not_found_handler(request, exc):
+async def not_found_handler(request: Request, exc: HTTPException):
     """Custom 404 handler with helpful information"""
     available_endpoints = [
         "/docs",

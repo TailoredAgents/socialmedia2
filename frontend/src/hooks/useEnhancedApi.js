@@ -213,10 +213,14 @@ export const useEnhancedApi = () => {
 
     // Goals operations  
     goals: {
-      getAll: () => makeEnhancedRequest(
-        apiService.getGoals.bind(apiService),
-        { cache: true, cacheKey: 'goals_all', cacheTTL: 120000 }
-      ),
+      getAll: async () => {
+        const response = await makeEnhancedRequest(
+          apiService.getGoals.bind(apiService),
+          { cache: true, cacheKey: 'goals_all', cacheTTL: 120000 }
+        )
+        // Extract goals array from API response {goals: [], count: number}
+        return response?.goals || []
+      },
       
       create: (goalData) => makeEnhancedRequest(
         apiService.createGoal.bind(apiService),
@@ -280,14 +284,19 @@ export const useEnhancedApi = () => {
         { cache: true, cacheKey: 'content_upcoming', cacheTTL: 60000 }
       ),
       
-      generate: (prompt, contentType) => makeEnhancedRequest(
+      generate: (prompt, contentType, platform = 'twitter') => makeEnhancedRequest(
         apiService.generateContent.bind(apiService),
-        { requestArgs: [prompt, contentType], retries: 1, retryDelay: 2000 }
+        { requestArgs: [prompt, contentType, platform], retries: 1, retryDelay: 2000 }
       ),
       
       generateImage: (prompt, contentContext, platform, industryContext) => makeEnhancedRequest(
         apiService.generateImage.bind(apiService),
         { requestArgs: [prompt, contentContext, platform, industryContext], retries: 1, retryDelay: 3000 }
+      ),
+      
+      getAnalytics: () => makeEnhancedRequest(
+        apiService.getContentAnalytics.bind(apiService),
+        { cache: true, cacheKey: 'content_analytics', cacheTTL: 300000 }
       )
     },
 
@@ -380,6 +389,11 @@ export const useEnhancedApi = () => {
       executeeCycle: () => makeEnhancedRequest(
         apiService.executeAutonomousCycle.bind(apiService),
         { retries: 1, retryDelay: 3000 }
+      ),
+
+      researchCompany: (companyName) => makeEnhancedRequest(
+        () => apiService.researchCompany(companyName),
+        { retries: 2, retryDelay: 2000 }
       )
     }
   }

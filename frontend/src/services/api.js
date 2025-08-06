@@ -272,6 +272,10 @@ class ApiService {
     return response.content || []
   }
 
+  async getAll(page = 1, limit = 20) {
+    return this.getContent(page, limit)
+  }
+
   async getContentById(contentId) {
     return this.request(`/api/content/${contentId}`)
   }
@@ -312,10 +316,18 @@ class ApiService {
     return this.request('/api/content/analytics/summary')
   }
 
-  async generateContent(prompt, contentType) {
+  async generateContent(prompt, contentType, platform = 'twitter', specificInstructions = null, companyResearchData = null) {
     return this.request('/api/content/generate', {
       method: 'POST',
-      body: { prompt, content_type: contentType }
+      body: { 
+        topic: prompt,
+        content_type: contentType, // Add content type to the request
+        platform: platform,
+        tone: 'professional',
+        include_hashtags: true,
+        specific_instructions: specificInstructions,
+        company_research_data: companyResearchData
+      }
     })
   }
 
@@ -355,6 +367,13 @@ class ApiService {
   async executeAutonomousCycle() {
     return this.request('/api/autonomous/execute-cycle', {
       method: 'POST'
+    })
+  }
+
+  async researchCompany(companyName) {
+    return this.request('/api/autonomous/research/company', {
+      method: 'POST',
+      body: { company_name: companyName }
     })
   }
 

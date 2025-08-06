@@ -1,347 +1,374 @@
 import { useQuery } from '@tanstack/react-query'
-import { ApiErrorBoundary } from '../components/ErrorBoundary'
+import { useState, useEffect } from 'react'
 import { 
-  ArrowUpIcon, 
-  ArrowDownIcon,
   DocumentTextIcon,
-  ChatBubbleLeftRightIcon,
-  UsersIcon,
-  EyeIcon,
-  PlayIcon,
-  ChartBarIcon
+  PlusIcon,
+  SparklesIcon,
+  CpuChipIcon,
+  CalendarDaysIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  PhotoIcon,
+  ArrowRightIcon,
+  HeartIcon
 } from '@heroicons/react/24/outline'
 import { useEnhancedApi } from '../hooks/useEnhancedApi'
-import { useRealTimeMetrics } from '../hooks/useRealTimeData'
+import { Link } from 'react-router-dom'
 
-const MetricCard = ({ title, value, change, changeType, icon: Icon, color = "blue" }) => {
-  const colorClasses = {
-    blue: 'text-blue-600',
-    green: 'text-green-600',
-    purple: 'text-purple-600',
-    orange: 'text-orange-600'
-  }
+// Lily's random compliments
+const compliments = [
+  "Looking sharp today! 🌟",
+  "Your style is on point! ✨", 
+  "You have great energy today! ⚡",
+  "That smile could light up a room! 😊",
+  "You're absolutely glowing! ✨",
+  "Your confidence is inspiring! 💫",
+  "You look fantastic today! 👌",
+  "That's a great look on you! 🎨",
+  "You're radiating positivity! ☀️",
+  "Your presence brightens the whole room! 🌈"
+]
+
+const LilyCompliment = () => {
+  const [compliment, setCompliment] = useState('')
+  const [showCompliment, setShowCompliment] = useState(false)
+
+  useEffect(() => {
+    // 30% chance to show a compliment on page load
+    if (Math.random() < 0.3) {
+      const randomCompliment = compliments[Math.floor(Math.random() * compliments.length)]
+      setCompliment(randomCompliment)
+      setShowCompliment(true)
+      
+      // Hide the compliment after 8 seconds
+      const timer = setTimeout(() => {
+        setShowCompliment(false)
+      }, 8000)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [])
+
+  if (!showCompliment) return null
 
   return (
-    <div className="bg-white rounded-lg shadow p-6" role="article" aria-labelledby={`metric-${title.replace(/\s+/g, '-').toLowerCase()}`}>
-      <div className="flex items-center">
-        <Icon className={`h-8 w-8 ${colorClasses[color]}`} aria-hidden="true" />
-        <div className="ml-4">
-          <p id={`metric-${title.replace(/\s+/g, '-').toLowerCase()}`} className="text-sm font-medium text-gray-600">{title}</p>
-          <div className="flex items-center">
-            <p className={`text-2xl font-bold ${colorClasses[color]}`} aria-label={`${title}: ${value}`}>{value}</p>
-            <div className={`ml-2 flex items-center text-sm ${
-              changeType === 'increase' ? 'text-green-600' : 'text-red-600'
-            }`}>
-              {changeType === 'increase' ? (
-                <ArrowUpIcon className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <ArrowDownIcon className="h-4 w-4" aria-hidden="true" />
-              )}
-              <span aria-label={`Change: ${changeType === 'increase' ? 'increased' : 'decreased'} by ${change}`}>{change}</span>
-            </div>
+    <div className="bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 rounded-xl p-6 mb-6 relative shadow-sm">
+      <button 
+        onClick={() => setShowCompliment(false)}
+        className="absolute top-3 right-3 text-pink-400 hover:text-pink-600 hover:bg-pink-100 rounded-full p-1 transition-all duration-200"
+      >
+        ✕
+      </button>
+      <div className="flex items-start space-x-4">
+        <div className="flex-shrink-0">
+          <div className="p-3 bg-pink-100 rounded-full">
+            <HeartIcon className="h-6 w-6 text-pink-500" />
           </div>
+        </div>
+        <div className="flex-grow">
+          <div className="flex items-center mb-2">
+            <span className="text-blue-600 font-semibold text-sm uppercase tracking-wide">Lily says:</span>
+          </div>
+          <p className="text-gray-800 text-lg font-medium leading-relaxed">
+            {compliment}
+          </p>
         </div>
       </div>
     </div>
   )
 }
 
-const WorkflowStage = ({ stage }) => {
-  const statusColors = {
-    completed: 'bg-green-100 text-green-800',
-    running: 'bg-blue-100 text-blue-800',
-    pending: 'bg-gray-100 text-gray-800'
-  }
-
-  const statusIcons = {
-    completed: '✓',
-    running: '🔄',
-    pending: '⏳'
+const ContentCard = ({ title, count, icon: Icon, color = "blue", description, linkTo }) => {
+  const colorClasses = {
+    blue: 'text-blue-600 bg-blue-100',
+    green: 'text-green-600 bg-green-100',
+    purple: 'text-purple-600 bg-purple-100',
+    orange: 'text-orange-600 bg-orange-100',
+    gray: 'text-gray-600 bg-gray-100'
   }
 
   return (
-    <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm" role="article" aria-labelledby={`stage-${stage.name.replace(/\s+/g, '-').toLowerCase()}`}>
-      <div>
-        <h3 id={`stage-${stage.name.replace(/\s+/g, '-').toLowerCase()}`} className="font-medium text-gray-900">{stage.name}</h3>
-        <p className="text-sm text-gray-500" aria-live="polite">
-          {stage.status === 'running' 
-            ? `Running... ${stage.progress}% complete`
-            : stage.status === 'completed'
-            ? `Completed in ${stage.duration_minutes}min`
-            : `Scheduled for ${stage.scheduled_time}`
-          }
-        </p>
+    <Link to={linkTo} className="group">
+      <div className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6 group-hover:border-blue-200 border border-transparent">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className={`inline-flex p-3 rounded-lg ${colorClasses[color]} mb-4`}>
+              <Icon className="h-6 w-6" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{count}</p>
+            <p className="text-sm font-medium text-gray-600">{title}</p>
+            <p className="text-xs text-gray-500 mt-1">{description}</p>
+          </div>
+          <ArrowRightIcon className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+        </div>
       </div>
-      <span 
-        className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[stage.status]}`}
-        role="status"
-        aria-label={`Status: ${stage.status}`}
-      >
-        <span aria-hidden="true">{statusIcons[stage.status]}</span> {stage.status}
-      </span>
-    </div>
+    </Link>
   )
 }
 
-const GoalProgress = ({ goal }) => (
-  <div className="mb-4" role="article" aria-labelledby={`goal-${goal.title.replace(/\s+/g, '-').toLowerCase()}`}>
-    <div className="flex justify-between text-sm mb-1">
-      <span id={`goal-${goal.title.replace(/\s+/g, '-').toLowerCase()}`} className="font-medium text-gray-900">{goal.title}</span>
-      <span className={goal.on_track ? 'text-green-600' : 'text-yellow-600'} aria-label={`Progress: ${Math.round(goal.progress)} percent`}>
-        {Math.round(goal.progress)}%
-      </span>
-    </div>
-    <div className="w-full bg-gray-200 rounded-full h-2" role="progressbar" aria-valuenow={goal.progress} aria-valuemin="0" aria-valuemax="100" aria-labelledby={`goal-${goal.title.replace(/\s+/g, '-').toLowerCase()}`}>
-      <div
-        className={`h-2 rounded-full ${goal.on_track ? 'bg-green-500' : 'bg-yellow-500'}`}
-        style={{ width: `${Math.min(goal.progress, 100)}%` }}
-      />
-    </div>
-    <p className="text-xs text-gray-500 mt-1" aria-label={`Current: ${goal.current}, Target: ${goal.target}`}>{goal.current} → {goal.target}</p>
-  </div>
-)
+const QuickActionCard = ({ title, description, icon: Icon, color = "blue", action, disabled = false }) => {
+  const colorClasses = {
+    blue: 'bg-blue-600 hover:bg-blue-700 text-white',
+    purple: 'bg-purple-600 hover:bg-purple-700 text-white',
+    green: 'bg-green-600 hover:bg-green-700 text-white'
+  }
+
+  return (
+    <button 
+      onClick={action}
+      disabled={disabled}
+      className={`${colorClasses[color]} rounded-lg p-6 text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full`}
+    >
+      <div className="flex items-center mb-3">
+        <Icon className="h-8 w-8 mr-3" />
+        <h3 className="text-lg font-semibold">{title}</h3>
+      </div>
+      <p className="text-sm opacity-90">{description}</p>
+    </button>
+  )
+}
 
 export default function Overview() {
   const { api } = useEnhancedApi()
-  const { metrics: realTimeMetrics, connectionStatus } = useRealTimeMetrics()
   
-  const { data: metrics, isLoading: metricsLoading, error: metricsError } = useQuery({
-    queryKey: ['metrics'],
-    queryFn: () => api.analytics.getMetrics(),
-    refetchInterval: 5 * 60 * 1000,
-    retry: 2
-  })
-
-  const { data: workflow, isLoading: workflowLoading } = useQuery({
-    queryKey: ['workflow-status'],
-    queryFn: () => api.workflow.getStatusSummary(),
+  // Fetch content statistics
+  const { data: contentStats, isLoading: contentLoading } = useQuery({
+    queryKey: ['content-stats'],
+    queryFn: async () => {
+      const content = await api.content.getAll(1, 100)
+      const aiGenerated = content.filter(item => item.generated_by_ai).length
+      const drafts = content.filter(item => item.status === 'draft').length
+      const scheduled = content.filter(item => item.status === 'scheduled').length
+      const published = content.filter(item => item.status === 'published').length
+      
+      return {
+        total: content.length,
+        aiGenerated,
+        drafts,
+        scheduled,
+        published
+      }
+    },
     refetchInterval: 30 * 1000,
     retry: 2
   })
 
-  const { data: goals, isLoading: goalsLoading } = useQuery({
-    queryKey: ['goals-summary'],
-    queryFn: () => api.goals.getDashboard(),
+  // Fetch upcoming content
+  const { data: upcomingContent } = useQuery({
+    queryKey: ['upcoming-content'],
+    queryFn: () => api.content.getUpcoming(),
     retry: 2
   })
 
-  const { data: memoryStats, isLoading: memoryLoading } = useQuery({
+  // Fetch memory stats for industry insights
+  const { data: memoryStats } = useQuery({
     queryKey: ['memory-analytics'],
     queryFn: () => api.memory.getAnalytics(),
-    refetchInterval: 5 * 60 * 1000,
     retry: 2
   })
 
-  if (metricsLoading) {
+  const handleGenerateAIContent = async () => {
+    const prompt = window.prompt('Enter a prompt for AI content generation:')
+    if (prompt && prompt.trim()) {
+      try {
+        // This would typically be handled by a mutation, but for demo:
+        alert('Redirecting to Create Post page with AI generation...')
+        window.location.href = '/create-post'
+      } catch (error) {
+        alert('Failed to generate content. Please try again.')
+      }
+    }
+  }
+
+  const handleScheduleContent = () => {
+    window.location.href = '/calendar'
+  }
+
+  const handleManageContent = () => {
+    window.location.href = '/content'
+  }
+
+  if (contentLoading) {
     return (
       <div className="animate-pulse space-y-6">
-        <div className="h-24 bg-gray-300 rounded-lg"></div>
-        <div className="grid grid-cols-4 gap-6">
+        <div className="h-32 bg-gray-300 rounded-lg"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 bg-gray-300 rounded-lg"></div>
+            <div key={i} className="h-40 bg-gray-300 rounded-lg"></div>
           ))}
         </div>
       </div>
     )
   }
 
-  if (metricsError) {
-    return (
-      <div className="rounded-md bg-red-50 p-4">
-        <div className="text-sm text-red-800">
-          Failed to load dashboard data. Please check your internet connection and try again.
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg p-6 text-white">
+    <div className="space-y-8">
+      {/* Lily's Random Compliment */}
+      <LilyCompliment />
+      
+      {/* Lily's Introduction */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg p-8 text-white">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">🚀 AI Social Media Content Agent</h1>
-            <p className="text-blue-100">
-              Autonomous content factory generating {realTimeMetrics?.postsToday || metrics?.total_posts || 0} posts 
-              with {realTimeMetrics?.engagementRate || metrics?.engagement_rate || 0}% avg engagement
+            <h1 className="text-4xl font-bold mb-2">👋 Hi, I'm Lily!</h1>
+            <h2 className="text-2xl font-semibold mb-3 text-blue-100">Your new Social Media Manager 😊</h2>
+            <p className="text-blue-100 text-lg mb-4">
+              I gather the latest industry insights and trends to create professional, 
+              engaging social media posts that resonate with your audience. Let me handle 
+              your content creation while you focus on growing your business!
             </p>
+            <div className="mt-4 flex items-center space-x-6 text-sm">
+              <div>
+                <span className="font-semibold">{contentStats?.total || 0}</span> Total Content Created
+              </div>
+              <div>
+                <span className="font-semibold">{contentStats?.aiGenerated || 0}</span> Posts by Lily
+              </div>
+              <div>
+                <span className="font-semibold">{upcomingContent?.length || 0}</span> Ready to Publish
+              </div>
+            </div>
           </div>
           <div className="text-right">
-            <div className="text-sm text-blue-100">
-              Connection: {connectionStatus} • {realTimeMetrics?.activeUsers || 0} active users
-            </div>
-            <div className="text-lg font-semibold">
-              {workflow?.current_stage?.replace('_', ' ').toUpperCase() || 'ACTIVE'}
-            </div>
+            <Link 
+              to="/create-post"
+              className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-white to-blue-50 hover:from-blue-50 hover:to-white text-blue-600 font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 border border-white border-opacity-50 backdrop-blur-sm"
+            >
+              <div className="flex items-center">
+                <div className="p-2 bg-blue-100 rounded-lg mr-3 group-hover:bg-blue-200 transition-colors duration-200">
+                  <PlusIcon className="h-5 w-5 text-blue-600" />
+                </div>
+                <span className="text-lg">Let's Create Together</span>
+                <svg className="ml-2 h-5 w-5 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </div>
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard
-          title="Total Views"
-          value={realTimeMetrics?.totalViews?.toLocaleString() || metrics?.total_views?.toLocaleString() || '0'}
-          change={`${realTimeMetrics?.viewsChange || '+12'}%`}
-          changeType={realTimeMetrics?.viewsChange >= 0 ? "increase" : "decrease"}
-          icon={EyeIcon}
-          color="blue"
-        />
-        <MetricCard
-          title="Engagement Rate"
-          value={`${realTimeMetrics?.engagementRate || metrics?.engagement_rate || 0}%`}
-          change={`${realTimeMetrics?.engagementRateChange || '+0.8'}%`}
-          changeType={realTimeMetrics?.engagementRateChange >= 0 ? "increase" : "decrease"}
-          icon={ChatBubbleLeftRightIcon}
-          color="green"
-        />
-        <MetricCard
-          title="Total Followers"
-          value={realTimeMetrics?.totalFollowers?.toLocaleString() || metrics?.total_followers?.toLocaleString() || '0'}
-          change={`${realTimeMetrics?.followersChange || '+23'}%`}
-          changeType={realTimeMetrics?.followersChange >= 0 ? "increase" : "decrease"}
-          icon={UsersIcon}
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <QuickActionCard
+          title="Let Lily Create"
+          description="I'll craft engaging posts using the latest industry insights and trends"
+          icon={SparklesIcon}
           color="purple"
+          action={handleGenerateAIContent}
         />
-        <MetricCard
-          title="Total Engagement"
-          value={realTimeMetrics?.totalEngagement?.toLocaleString() || metrics?.total_engagement?.toLocaleString() || '0'}
-          change={`${realTimeMetrics?.engagementChange || '+5.2'}%`}
-          changeType={realTimeMetrics?.engagementChange >= 0 ? "increase" : "decrease"}
+        <QuickActionCard
+          title="Schedule Content"
+          description="Plan and schedule your content across platforms"
+          icon={CalendarDaysIcon}
+          color="blue"
+          action={handleScheduleContent}
+        />
+        <QuickActionCard
+          title="Content Library"
+          description="Browse and manage all the content I've created for you"
           icon={DocumentTextIcon}
-          color="orange"
+          color="green"
+          action={handleManageContent}
         />
       </div>
 
-      {/* Workflow Status */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">🤖 Autonomous Workflow</h2>
-          <button 
-            onClick={async () => {
-              try {
-                const response = await fetch('/api/autonomous/execute-cycle', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' }
-                })
-                const result = await response.json()
-                if (result.status === 'initiated') {
-                  alert('Autonomous posting cycle initiated!')
-                }
-              } catch (error) {
-                alert('Failed to trigger autonomous cycle')
-              }
-            }}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            <PlayIcon className="h-4 w-4 mr-2" />
-            Trigger Autonomous Cycle
-          </button>
+      {/* Content Statistics */}
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Content Overview</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <ContentCard
+            title="Draft Content"
+            count={contentStats?.drafts || 0}
+            icon={DocumentTextIcon}
+            color="gray"
+            description="Ready for review and publishing"
+            linkTo="/content?status=draft"
+          />
+          <ContentCard
+            title="AI Generated"
+            count={contentStats?.aiGenerated || 0}
+            icon={SparklesIcon}
+            color="purple"
+            description="Created with artificial intelligence"
+            linkTo="/content"
+          />
+          <ContentCard
+            title="Scheduled"
+            count={contentStats?.scheduled || 0}
+            icon={ClockIcon}
+            color="blue"
+            description="Queued for automatic publishing"
+            linkTo="/calendar"
+          />
+          <ContentCard
+            title="Published"
+            count={contentStats?.published || 0}
+            icon={CheckCircleIcon}
+            color="green"
+            description="Successfully posted content"
+            linkTo="/content?status=published"
+          />
         </div>
-        
-        {workflowLoading ? (
-          <div className="animate-pulse space-y-3">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded-lg"></div>
-            ))}
-          </div>
-        ) : workflow?.executions?.length > 0 ? (
-          <div className="space-y-3">
-            {workflow.executions.slice(0, 4).map((execution, index) => (
-              <WorkflowStage key={index} stage={{
-                name: execution.workflow_type,
-                status: execution.status,
-                progress: execution.progress || 0,
-                duration_minutes: execution.duration_minutes,
-                scheduled_time: execution.started_at
-              }} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            <PlayIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-            <p>No recent workflow executions</p>
-            <p className="text-sm">Click "Trigger Cycle" to start a new workflow</p>
-          </div>
-        )}
       </div>
 
-      {/* Goals & Memory */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Upcoming Content */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">🎯 Goal Progress</h2>
-          {goalsLoading ? (
-            <div className="animate-pulse space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-2 bg-gray-200 rounded"></div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Content</h3>
+          {upcomingContent && upcomingContent.length > 0 ? (
+            <div className="space-y-3">
+              {upcomingContent.slice(0, 5).map((item) => (
+                <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900 truncate">{item.title}</p>
+                    <p className="text-xs text-gray-500">{item.platform} • {new Date(item.scheduled_at).toLocaleDateString()}</p>
+                  </div>
+                  {item.image_url && <PhotoIcon className="h-4 w-4 text-gray-400 ml-2" />}
                 </div>
               ))}
-            </div>
-          ) : goals?.goals?.length > 0 ? (
-            <div>
-              {goals.goals.slice(0, 3).map((goal) => (
-                <GoalProgress key={goal.id} goal={{
-                  title: goal.title,
-                  progress: goal.progress_percentage,
-                  current: goal.current_value,
-                  target: goal.target_value,
-                  on_track: goal.is_on_track
-                }} />
-              ))}
-              <div className="text-sm text-gray-500 mt-4">
-                {goals?.active_goals || 0} active goals • 
-                {goals?.on_track_goals || 0} on track
-              </div>
+              <Link to="/calendar" className="block text-sm text-blue-600 hover:text-blue-700 mt-3">
+                View all scheduled →
+              </Link>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              <ChartBarIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p>No goals yet</p>
-              <p className="text-sm">Create your first goal to start tracking progress</p>
-            </div>
+            <p className="text-gray-500 text-sm">No scheduled content. Start by creating some posts!</p>
           )}
         </div>
 
+        {/* Lily's Capabilities */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">🧠 Memory System</h2>
-          {memoryLoading ? (
-            <div className="animate-pulse space-y-3">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="flex justify-between">
-                  <div className="h-4 bg-gray-200 rounded w-24"></div>
-                  <div className="h-4 bg-gray-200 rounded w-8"></div>
-                </div>
-              ))}
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">What I Can Do For You</h3>
+          <div className="space-y-4">
+            <div className="flex items-center">
+              <CpuChipIcon className="h-5 w-5 text-purple-600 mr-3" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900">Industry Research</p>
+                <p className="text-xs text-gray-500">I stay up-to-date with the latest trends in your industry</p>
+              </div>
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Always On</span>
             </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span>Content Items:</span>
-                <span className="font-semibold">{memoryStats?.total_content || 0}</span>
+            <div className="flex items-center">
+              <SparklesIcon className="h-5 w-5 text-blue-600 mr-3" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900">Content Creation</p>
+                <p className="text-xs text-gray-500">Professional posts tailored to your brand and audience</p>
               </div>
-              <div className="flex justify-between text-sm">
-                <span>Vector Embeddings:</span>
-                <span className="font-semibold">{memoryStats?.total_embeddings || 0}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>High Performing:</span>
-                <span className="font-semibold text-green-600">{memoryStats?.high_performing || 0}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Repurpose Ready:</span>
-                <span className="font-semibold text-blue-600">{memoryStats?.repurpose_candidates || 0}</span>
-              </div>
-              <div className="pt-3 border-t">
-                <a href="/memory" className="flex items-center text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
-                  <ChartBarIcon className="h-4 w-4 mr-1" />
-                  View Memory Explorer →
-                </a>
-              </div>
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Ready</span>
             </div>
-          )}
+            <div className="flex items-center">
+              <PhotoIcon className="h-5 w-5 text-orange-600 mr-3" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900">Visual Content</p>
+                <p className="text-xs text-gray-500">Eye-catching images to complement your posts</p>
+              </div>
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Available</span>
+            </div>
+            <Link to="/create-post" className="block text-sm text-blue-600 hover:text-blue-700 mt-3">
+              Let's get started together →
+            </Link>
+          </div>
         </div>
       </div>
     </div>

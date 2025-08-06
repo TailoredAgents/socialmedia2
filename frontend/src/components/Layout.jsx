@@ -5,15 +5,12 @@ import NotificationSystem from './Notifications/NotificationSystem'
 import { 
   HomeIcon, 
   CalendarDaysIcon, 
-  ChartBarIcon, 
   DocumentTextIcon, 
   Cog6ToothIcon,
   Bars3Icon,
   XMarkIcon,
   CpuChipIcon,
-  CheckCircleIcon,
   ArrowRightOnRectangleIcon,
-  BoltIcon,
   PlusIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
@@ -21,12 +18,9 @@ import {
 const navigation = [
   { name: 'Overview', href: '/', icon: HomeIcon },
   { name: 'Create Post', href: '/create-post', icon: PlusIcon },
-  { name: 'Calendar', href: '/calendar', icon: CalendarDaysIcon },
-  { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },
-  { name: 'Performance', href: '/performance', icon: BoltIcon },
-  { name: 'Content', href: '/content', icon: DocumentTextIcon },
+  { name: 'Content Library', href: '/content', icon: DocumentTextIcon },
+  { name: 'Scheduler', href: '/calendar', icon: CalendarDaysIcon },
   { name: 'Memory', href: '/memory', icon: CpuChipIcon },
-  { name: 'Goals', href: '/goals', icon: CheckCircleIcon },
   { name: 'Error Logs', href: '/error-logs', icon: ExclamationTriangleIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ]
@@ -88,9 +82,10 @@ function Layout({ children }) {
             <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-2">
               <div className="flex h-16 shrink-0 items-center">
                 <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">AI</span>
+                  <span className="text-white font-bold text-sm">L</span>
                 </div>
-                <span className="ml-2 text-xl font-bold text-gray-900">SocialAgent</span>
+                <span className="ml-2 text-xl font-bold text-gray-900">Lily AI</span>
+                <span className="ml-1 text-sm text-gray-500">Social Manager</span>
               </div>
               <nav className="flex flex-1 flex-col" role="navigation" aria-label="Main navigation">
                 <ul className="flex flex-1 flex-col gap-y-7">
@@ -135,9 +130,10 @@ function Layout({ children }) {
         <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6">
           <div className="flex h-16 shrink-0 items-center">
             <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">AI</span>
+              <span className="text-white font-bold text-sm">L</span>
             </div>
-            <span className="ml-2 text-xl font-bold text-gray-900">SocialAgent</span>
+            <span className="ml-2 text-xl font-bold text-gray-900">Lily AI</span>
+            <span className="ml-1 text-sm text-gray-500">Social Manager</span>
           </div>
           <nav className="flex flex-1 flex-col" role="navigation" aria-label="Main navigation">
             <ul className="flex flex-1 flex-col gap-y-7">

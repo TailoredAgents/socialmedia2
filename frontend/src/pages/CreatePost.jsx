@@ -2,13 +2,11 @@ import { useState, useEffect } from 'react'
 import { useEnhancedApi } from '../hooks/useEnhancedApi'
 import { useNotifications } from '../hooks/useNotifications'
 import { error as logError } from '../utils/logger.js'
+import ProgressBar from '../components/ProgressBar'
 import {
-  PlusIcon,
   PhotoIcon,
   DocumentTextIcon,
-  CalendarIcon,
   SparklesIcon,
-  EyeIcon,
   ArrowPathIcon,
   CheckCircleIcon,
   XCircleIcon,
@@ -22,22 +20,15 @@ const platforms = [
   { value: 'facebook', label: 'Facebook', maxLength: 63206 }
 ]
 
-const contentTypes = [
-  { value: 'text', label: 'Text Post', icon: DocumentTextIcon },
-  { value: 'image', label: 'Image + Text', icon: PhotoIcon },
-  { value: 'ai_generated', label: 'AI Generated', icon: SparklesIcon }
-]
 
 export default function CreatePost() {
   const { api } = useEnhancedApi()
-  const { showSuccess, showError } = useNotifications()
+  const { showSuccess, showError, showProgress } = useNotifications()
   
   const [formData, setFormData] = useState({
     title: '',
     content: '',
     platform: 'twitter',
-    contentType: 'text',
-    scheduledFor: '',
     tags: []
   })
   
@@ -48,10 +39,13 @@ export default function CreatePost() {
   const [industryContext, setIndustryContext] = useState('')
   const [showResearchPanel, setShowResearchPanel] = useState(false)
   const [researchData, setResearchData] = useState(null)
+  const [generateImageWithContent, setGenerateImageWithContent] = useState(true) // Default to true
   const [isResearching, setIsResearching] = useState(false)
+  const [contentGenerationProgress, setContentGenerationProgress] = useState(false)
+  const [imageGenerationProgress, setImageGenerationProgress] = useState(false)
+  const [specificInstructions, setSpecificInstructions] = useState('')
 
   const selectedPlatform = platforms.find(p => p.value === formData.platform)
-  const selectedContentType = contentTypes.find(c => c.value === formData.contentType)
 
   useEffect(() => {
     // Auto-conduct industry research when component mounts
@@ -102,118 +96,186 @@ export default function CreatePost() {
       [field]: value
     }))
     
-    // Clear generated image if content type changes
-    if (field === 'contentType' && value !== 'image' && value !== 'ai_generated') {
-      setGeneratedImage(null)
-      setImagePrompt('')
-    }
   }
 
   const generateAIContent = async () => {
     setIsGenerating(true)
+    setContentGenerationProgress(true)
+    
+    // Show Lily's initial message
+    showProgress(
+      "Let me focus and create something amazing for you! 😊", 
+      null
+    )
+    
     try {
-      const prompt = `Create engaging social media content for ${formData.platform} about AI Agent products. 
-      Industry context: ${industryContext}
-      Platform: ${formData.platform} (max ${selectedPlatform.maxLength} characters)
-      Topic focus: Autonomous social media management and AI automation
-      Tone: Professional but approachable
-      Include relevant hashtags appropriate for the platform.`
+      // Phase 1: Generate Caption First
+      showProgress("Creating your caption with industry insights... ✍️", null)
+      
+      // Step 1: Get company research data for enhanced context
+      let companyResearchData = null
+      try {
+        const researchResponse = await api.autonomous.researchCompany('Your Company')
+        if (researchResponse && researchResponse.success) {
+          companyResearchData = researchResponse
+        }
+      } catch (error) {
+        console.warn('Company research failed, using fallback:', error)
+      }
+      
+      // Prepare enhanced context with research data
+      let enhancedContext = industryContext
+      let specificInsights = ''
+      
+      if (companyResearchData) {
+        const insights = companyResearchData.insights || {}
+        const contentThemes = insights.content_themes || []
+        const recentNews = insights.recent_news || []
+        const marketPosition = insights.market_position || []
+        
+        specificInsights = [
+          ...contentThemes.slice(0, 2).map(theme => theme.insight),
+          ...recentNews.slice(0, 1).map(news => news.insight),
+          ...marketPosition.slice(0, 1).map(pos => pos.insight)
+        ].join('. ')
+        
+        enhancedContext = `${industryContext}. Company insights: ${specificInsights}`
+      }
+      
+      // Calculate character limit (leave 30 characters buffer as requested)
+      const maxLength = selectedPlatform.maxLength - 30
+      
+      const topic = specificInstructions || 'AI-powered social media management and automation'
 
-      const response = await api.content.generate(prompt, formData.contentType)
+      // STEP 1: Generate caption ONLY (always use 'text' type for caption generation)
+      const response = await api.content.generate(
+        topic, 
+        'text', // Always generate text first
+        formData.platform,
+        specificInstructions,
+        companyResearchData
+      )
       
       if (response && response.content) {
+        // Validate character count
+        let content = response.content.trim()
+        if (content.length > maxLength) {
+          // Truncate if too long, preserving hashtags at the end
+          const hashtagMatch = content.match(/(#\w+\s*)+$/);
+          const hashtags = hashtagMatch ? hashtagMatch[0] : '';
+          const contentWithoutHashtags = content.replace(/(#\w+\s*)+$/, '').trim();
+          const availableLength = maxLength - hashtags.length - 1; // -1 for space before hashtags
+          
+          if (contentWithoutHashtags.length > availableLength) {
+            const truncated = contentWithoutHashtags.substring(0, availableLength - 3).trim() + '...';
+            content = hashtags ? `${truncated} ${hashtags}` : truncated;
+          }
+        }
+        
+        // Update form with generated content
+        const generatedData = {
+          content: content,
+          title: response.title || `AI Generated ${formData.platform} Post`
+        }
+        
         setFormData(prev => ({
           ...(prev || {}),
-          content: response.content,
-          title: response.title || `AI Generated ${formData.platform} Post`
+          ...generatedData
         }))
-        showSuccess('AI content generated successfully!')
+        
+        showSuccess(`✨ Caption created successfully! (${content.length}/${maxLength} chars)`)
+        
+        // STEP 2: Now generate image based on the caption (if enabled)
+        if (generateImageWithContent) {
+          showProgress("Now creating a beautiful image to match your caption... 🎨", null)
+          setImageGenerationProgress(true)
+          
+          try {
+            const imagePrompt = `Create a professional social media image for ${formData.platform} that complements this content: ${content.substring(0, 200)}. Topic: ${topic}. Industry context: ${enhancedContext.substring(0, 300) || 'Professional business context'}`
+            
+            const imageData = await api.content.generateImage(
+              imagePrompt,
+              content,
+              formData.platform,
+              enhancedContext
+            )
+            
+            if (imageData && imageData.status === 'success' && imageData.image_data_url) {
+              const processedImageData = {
+                ...imageData,
+                image_url: imageData.image_data_url,
+                prompt: imageData.prompt?.enhanced || imageData.prompt?.original || imagePrompt
+              }
+              setGeneratedImage(processedImageData)
+              showSuccess('🎉 Complete! Caption and image created successfully!')
+            } else if (imageData && imageData.error) {
+              showError(`Caption created! But I had trouble with the image: Sorry, I'm having trouble generating images right now. Please try again later! 😔 - Lily`)
+            } else {
+              showError(`Caption created! But I had trouble generating the image. Please try again later! 😔 - Lily`)
+            }
+          } catch (imageError) {
+            logError('Image generation failed:', imageError)
+            showError(`Caption created! But I had trouble generating the image: Sorry, I'm having trouble generating images right now. Please try again later! 😔 - Lily`)
+          } finally {
+            setImageGenerationProgress(false)
+          }
+        }
+        
       } else if (response && response.error) {
-        showError(`AI content generation failed: ${response.error}`)
+        showError(`Sorry, my AI content generation is currently unavailable. Please try again later! 😔 - Lily`)
       } else {
-        showError('AI content generation failed: No content returned')
+        showError(`Sorry, my AI content generation is currently unavailable. Please try again later! 😔 - Lily`)
       }
     } catch (error) {
       logError('AI content generation failed:', error)
-      showError('Failed to generate AI content')
+      showError(`Sorry, my AI content generation is currently unavailable. Please try again later! 😔 - Lily`)
     } finally {
       setIsGenerating(false)
+      setContentGenerationProgress(false)
     }
   }
 
-  const generateImage = async () => {
-    if (!imagePrompt && !formData.content) {
-      showError('Please provide content or image prompt first')
-      return
-    }
 
-    setIsGenerating(true)
-    try {
-      const prompt = imagePrompt || `Create a professional social media image for: ${formData.content.substring(0, 200)}`
-      
-      // Call image generation API
-      const imageData = await api.content.generateImage(
-        prompt,
-        formData.content,
-        formData.platform,
-        industryContext
-      )
-      
-      console.log('Image generation response:', imageData) // Debug log
-      
-      if (imageData && imageData.status === 'success' && imageData.image_url) {
-        setGeneratedImage(imageData)
-        showSuccess('Image generated successfully!')
-      } else if (imageData && imageData.error) {
-        setGeneratedImage(imageData) // Show error state
-        showError(`Image generation failed: ${imageData.error}`)
-      } else {
-        showError('Image generation failed: No image returned')
-      }
-    } catch (error) {
-      logError('Image generation failed:', error)
-      showError('Failed to generate image')
-    } finally {
-      setIsGenerating(false)
-    }
-  }
-
-  const createPost = async () => {
+  const saveToLibrary = async () => {
     if (!formData.content.trim()) {
-      showError('Please provide content for your post')
+      showError('Please provide content before saving to library')
       return
     }
 
     setIsCreating(true)
     try {
-      const postData = {
+      const saveData = {
         ...formData,
-        image_url: generatedImage?.image_url,
+        image_url: generatedImage?.image_url || generatedImage?.image_data_url,
+        image_data: generatedImage?.image_base64, // Include base64 data if available
         image_prompt: imagePrompt,
         industry_context: industryContext,
         research_data: researchData,
-        status: formData.scheduledFor ? 'scheduled' : 'draft',
-        scheduled_at: formData.scheduledFor || null
+        status: 'draft',
+        generated_by_ai: true // Mark as AI generated since it's coming from Create Post
       }
 
-      await api.content.create(postData)
+      await api.content.create(saveData)
       
-      showSuccess('Post created successfully!')
+      showSuccess('Content saved to library successfully!')
       
-      // Reset form
-      setFormData({
-        title: '',
-        content: '',
-        platform: 'twitter',
-        contentType: 'text',
-        scheduledFor: '',
-        tags: []
-      })
-      setGeneratedImage(null)
-      setImagePrompt('')
+      // Option to view in content library
+      if (window.confirm('Content saved! Would you like to view it in the content library?')) {
+        window.location.href = '/content'
+      } else {
+        // Reset form
+        setFormData({
+          title: '',
+          content: '',
+          platform: 'twitter',
+          tags: []
+        })
+        setGeneratedImage(null)
+        setImagePrompt('')
+      }
     } catch (error) {
-      logError('Post creation failed:', error)
-      showError('Failed to create post')
+      logError('Save to library failed:', error)
+      showError('Failed to save content to library')
     } finally {
       setIsCreating(false)
     }
@@ -225,12 +287,17 @@ export default function CreatePost() {
 
   const getCharacterCountColor = () => {
     const count = getCharacterCount()
-    const maxLength = selectedPlatform.maxLength
+    const maxLength = selectedPlatform.maxLength - 30 // Account for 30-char buffer
     const percentage = count / maxLength
     
-    if (percentage > 0.9) return 'text-red-600'
-    if (percentage > 0.7) return 'text-yellow-600'
+    if (percentage > 0.95) return 'text-red-600 font-bold'
+    if (percentage > 0.85) return 'text-red-500'
+    if (percentage > 0.75) return 'text-yellow-600'
     return 'text-gray-600'
+  }
+
+  const isOverCharacterLimit = () => {
+    return getCharacterCount() > (selectedPlatform.maxLength - 30)
   }
 
   return (
@@ -257,49 +324,58 @@ export default function CreatePost() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content Creation */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Content Type & Platform Selection */}
+          {/* Platform Selection & Specific Instructions */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Post Configuration</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Content Type
-                </label>
-                <div className="space-y-2">
-                  {contentTypes.map(type => (
-                    <label key={type.value} className="flex items-center">
-                      <input
-                        type="radio"
-                        name="contentType"
-                        value={type.value}
-                        checked={formData.contentType === type.value}
-                        onChange={(e) => handleChange('contentType', e.target.value)}
-                        className="mr-3"
-                      />
-                      <type.icon className="h-4 w-4 mr-2" />
-                      <span className="text-sm">{type.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Platform
+              </label>
+              <select
+                value={formData.platform}
+                onChange={(e) => handleChange('platform', e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {platforms.map(platform => (
+                  <option key={platform.value} value={platform.value}>
+                    {platform.label} (max {platform.maxLength - 30} chars + 30 buffer)
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Platform
-                </label>
-                <select
-                  value={formData.platform}
-                  onChange={(e) => handleChange('platform', e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {platforms.map(platform => (
-                    <option key={platform.value} value={platform.value}>
-                      {platform.label} (max {platform.maxLength} chars)
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {/* Specific Instructions for Lily */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Specific Instructions for Lily (Optional)
+              </label>
+              <textarea
+                value={specificInstructions}
+                onChange={(e) => setSpecificInstructions(e.target.value)}
+                rows={3}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Tell Lily what kind of content you want... (e.g., 'Create a motivational post about productivity tips', 'Share industry insights about AI automation', etc.)"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Lily will use your company research data and industry insights to create specific, relevant content based on your instructions.
+              </p>
+            </div>
+
+            {/* Image Generation Opt-out */}
+            <div className="mt-4">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!generateImageWithContent}
+                  onChange={(e) => setGenerateImageWithContent(!e.target.checked)}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-700">Don't generate an AI image with this post</span>
+              </label>
+              <p className="text-xs text-gray-500 mt-1">
+                By default, Lily will create an AI-generated image to accompany your post. Uncheck this to create text-only content.
+              </p>
             </div>
           </div>
 
@@ -309,17 +385,32 @@ export default function CreatePost() {
               <h3 className="text-lg font-medium text-gray-900">Content</h3>
               <button
                 onClick={generateAIContent}
-                disabled={isGenerating}
+                disabled={contentGenerationProgress}
                 className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
-                {isGenerating ? (
-                  <ArrowPathIcon className="h-4 w-4 animate-spin" />
-                ) : (
+                {!contentGenerationProgress ? (
                   <SparklesIcon className="h-4 w-4" />
-                )}
-                <span>{isGenerating ? 'Generating...' : 'Generate AI Content'}</span>
+                ) : null}
+                <span>{contentGenerationProgress ? 'Creating Caption & Image...' : 'Generate AI Content'}</span>
               </button>
             </div>
+
+            {/* Content Generation Progress */}
+            {contentGenerationProgress && (
+              <div className="mb-6">
+                <ProgressBar
+                  isActive={contentGenerationProgress}
+                  stages={[
+                    '📋 Gathering company research...',
+                    '🔍 Analyzing industry insights...',
+                    '✍️ Writing your caption...',
+                    '✨ Perfecting the message...'
+                  ]}
+                  duration={6000}
+                  onComplete={() => {}}
+                />
+              </div>
+            )}
 
             <div className="space-y-4">
               <div>
@@ -341,104 +432,107 @@ export default function CreatePost() {
                     Content
                   </label>
                   <span className={`text-xs ${getCharacterCountColor()}`}>
-                    {getCharacterCount()}/{selectedPlatform.maxLength}
+                    {getCharacterCount()}/{selectedPlatform.maxLength - 30} (+30 buffer)
                   </span>
                 </div>
                 <textarea
                   value={formData.content}
                   onChange={(e) => handleChange('content', e.target.value)}
                   rows={6}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isOverCharacterLimit() ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
                   placeholder="Write your content here or use AI generation..."
                   maxLength={selectedPlatform.maxLength}
                   required
                 />
+                {isOverCharacterLimit() && (
+                  <p className="text-sm text-red-600 mt-1">
+                    ⚠️ Content exceeds recommended limit. Consider shortening to stay within the 30-character safety buffer.
+                  </p>
+                )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Schedule For (Optional)
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.scheduledFor}
-                  onChange={(e) => handleChange('scheduledFor', e.target.value)}
-                  min={new Date().toISOString().slice(0, 16)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
             </div>
           </div>
 
-          {/* Image Generation */}
-          {(formData.contentType === 'image' || formData.contentType === 'ai_generated') && (
+          {/* Generated Image Display */}
+          {generateImageWithContent && (
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Image Generation</h3>
-                <button
-                  onClick={generateImage}
-                  disabled={isGenerating}
-                  className="bg-green-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-green-700 transition-colors disabled:opacity-50"
-                >
-                  {isGenerating ? (
-                    <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                <h3 className="text-lg font-medium text-gray-900">Generated Image</h3>
+                <div className="text-sm text-blue-600">
+                  {imageGenerationProgress ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Creating image...
+                    </span>
                   ) : (
-                    <PhotoIcon className="h-4 w-4" />
+                    <span>🎨 Images are auto-generated with your content</span>
                   )}
-                  <span>{isGenerating ? 'Generating...' : 'Generate Image'}</span>
-                </button>
+                </div>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Image Prompt (Optional - AI will generate from content if empty)
-                  </label>
-                  <textarea
-                    value={imagePrompt}
-                    onChange={(e) => setImagePrompt(e.target.value)}
-                    rows={3}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Describe the image you want to generate..."
+              {/* Image Generation Progress */}
+              {imageGenerationProgress && (
+                <div className="mb-6">
+                  <ProgressBar
+                    isActive={imageGenerationProgress}
+                    stages={[
+                      'Processing your caption...',
+                      'Creating visual concept...',
+                      'Generating image...',
+                      'Adding finishing touches...'
+                    ]}
+                    duration={8000}
+                    onComplete={() => {}}
                   />
                 </div>
+              )}
 
-                {generatedImage && (
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">Generated Image</span>
-                      <div className="flex items-center space-x-2">
-                        {generatedImage.status === 'success' ? (
-                          <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <XCircleIcon className="h-4 w-4 text-red-500" />
-                        )}
-                        <span className="text-xs text-gray-600">
-                          {generatedImage.model || 'AI Generated'}
-                        </span>
-                      </div>
+              {generatedImage ? (
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">AI Generated Image</span>
+                    <div className="flex items-center space-x-2">
+                      {generatedImage.status === 'success' ? (
+                        <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <XCircleIcon className="h-4 w-4 text-red-500" />
+                      )}
+                      <span className="text-xs text-gray-600">
+                        {generatedImage.model || 'AI Generated'}
+                      </span>
                     </div>
-                    
-                    {generatedImage.image_url && (
-                      <img
-                        src={generatedImage.image_url}
-                        alt="Generated content"
-                        className="w-full max-w-md rounded-lg shadow-sm"
-                      />
-                    )}
-                    
-                    {generatedImage.error && (
-                      <p className="text-sm text-red-600 mt-2">
-                        {generatedImage.error}
-                      </p>
-                    )}
-                    
-                    <p className="text-xs text-gray-500 mt-2">
-                      Prompt: {generatedImage.prompt}
-                    </p>
                   </div>
-                )}
-              </div>
+                  
+                  {generatedImage.image_url && (
+                    <img
+                      src={generatedImage.image_url}
+                      alt="Generated content"
+                      className="w-full max-w-md rounded-lg shadow-sm"
+                    />
+                  )}
+                  
+                  {generatedImage.error && (
+                    <p className="text-sm text-red-600 mt-2">
+                      {generatedImage.error}
+                    </p>
+                  )}
+                  
+                  <p className="text-xs text-gray-500 mt-2">
+                    Prompt: {generatedImage.prompt}
+                  </p>
+                </div>
+              ) : !imageGenerationProgress && (
+                <div className="text-center py-8 text-gray-500">
+                  <PhotoIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <p className="text-sm">Your image will appear here after generating content</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -446,7 +540,7 @@ export default function CreatePost() {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex justify-between items-center">
               <div className="text-sm text-gray-600">
-                Ready to create your post?
+                Ready to save your content to the library?
               </div>
               <div className="flex space-x-3">
                 <button
@@ -455,8 +549,6 @@ export default function CreatePost() {
                       title: '',
                       content: '',
                       platform: 'twitter',
-                      contentType: 'text',
-                      scheduledFor: '',
                       tags: []
                     })
                     setGeneratedImage(null)
@@ -467,16 +559,16 @@ export default function CreatePost() {
                   Clear
                 </button>
                 <button
-                  onClick={createPost}
+                  onClick={saveToLibrary}
                   disabled={isCreating || !formData.content.trim()}
                   className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
                 >
                   {isCreating ? (
                     <ArrowPathIcon className="h-4 w-4 animate-spin" />
                   ) : (
-                    <PlusIcon className="h-4 w-4" />
+                    <DocumentTextIcon className="h-4 w-4" />
                   )}
-                  <span>{isCreating ? 'Creating...' : 'Create Post'}</span>
+                  <span>{isCreating ? 'Saving...' : 'Save to Library'}</span>
                 </button>
               </div>
             </div>

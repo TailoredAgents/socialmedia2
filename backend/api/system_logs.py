@@ -11,6 +11,7 @@ import logging
 import traceback
 import sys
 import os
+from backend.core.timezone_utils import now_in_est, format_lily_timestamp
 
 router = APIRouter(
     prefix="/api/system",
@@ -27,7 +28,8 @@ class ErrorLogStore:
         
     def add_error(self, error_data: Dict[str, Any]):
         """Add error to store and notify websocket clients"""
-        error_data['timestamp'] = datetime.utcnow().isoformat()
+        error_data['timestamp'] = format_lily_timestamp()  # Use EST timezone
+        error_data['timestamp_utc'] = datetime.utcnow().isoformat()  # Keep UTC for compatibility
         error_data['id'] = len(self.errors)
         self.errors.appendleft(error_data)
         
@@ -76,6 +78,27 @@ class ErrorLogStore:
             
             self.websocket_clients = active_clients
     
+    def _parse_timestamp(self, log_entry: Dict[str, Any]) -> datetime:
+        """Parse timestamp from log entry, handling both UTC and EST formats"""
+        try:
+            # Try UTC timestamp first (ISO format)
+            if 'timestamp_utc' in log_entry:
+                return datetime.fromisoformat(log_entry['timestamp_utc'].replace('Z', ''))
+            
+            # Fall back to parsing EST timestamp (remove timezone suffix)
+            timestamp_str = log_entry.get('timestamp', '')
+            if ' EST' in timestamp_str or ' EDT' in timestamp_str:
+                # Remove timezone suffix and parse
+                timestamp_str = timestamp_str.replace(' EST', '').replace(' EDT', '')
+                return datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+            
+            # Try direct ISO parsing
+            return datetime.fromisoformat(timestamp_str)
+            
+        except (ValueError, KeyError):
+            # Return a very old timestamp if parsing fails
+            return datetime(1970, 1, 1)
+    
     def get_errors(self, limit: int = 50, severity: Optional[str] = None) -> List[Dict]:
         """Get recent errors"""
         errors = list(self.errors)[:limit]
@@ -116,11 +139,11 @@ class ErrorLogStore:
         hour_ago = now - timedelta(hours=1)
         day_ago = now - timedelta(days=1)
         
-        # Count errors by time period
+        # Count errors by time period (use UTC timestamp for comparison)
         hour_errors = sum(1 for e in self.errors 
-                         if datetime.fromisoformat(e['timestamp']) > hour_ago)
+                         if self._parse_timestamp(e) > hour_ago)
         day_errors = sum(1 for e in self.errors 
-                        if datetime.fromisoformat(e['timestamp']) > day_ago)
+                        if self._parse_timestamp(e) > day_ago)
         
         # Count by severity
         severity_counts = {}
@@ -253,9 +276,9 @@ async def websocket_log_stream(websocket: WebSocket):
                 # Wait for any message from client (ping/pong)
                 data = await websocket.receive_text()
                 
-                # Echo back as pong
+                # Echo back as pong (send as JSON to avoid parsing errors)
                 if data == "ping":
-                    await websocket.send_text("pong")
+                    await websocket.send_json({"type": "pong", "timestamp": format_lily_timestamp()})
                     
             except WebSocketDisconnect:
                 break

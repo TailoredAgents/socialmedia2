@@ -3,6 +3,10 @@ Real AI Agent Industry Insights Service
 
 Provides weekly AI insights about new developments in the AI Agent industry
 using OpenAI for analysis and web search for current data.
+
+IMPORTANT: NO MOCK DATA OR FALLBACKS ARE ALLOWED IN THIS FILE.
+All responses must be real AI-generated insights or proper error handling.
+Return empty arrays/error states instead of fake data.
 """
 import asyncio
 import logging
@@ -167,16 +171,8 @@ class AIInsightsService:
         return results
     
     async def _get_fallback_insights(self) -> List[Dict[str, Any]]:
-        """Fallback insights when search fails"""
-        return [
-            {
-                'title': 'AI Agent Frameworks See Major Updates',
-                'snippet': 'CrewAI and LangChain release new features for multi-agent coordination',
-                'source': 'AI Industry News',
-                'link': 'https://example.com/ai-agents-update',
-                'relevance_score': 0.8
-            }
-        ]
+        """Fallback insights when search fails - return empty to indicate failure"""
+        return []
     
     async def generate_weekly_insights(self) -> Dict[str, Any]:
         """Generate comprehensive weekly AI agent industry insights"""

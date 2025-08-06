@@ -44,7 +44,7 @@ const platforms = {
   Facebook: { color: 'bg-indigo-600', textColor: 'text-indigo-600' },
 }
 
-export default function Calendar() {
+export default function Scheduler() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState('week') // 'month' or 'week'
   const [posts, setPosts] = useState([])
@@ -273,7 +273,7 @@ export default function Calendar() {
             {viewMode === 'week' ? `Week of ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}` : `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
           </h2>
           <p className="text-sm text-gray-600">
-            {viewMode === 'week' ? 'Drag and drop to reschedule posts • Colored dots show optimal times' : 'Manage your content calendar and scheduled posts'}
+            {viewMode === 'week' ? 'Drag and drop to reschedule posts • Colored dots show optimal times' : 'Manage your content scheduler and scheduled posts'}
           </p>
         </div>
         <div className="flex items-center space-x-4">

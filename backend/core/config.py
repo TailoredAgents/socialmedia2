@@ -75,6 +75,9 @@ class Settings(BaseSettings):
     mock_social_apis: str = "false"
     show_sample_data: str = "false"
     
+    # Timezone Configuration
+    timezone: str = "America/New_York"  # EST/EDT timezone for Lily
+    
     class Config:
         env_file = ".env"
         case_sensitive = False

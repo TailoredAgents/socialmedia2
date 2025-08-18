@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useEnhancedApi } from '../hooks/useEnhancedApi'
 import { useNotifications } from '../hooks/useNotifications'
 import { error as logError } from '../utils/logger.js'
+import SocialPlatformManager from '../components/SocialPlatforms/SocialPlatformManager'
 import {
   UserIcon,
   KeyIcon,
@@ -799,37 +800,7 @@ export default function Settings() {
           </h3>
         </div>
         <div className="p-6">
-          <div className="space-y-4">
-            {Object.entries(settings.platforms).map(([platform, config]) => (
-              <div key={platform} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-                    platform === 'twitter' ? 'bg-sky-500' :
-                    platform === 'linkedin' ? 'bg-blue-600' :
-                    platform === 'instagram' ? 'bg-pink-600' :
-                    'bg-indigo-600'
-                  }`}>
-                    {platform.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 capitalize">{platform}</p>
-                    <p className="text-sm text-gray-600">
-                      {config.connected ? `Connected as @${config.username}` : 'Not connected'}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    config.connected
-                      ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                  }`}
-                >
-                  {config.connected ? 'Disconnect' : 'Connect'}
-                </button>
-              </div>
-            ))}
-          </div>
+          <SocialPlatformManager />
         </div>
       </div>
 

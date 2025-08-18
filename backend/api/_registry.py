@@ -13,6 +13,7 @@ from . import (
     content_history,
     notifications,
     vector_search,
+    vector_search_production,
     similarity,
     deep_research,
     integration_services,
@@ -33,7 +34,8 @@ ROUTERS = [
     diagnostics.router,
     content_history.router,
     notifications.router,
-    vector_search.router,
+    vector_search_production.router,  # Production pgvector search (primary)
+    vector_search.router,  # Legacy vector search (will be phased out)
     similarity.router,
     deep_research.router,
     integration_services.router,

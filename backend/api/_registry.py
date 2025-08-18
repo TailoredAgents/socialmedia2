@@ -21,6 +21,7 @@ from . import (
     autonomous,
     performance_monitoring,
     social_platforms,
+    organizations,
 )
 
 # All routers to be registered with the FastAPI app
@@ -44,4 +45,5 @@ ROUTERS = [
     autonomous.router,
     performance_monitoring.router,
     social_platforms.router,  # Social media platform connections and posting
+    organizations.router,  # Multi-tenant organization management
 ]

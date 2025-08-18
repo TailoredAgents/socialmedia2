@@ -14,6 +14,8 @@ class User(Base):
     full_name = Column(String)
     hashed_password = Column(String)  # For local authentication
     is_active = Column(Boolean, default=True)
+    is_superuser = Column(Boolean, default=False)  # For FastAPI Users
+    is_verified = Column(Boolean, default=False)  # For FastAPI Users
     tier = Column(String, default="base")  # base, pro, enterprise
     auth_provider = Column(String, default="local")  # local, auth0
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -44,6 +46,7 @@ class ContentLog(Base):
     
     # External IDs
     platform_post_id = Column(String)  # ID from social platform
+    external_post_id = Column(String, index=True)  # For idempotency tracking
     
     # Relationships
     user = relationship("User", back_populates="content_logs")
@@ -233,7 +236,7 @@ class ContentItem(Base):
     content_hash = Column(String, index=True)  # SHA256 hash for deduplication
     
     # Platform and type information
-    platform = Column(String, nullable=False, index=True)  # twitter, linkedin, instagram, facebook, tiktok
+    platform = Column(String, nullable=False, index=True)  # twitter, linkedin, instagram, facebook
     content_type = Column(String, nullable=False, index=True)  # text, image, video, carousel, story
     content_format = Column(String)  # post, thread, article, etc.
     
@@ -543,4 +546,24 @@ class Notification(Base):
         Index('idx_notification_user_read', user_id, is_read),
         Index('idx_notification_user_type', user_id, notification_type),
         Index('idx_notification_created', created_at.desc()),
+    )
+
+
+class RefreshTokenBlacklist(Base):
+    """Store revoked/blacklisted refresh tokens"""
+    __tablename__ = "refresh_token_blacklist"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token_jti = Column(String, unique=True, index=True, nullable=False)  # JWT ID claim
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    revoked_at = Column(DateTime(timezone=True), server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=False)  # Original token expiration
+    
+    # Relationships
+    user = relationship("User")
+    
+    # Indexes for performance
+    __table_args__ = (
+        Index('idx_blacklist_token_user', token_jti, user_id),
+        Index('idx_blacklist_expires', expires_at),
     )

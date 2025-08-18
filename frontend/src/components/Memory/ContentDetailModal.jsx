@@ -59,7 +59,7 @@ export default function ContentDetailModal({ content, isOpen, onClose, onRepurpo
       id: 'video-script',
       title: 'Video Script',
       description: 'Convert to video format',
-      platform: 'YouTube/TikTok',
+      platform: 'YouTube',
       effort: 'High'
     }
   ]

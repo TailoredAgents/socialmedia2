@@ -1,0 +1,1 @@
+- Only write production-ready code, no mock, fake, demo, or placeholder code

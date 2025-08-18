@@ -40,7 +40,7 @@ class ContentItemFactory(factory.Factory):
     user_id = factory.SubFactory(UserFactory)
     title = factory.Faker('sentence', nb_words=4)
     content = factory.Faker('text', max_nb_chars=280)
-    platform = fuzzy.FuzzyChoice(['twitter', 'linkedin', 'instagram', 'facebook', 'tiktok'])
+    platform = fuzzy.FuzzyChoice(['twitter', 'linkedin', 'instagram', 'facebook'])
     status = fuzzy.FuzzyChoice(['draft', 'scheduled', 'published', 'failed'])
     content_type = fuzzy.FuzzyChoice(['text', 'image', 'video', 'link', 'poll'])
     

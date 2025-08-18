@@ -86,40 +86,33 @@ except Exception as e:
 loaded_routers = []
 failed_routers = []
 
-# Define all routers to load (routers define their own prefixes)
-routers_config = [
-    ("system_logs", "backend.api.system_logs"),
-    ("content", "backend.api.content_real"),
-    ("autonomous", "backend.api.autonomous"),
-    ("memory", "backend.api.memory"),
-    ("goals", "backend.api.goals"),
-    ("notifications_stub", "backend.api.notifications_stub"),
-    ("workflow_stub", "backend.api.workflow_stub"),
-    ("metrics", "backend.api.metrics_stub"),
-    ("diagnostics", "backend.api.diagnostics_simple"),
-]
-
-# Load routers with detailed error handling - app will start even if routers fail
-for router_name, module_path in routers_config:
-    try:
-        logger.info("Attempting to load {} router from {}".format(router_name, module_path))
-        module = __import__(module_path, fromlist=['router'])
-        router = getattr(module, 'router', None)
-        if router:
-            app.include_router(router, tags=[router_name])
+# Load routers from centralized registry
+try:
+    from backend.api._registry import ROUTERS
+    logger.info("Loading {} routers from registry".format(len(ROUTERS)))
+    
+    for router in ROUTERS:
+        try:
+            router_name = getattr(router, 'prefix', 'unknown').replace('/api/', '') or 'root'
+            app.include_router(router)
             loaded_routers.append(router_name)
             logger.info("✅ {} router loaded successfully".format(router_name))
-        else:
-            failed_routers.append((router_name, "No router attribute"))
-            logger.warning("⚠️ {}: No router attribute found".format(router_name))
-    except ImportError as e:
-        failed_routers.append((router_name, str(e)))
-        logger.warning("⚠️ {} router failed to load (ImportError): {}".format(router_name, e))
-    except Exception as e:
-        failed_routers.append((router_name, str(e)))
-        logger.error("❌ {} router error: {} - {}".format(router_name, type(e).__name__, e))
-        # Continue loading other routers even if one fails
-        continue
+        except Exception as e:
+            router_name = getattr(router, 'prefix', 'unknown')
+            failed_routers.append((router_name, str(e)))
+            logger.error("❌ {} router error: {} - {}".format(router_name, type(e).__name__, e))
+            continue
+            
+except ImportError as e:
+    logger.error("Failed to import router registry: {}".format(e))
+    # Fallback to minimal routers
+    try:
+        from backend.api import auth
+        app.include_router(auth.router)
+        loaded_routers.append("auth")
+        logger.info("✅ Fallback auth router loaded")
+    except Exception as fallback_e:
+        logger.error("❌ Even fallback auth router failed: {}".format(fallback_e))
 
 # Root endpoints
 @app.get("/")
@@ -145,6 +138,8 @@ async def health_check():
         "python_version": "{}.{}.{}".format(sys.version_info.major, sys.version_info.minor, sys.version_info.micro),
         "environment": os.getenv("ENVIRONMENT", "production"),
         "uptime": "Running",
+        "routers_loaded": len(loaded_routers),
+        "routers": loaded_routers,
         "features": {
             "environment": os.getenv("ENVIRONMENT", "production"),
             "available_features": loaded_routers,

@@ -126,7 +126,7 @@ const AlertFilters = ({ filters, setFilters, darkMode }) => {
   const filterOptions = {
     type: ['All', 'Engagement', 'Approval', 'Milestone', 'Error', 'Trending'],
     priority: ['All', 'High', 'Medium', 'Low'],
-    platform: ['All', 'LinkedIn', 'Twitter', 'Instagram', 'Facebook', 'TikTok'],
+    platform: ['All', 'LinkedIn', 'Twitter', 'Instagram', 'Facebook'],
     status: ['All', 'Unread', 'Read']
   }
 

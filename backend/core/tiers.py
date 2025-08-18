@@ -110,7 +110,7 @@ class TierManager:
             
             SubscriptionTier.MID: TierFeatures(
                 tier=SubscriptionTier.MID,
-                max_platforms=5,  # + Facebook, TikTok
+                max_platforms=4,  # + Facebook
                 max_posts_per_day=15,
                 max_content_storage=500,
                 research_enabled=True,

@@ -1,96 +1,181 @@
 from backend.tasks.celery_app import celery_app
 from backend.agents.tools import twitter_tool
+from backend.db.database import get_db
+from backend.db.models import ContentLog
+from backend.core.feature_flags import ff
 import logging
+import hashlib
 from datetime import datetime, timedelta
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
-@celery_app.task
-def schedule_post(content, platform, scheduled_time=None):
-    """Schedule a post for a specific platform"""
+@celery_app.task(
+    autoretry_for=(Exception,),
+    retry_backoff=2,
+    retry_jitter=True,
+    max_retries=5
+)
+def schedule_post(content, platform, scheduled_time=None, user_id=None, idempotency_key=None):
+    """Schedule a post for a specific platform with idempotency"""
     try:
         if scheduled_time is None:
             scheduled_time = datetime.utcnow() + timedelta(hours=1)
         
-        # For now, we'll simulate scheduling
-        # In production, you'd integrate with platform APIs or scheduling services
+        # Create idempotency key if not provided
+        if not idempotency_key:
+            content_hash = hashlib.sha256(f"{user_id}_{platform}_{content}_{scheduled_time}".encode()).hexdigest()[:16]
+            idempotency_key = f"schedule_{content_hash}"
         
-        result = {
-            'status': 'scheduled',
-            'content': content,
-            'platform': platform,
-            'scheduled_for': scheduled_time.isoformat(),
-            'post_id': f"{platform}_{int(datetime.utcnow().timestamp())}"
-        }
-        
-        logger.info(f"Post scheduled for {platform} at {scheduled_time}")
-        
-        return result
+        # Check for existing post with same idempotency key
+        db = next(get_db())
+        try:
+            existing = db.query(ContentLog).filter(
+                ContentLog.external_post_id == idempotency_key
+            ).first()
+            
+            if existing:
+                logger.info(f"Post already scheduled with key {idempotency_key}")
+                return {
+                    'status': 'already_scheduled',
+                    'content': existing.content,
+                    'platform': existing.platform,
+                    'scheduled_for': existing.scheduled_for.isoformat(),
+                    'post_id': str(existing.id)
+                }
+            
+            # Create new content log entry
+            content_log = ContentLog(
+                user_id=user_id,
+                platform=platform,
+                content=content,
+                status="scheduled",
+                scheduled_for=scheduled_time,
+                external_post_id=idempotency_key,
+                content_type="text"
+            )
+            db.add(content_log)
+            db.commit()
+            db.refresh(content_log)
+            
+            result = {
+                'status': 'scheduled',
+                'content': content,
+                'platform': platform,
+                'scheduled_for': scheduled_time.isoformat(),
+                'post_id': str(content_log.id),
+                'idempotency_key': idempotency_key
+            }
+            
+            logger.info(f"Post scheduled for {platform} at {scheduled_time} with key {idempotency_key}")
+            
+            return result
+            
+        finally:
+            db.close()
         
     except Exception as exc:
         logger.error(f"Post scheduling failed: {str(exc)}")
-        return {
-            'status': 'error',
-            'message': f'Post scheduling failed: {str(exc)}'
-        }
+        raise
 
-@celery_app.task
-def publish_post(content, platform, post_id=None):
-    """Publish a post immediately to the specified platform"""
+@celery_app.task(
+    autoretry_for=(Exception,),
+    retry_backoff=2,
+    retry_jitter=True,
+    max_retries=5
+)
+def publish_post(content, platform, post_id=None, user_id=None, idempotency_key=None):
+    """Publish a post immediately to the specified platform with idempotency"""
     try:
-        if platform.lower() == 'twitter':
-            result = twitter_tool.post_tweet(content)
+        # Create idempotency key if not provided
+        if not idempotency_key:
+            content_hash = hashlib.sha256(f"{user_id}_{platform}_{content}".encode()).hexdigest()[:16]
+            idempotency_key = f"publish_{content_hash}"
+        
+        # Check for existing published post with same idempotency key
+        db = next(get_db())
+        try:
+            existing = db.query(ContentLog).filter(
+                ContentLog.external_post_id == idempotency_key,
+                ContentLog.status == "published"
+            ).first()
             
-            if result['status'] == 'success':
+            if existing:
+                logger.info(f"Post already published with key {idempotency_key}")
                 return {
+                    'status': 'already_published',
+                    'platform': existing.platform,
+                    'content': existing.content,
+                    'platform_post_id': existing.platform_post_id,
+                    'published_at': existing.published_at.isoformat() if existing.published_at else None
+                }
+            
+            # Use stub integrations if feature flag is enabled
+            if ff("USE_STUB_INTEGRATIONS"):
+                # Simulate successful publishing
+                platform_post_id = f"{platform}_{int(datetime.utcnow().timestamp())}"
+                result = {
                     'status': 'published',
                     'platform': platform,
                     'content': content,
-                    'platform_post_id': result['tweet_id'],
-                    'published_at': datetime.utcnow().isoformat()
+                    'platform_post_id': platform_post_id,
+                    'published_at': datetime.utcnow().isoformat(),
+                    'note': 'Published via stub integration'
                 }
             else:
-                return {
-                    'status': 'failed',
-                    'platform': platform,
-                    'error': result.get('error', 'Unknown error')
-                }
-        
-        elif platform.lower() == 'linkedin':
-            # LinkedIn API integration would go here
-            # For now, simulate success
-            return {
-                'status': 'published',
-                'platform': platform,
-                'content': content,
-                'platform_post_id': f"linkedin_{int(datetime.utcnow().timestamp())}",
-                'published_at': datetime.utcnow().isoformat(),
-                'note': 'LinkedIn integration not yet implemented'
-            }
-        
-        elif platform.lower() == 'instagram':
-            # Instagram API integration would go here
-            return {
-                'status': 'published',
-                'platform': platform,
-                'content': content,
-                'platform_post_id': f"instagram_{int(datetime.utcnow().timestamp())}",
-                'published_at': datetime.utcnow().isoformat(),
-                'note': 'Instagram integration not yet implemented'
-            }
-        
-        else:
-            return {
-                'status': 'error',
-                'message': f'Platform {platform} not supported'
-            }
+                # Real platform integrations
+                if platform.lower() == 'twitter':
+                    result = twitter_tool.post_tweet(content)
+                    
+                    if result['status'] != 'success':
+                        raise Exception(f"Twitter API error: {result.get('error', 'Unknown error')}")
+                        
+                    result = {
+                        'status': 'published',
+                        'platform': platform,
+                        'content': content,
+                        'platform_post_id': result['tweet_id'],
+                        'published_at': datetime.utcnow().isoformat()
+                    }
+                else:
+                    raise Exception(f'Platform {platform} not yet supported')
+            
+            # Update or create content log entry
+            if post_id:
+                # Update existing scheduled post
+                content_log = db.query(ContentLog).filter(ContentLog.id == int(post_id)).first()
+                if content_log:
+                    content_log.status = "published"
+                    content_log.published_at = datetime.utcnow()
+                    content_log.platform_post_id = result['platform_post_id']
+                    content_log.external_post_id = idempotency_key
+                else:
+                    raise Exception(f"Content log {post_id} not found")
+            else:
+                # Create new content log entry
+                content_log = ContentLog(
+                    user_id=user_id,
+                    platform=platform,
+                    content=content,
+                    status="published",
+                    published_at=datetime.utcnow(),
+                    platform_post_id=result['platform_post_id'],
+                    external_post_id=idempotency_key,
+                    content_type="text"
+                )
+                db.add(content_log)
+            
+            db.commit()
+            logger.info(f"Post published successfully to {platform} with key {idempotency_key}")
+            
+            return result
+            
+        finally:
+            db.close()
             
     except Exception as exc:
         logger.error(f"Post publishing failed: {str(exc)}")
-        return {
-            'status': 'error',
-            'message': f'Post publishing failed: {str(exc)}'
-        }
+        raise
 
 @celery_app.task
 def batch_publish_posts(posts):

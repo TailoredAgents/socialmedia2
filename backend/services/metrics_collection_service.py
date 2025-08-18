@@ -27,7 +27,6 @@ class MetricsPlatform(Enum):
     LINKEDIN = "linkedin"
     INSTAGRAM = "instagram"
     FACEBOOK = "facebook"
-    TIKTOK = "tiktok"
 
 @dataclass
 class UnifiedMetrics:

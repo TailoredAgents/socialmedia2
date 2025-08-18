@@ -43,7 +43,7 @@ const emptyData = {
 
 // Filter Component
 const FilterSection = ({ filters, setFilters, darkMode }) => {
-  const platforms = ['All', 'LinkedIn', 'Twitter', 'Instagram', 'Facebook', 'TikTok']
+  const platforms = ['All', 'LinkedIn', 'Twitter', 'Instagram', 'Facebook']
   const timeframes = ['7d', '30d', '90d', '1y']
   const metrics = ['All', 'Engagement', 'Reach', 'Clicks', 'Shares']
 

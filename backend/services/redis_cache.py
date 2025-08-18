@@ -130,12 +130,6 @@ class RedisCache:
                 "profile": 7200,      # 2 hours
                 "post": 3600,         # 1 hour
                 "analytics": 1800     # 30 minutes
-            },
-            "tiktok": {
-                "profile": 3600,      # 1 hour
-                "video": 1800,        # 30 minutes
-                "analytics": 1800,    # 30 minutes
-                "trending": 600       # 10 minutes (trending changes fast)
             }
         }
         

@@ -37,8 +37,7 @@ const platforms = [
   { value: 'twitter', label: 'Twitter' },
   { value: 'linkedin', label: 'LinkedIn' },
   { value: 'instagram', label: 'Instagram' },
-  { value: 'facebook', label: 'Facebook' },
-  { value: 'tiktok', label: 'TikTok' }
+  { value: 'facebook', label: 'Facebook' }
 ]
 
 export default function CreateGoalModal({ isOpen, onClose, onSubmit }) {

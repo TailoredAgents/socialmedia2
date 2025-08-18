@@ -20,6 +20,12 @@ from backend.core.audit_logger import log_content_event, AuditEventType
 from backend.integrations.twitter_client import twitter_client, TwitterAPIError
 from backend.integrations.linkedin_client import linkedin_client, LinkedInAPIError
 from backend.integrations.instagram_client import instagram_client, InstagramAPIError
+from backend.services.notification_service import (
+    trigger_post_published_notification,
+    trigger_post_failed_notification,
+    trigger_platform_connected_notification,
+    trigger_oauth_expired_notification
+)
 
 logger = logging.getLogger(__name__)
 
@@ -235,6 +241,13 @@ async def oauth_callback(
         
         logger.info(f"Successfully connected {platform} account for user {user_id}")
         
+        # Trigger platform connected notification
+        try:
+            username = user_info.get("username", user_info.get("display_name", ""))
+            await trigger_platform_connected_notification(user_id, platform, username)
+        except Exception as e:
+            logger.warning(f"Failed to send platform connected notification: {e}")
+        
         # Redirect to frontend with success message
         return RedirectResponse(
             url=f"http://localhost:3000/dashboard/connections?success=true&platform={platform}",
@@ -366,6 +379,12 @@ async def validate_platform_connection(
         access_token = token_manager.get_access_token(connection.access_token)
         
         if not access_token:
+            # Trigger OAuth expired notification
+            try:
+                await trigger_oauth_expired_notification(current_user.id, platform)
+            except Exception as e:
+                logger.warning(f"Failed to trigger OAuth expired notification: {e}")
+            
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid or expired access token"
@@ -520,18 +539,57 @@ async def post_to_platforms(
             
             logger.info(f"Successfully posted to {platform} for user {current_user.id}")
             
+            # Trigger post published notification
+            try:
+                background_tasks.add_task(
+                    trigger_post_published_notification,
+                    current_user.id,
+                    platform,
+                    post_result["id"],
+                    post_request.content
+                )
+            except Exception as e:
+                logger.warning(f"Failed to trigger post published notification: {e}")
+            
         except (TwitterAPIError, LinkedInAPIError, InstagramAPIError) as e:
             logger.error(f"Failed to post to {platform}: {e}")
+            error_msg = str(e)
             errors.append({
                 "platform": platform,
-                "error": str(e)
+                "error": error_msg
             })
+            
+            # Trigger post failed notification
+            try:
+                background_tasks.add_task(
+                    trigger_post_failed_notification,
+                    current_user.id,
+                    platform,
+                    post_request.content,
+                    error_msg
+                )
+            except Exception as notification_error:
+                logger.warning(f"Failed to trigger post failed notification: {notification_error}")
+                
         except Exception as e:
             logger.error(f"Unexpected error posting to {platform}: {e}")
+            error_msg = f"Unexpected error: {str(e)}"
             errors.append({
                 "platform": platform,
-                "error": f"Unexpected error: {str(e)}"
+                "error": error_msg
             })
+            
+            # Trigger post failed notification for unexpected errors
+            try:
+                background_tasks.add_task(
+                    trigger_post_failed_notification,
+                    current_user.id,
+                    platform,
+                    post_request.content,
+                    error_msg
+                )
+            except Exception as notification_error:
+                logger.warning(f"Failed to trigger post failed notification: {notification_error}")
     
     db.commit()
     

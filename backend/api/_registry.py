@@ -20,6 +20,7 @@ from . import (
     feature_flags,
     autonomous,
     performance_monitoring,
+    social_platforms,
 )
 
 # All routers to be registered with the FastAPI app
@@ -42,4 +43,5 @@ ROUTERS = [
     feature_flags.router,
     autonomous.router,
     performance_monitoring.router,
+    social_platforms.router,  # Social media platform connections and posting
 ]

@@ -1,22 +1,27 @@
 """
-LinkedIn API Integration Client
-Created by Tailored Agents - AI Development Specialists
-Integration Specialist Component - Complete LinkedIn API integration for professional content
+LinkedIn API Client with OAuth 2.0 Support
+Handles authentication, posting, and metrics collection for LinkedIn platform
 """
-import asyncio
+import os
 import logging
-from typing import Dict, List, Optional, Any, Tuple, Union
+from typing import Dict, Any, Optional, List, Tuple
 from datetime import datetime, timedelta
 import json
-import httpx
+import time
 from dataclasses import dataclass
-import base64
 
-from backend.core.config import get_settings
-from backend.auth.social_oauth import oauth_manager
+import requests
+from requests.auth import HTTPBasicAuth
+from requests_oauthlib import OAuth2Session
 
-settings = get_settings()
+from backend.core.token_encryption import get_token_manager
+from backend.core.audit_logger import log_content_event, AuditEventType
+
 logger = logging.getLogger(__name__)
+
+class LinkedInAPIError(Exception):
+    """Custom exception for LinkedIn API errors"""
+    pass
 
 @dataclass
 class LinkedInPost:
@@ -31,215 +36,215 @@ class LinkedInPost:
     article_url: Optional[str] = None
     company_page_id: Optional[str] = None
 
-@dataclass
-class LinkedInArticle:
-    """LinkedIn article data structure"""
-    id: str
-    title: str
-    content: str
-    author_id: str
-    published_at: datetime
-    canonical_url: str
-    thumbnail_url: Optional[str]
-    view_count: int
-    engagement_metrics: Dict[str, int]
-
-@dataclass
-class LinkedInAnalytics:
-    """LinkedIn analytics data structure"""
-    post_id: str
-    impressions: int
-    clicks: int
-    reactions: int
-    comments: int
-    shares: int
-    engagement_rate: float
-    unique_impressions: int
-    click_through_rate: float
-    fetched_at: datetime
-
-@dataclass
-class LinkedInCompanyPage:
-    """LinkedIn company page data structure"""
-    id: str
-    name: str
-    description: str
-    follower_count: int
-    logo_url: str
-    industry: str
-    company_size: str
-    website_url: str
-
-class LinkedInAPIClient:
+class LinkedInClient:
     """
-    LinkedIn API Client with comprehensive posting and analytics capabilities
+    LinkedIn API client with OAuth 2.0 authentication and comprehensive features
     
     Features:
-    - Professional post creation with media support
-    - Company page content management
-    - Article publishing
-    - Analytics and engagement metrics
-    - Connection and network insights
-    - Video and document sharing support
+    - OAuth 2.0 authentication flow
+    - Professional post creation
+    - Engagement metrics collection
+    - Rate limit handling
+    - Error recovery and retry logic
     """
     
-    def __init__(self):
-        """Initialize LinkedIn API client"""
-        self.api_base = "https://api.linkedin.com/v2"
-        self.api_version = "202401"  # LinkedIn API version
-        
-        # API endpoints
-        self.endpoints = {
-            "people": "/people/~",
-            "posts": "/ugcPosts",
-            "shares": "/shares",
-            "articles": "/articles",
-            "companies": "/companies/{company_id}",
-            "organization_posts": "/organizationAcls",
-            "media_upload": "/assets",
-            "analytics": "/organizationalEntityShareStatistics",
-            "social_actions": "/socialActions/{share_id}/comments"
-        }
-        
-        # Rate limiting configuration (LinkedIn is more restrictive)
-        self.rate_limits = {
-            "post_create": {"requests": 100, "window": 3600},  # 100 per hour
-            "post_lookup": {"requests": 500, "window": 3600},
-            "people_lookup": {"requests": 500, "window": 3600},
-            "analytics": {"requests": 1000, "window": 3600},
-            "media_upload": {"requests": 100, "window": 3600}
-        }
-        
-        # Content limits
-        self.content_limits = {
-            "post_text": 3000,  # Characters
-            "article_title": 150,
-            "article_content": 110000,  # Characters
-            "media_per_post": 9,  # Maximum media items
-            "hashtags_recommended": 5
-        }
-        
-        # Supported media types
-        self.supported_media_types = {
-            "image": ["jpg", "jpeg", "png"],
-            "video": ["mp4", "mov", "avi"],
-            "document": ["pdf", "doc", "docx", "ppt", "pptx"]
-        }
-        
-        logger.info("LinkedInAPIClient initialized with v2 API support")
+    # LinkedIn API v2 endpoints
+    BASE_URL = "https://api.linkedin.com/v2"
+    OAUTH_URL = "https://www.linkedin.com/oauth/v2"
     
-    async def _make_request(
-        self,
-        method: str,
-        endpoint: str,
-        access_token: str,
-        data: Optional[Dict] = None,
-        params: Optional[Dict] = None,
-        headers: Optional[Dict] = None,
-        files: Optional[Dict] = None
-    ) -> Dict[str, Any]:
+    # LinkedIn API limits
+    MAX_POST_LENGTH = 3000
+    MAX_IMAGES_PER_POST = 9
+    
+    def __init__(self, client_id: Optional[str] = None, client_secret: Optional[str] = None):
         """
-        Make authenticated request to LinkedIn API
+        Initialize LinkedIn client
         
         Args:
-            method: HTTP method
-            endpoint: API endpoint
-            access_token: OAuth access token
-            data: Request data
-            params: Query parameters
-            headers: Additional headers
-            files: File uploads
+            client_id: LinkedIn OAuth 2.0 Client ID
+            client_secret: LinkedIn OAuth 2.0 Client Secret
+        """
+        self.client_id = client_id or os.getenv("LINKEDIN_CLIENT_ID")
+        self.client_secret = client_secret or os.getenv("LINKEDIN_CLIENT_SECRET")
+        
+        if not self.client_id or not self.client_secret:
+            logger.warning("LinkedIn OAuth credentials not provided. Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET environment variables.")
+        
+        self.token_manager = get_token_manager()
+        self.session = requests.Session()
+        
+        # Rate limiting tracking
+        self.rate_limits = {}
+        self.last_rate_limit_check = {}
+        
+        logger.info("LinkedIn client initialized")
+    
+    def get_oauth_authorization_url(self, redirect_uri: str, state: Optional[str] = None) -> Tuple[str, str]:
+        """
+        Get OAuth 2.0 authorization URL for user consent
+        
+        Args:
+            redirect_uri: OAuth redirect URI
+            state: Optional state parameter for CSRF protection
             
         Returns:
-            API response data
+            Tuple of (authorization_url, state)
         """
-        url = f"{self.api_base}{endpoint}"
+        try:
+            oauth = OAuth2Session(
+                client_id=self.client_id,
+                redirect_uri=redirect_uri,
+                scope=["r_liteprofile", "r_emailaddress", "w_member_social", "r_member_social"]
+            )
+            
+            authorization_url, state = oauth.authorization_url(
+                f"{self.OAUTH_URL}/authorization",
+                state=state
+            )
+            
+            logger.info(f"Generated LinkedIn OAuth authorization URL for redirect_uri: {redirect_uri}")
+            return authorization_url, state
+            
+        except Exception as e:
+            logger.error(f"Failed to generate LinkedIn OAuth authorization URL: {e}")
+            raise LinkedInAPIError(f"OAuth authorization URL generation failed: {e}")
+    
+    def exchange_code_for_tokens(self, authorization_code: str, redirect_uri: str) -> Dict[str, Any]:
+        """
+        Exchange authorization code for access and refresh tokens
         
-        request_headers = {
+        Args:
+            authorization_code: OAuth authorization code from callback
+            redirect_uri: OAuth redirect URI used in authorization
+            
+        Returns:
+            Dictionary containing token data
+        """
+        try:
+            token_data = {
+                "grant_type": "authorization_code",
+                "code": authorization_code,
+                "redirect_uri": redirect_uri,
+                "client_id": self.client_id,
+                "client_secret": self.client_secret
+            }
+            
+            response = requests.post(
+                f"{self.OAUTH_URL}/accessToken",
+                data=token_data,
+                headers={"Content-Type": "application/x-www-form-urlencoded"}
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"LinkedIn token exchange failed: {response.status_code} - {response.text}")
+                raise LinkedInAPIError(f"Token exchange failed: {response.text}")
+            
+            token_response = response.json()
+            
+            # Add expiration timestamp
+            if "expires_in" in token_response:
+                token_response["expires_at"] = time.time() + token_response["expires_in"]
+            
+            logger.info("Successfully exchanged authorization code for LinkedIn tokens")
+            return token_response
+            
+        except Exception as e:
+            logger.error(f"LinkedIn token exchange failed: {e}")
+            raise LinkedInAPIError(f"Token exchange failed: {e}")
+    
+    def _get_authenticated_session(self, access_token: str) -> requests.Session:
+        """Get authenticated requests session"""
+        session = requests.Session()
+        session.headers.update({
             "Authorization": f"Bearer {access_token}",
-            "LinkedIn-Version": self.api_version,
-            "X-Restli-Protocol-Version": "2.0.0",
-            "User-Agent": "AI-Social-Media-Agent/1.0"
-        }
-        
-        if headers:
-            request_headers.update(headers)
-        
-        # Add Content-Type for JSON requests
-        if data and not files:
-            request_headers["Content-Type"] = "application/json"
-        
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            try:
-                if method.upper() == "GET":
-                    response = await client.get(url, headers=request_headers, params=params)
-                elif method.upper() == "POST":
-                    if files:
-                        response = await client.post(url, headers=request_headers, data=data, files=files)
-                    elif data:
-                        response = await client.post(url, headers=request_headers, json=data)
-                    else:
-                        response = await client.post(url, headers=request_headers, params=params)
-                elif method.upper() == "PUT":
-                    response = await client.put(url, headers=request_headers, json=data)
-                elif method.upper() == "DELETE":
-                    response = await client.delete(url, headers=request_headers, params=params)
-                else:
-                    raise ValueError(f"Unsupported HTTP method: {method}")
-                
-                # Handle rate limiting
-                if response.status_code == 429:
-                    retry_after = int(response.headers.get("Retry-After", 3600))
-                    logger.warning(f"LinkedIn rate limited. Waiting {retry_after}s")
-                    await asyncio.sleep(retry_after)
-                    # Retry once after rate limit
-                    return await self._make_request(method, endpoint, access_token, data, params, headers, files)
-                
-                # Handle API errors
-                if response.status_code >= 400:
-                    error_data = response.json() if response.content else {}
-                    logger.error(f"LinkedIn API error {response.status_code}: {error_data}")
-                    raise Exception(f"LinkedIn API error: {error_data.get('message', response.text)}")
-                
-                return response.json() if response.content else {}
-                
-            except httpx.RequestError as e:
-                logger.error(f"HTTP request error: {e}")
-                raise Exception(f"Network error: {str(e)}")
-            except Exception as e:
-                logger.error(f"LinkedIn API request failed: {e}")
-                raise
+            "Content-Type": "application/json",
+            "LinkedIn-Version": "202401",
+            "X-Restli-Protocol-Version": "2.0.0"
+        })
+        return session
     
-    async def get_user_profile(self, access_token: str) -> Dict[str, Any]:
+    def _check_rate_limit(self, endpoint: str) -> bool:
         """
-        Get authenticated user's LinkedIn profile
+        Check if we're within rate limits for an endpoint
+        
+        Args:
+            endpoint: API endpoint to check
+            
+        Returns:
+            True if within limits, False if rate limited
+        """
+        now = time.time()
+        rate_limit_info = self.rate_limits.get(endpoint, {})
+        
+        # Check if rate limit has reset
+        reset_time = rate_limit_info.get("reset_time", 0)
+        if now >= reset_time:
+            return True
+        
+        # Check remaining requests
+        remaining = rate_limit_info.get("remaining", 1)
+        return remaining > 0
+    
+    def _update_rate_limit(self, endpoint: str, response: requests.Response):
+        """Update rate limit tracking from API response headers"""
+        headers = response.headers
+        
+        self.rate_limits[endpoint] = {
+            "limit": int(headers.get("X-RateLimit-Limit", 0)),
+            "remaining": int(headers.get("X-RateLimit-Remaining", 0)),
+            "reset_time": int(headers.get("X-RateLimit-Reset", 0))
+        }
+    
+    def get_user_info(self, access_token: str) -> Dict[str, Any]:
+        """
+        Get authenticated user information
         
         Args:
             access_token: OAuth access token
             
         Returns:
-            User profile data
+            Dictionary containing user information
         """
-        params = {
-            "projection": "(id,firstName,lastName,profilePicture(displayImage~:playableStreams),headline,summary,numConnections,numFollowers,industry,positions)"
-        }
-        
-        response = await self._make_request("GET", self.endpoints["people"], access_token, params=params)
-        
-        # Extract profile information
-        profile = {
-            "id": response.get("id"),
-            "first_name": response.get("firstName", {}).get("localized", {}).get("en_US", ""),
-            "last_name": response.get("lastName", {}).get("localized", {}).get("en_US", ""),
-            "headline": response.get("headline", {}).get("localized", {}).get("en_US", ""),
-            "summary": response.get("summary", {}).get("localized", {}).get("en_US", ""),
-            "connections": response.get("numConnections", 0),
-            "followers": response.get("numFollowers", 0),
-            "industry": response.get("industry", {}).get("localized", {}).get("en_US", ""),
-            "profile_image": self._extract_profile_image(response.get("profilePicture", {}))
-        }
-        
-        return profile
+        try:
+            session = self._get_authenticated_session(access_token)
+            
+            # Check rate limits
+            if not self._check_rate_limit("people"):
+                raise LinkedInAPIError("Rate limit exceeded for user info endpoint")
+            
+            response = session.get(
+                f"{self.BASE_URL}/people/~",
+                params={
+                    "projection": "(id,firstName,lastName,profilePicture(displayImage~:playableStreams),headline,numConnections,numFollowers,industry)"
+                }
+            )
+            
+            self._update_rate_limit("people", response)
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to get LinkedIn user info: {response.status_code} - {response.text}")
+                raise LinkedInAPIError(f"Failed to get user info: {response.text}")
+            
+            user_data = response.json()
+            
+            # Extract user information
+            profile = {
+                "id": user_data.get("id"),
+                "first_name": user_data.get("firstName", {}).get("localized", {}).get("en_US", ""),
+                "last_name": user_data.get("lastName", {}).get("localized", {}).get("en_US", ""),
+                "headline": user_data.get("headline", {}).get("localized", {}).get("en_US", ""),
+                "connections": user_data.get("numConnections", 0),
+                "followers": user_data.get("numFollowers", 0),
+                "industry": user_data.get("industry", {}).get("localized", {}).get("en_US", ""),
+                "profile_image": self._extract_profile_image(user_data.get("profilePicture", {}))
+            }
+            
+            logger.info(f"Retrieved LinkedIn user info for {profile['first_name']} {profile['last_name']}")
+            return profile
+            
+        except Exception as e:
+            logger.error(f"Failed to get LinkedIn user info: {e}")
+            raise LinkedInAPIError(f"Failed to get user info: {e}")
     
     def _extract_profile_image(self, profile_picture_data: Dict) -> str:
         """Extract profile image URL from LinkedIn response"""
@@ -258,414 +263,217 @@ class LinkedInAPIClient:
         except Exception:
             return ""
     
-    async def create_post(
-        self,
-        access_token: str,
-        text: str,
-        visibility: str = "PUBLIC",
-        media_assets: Optional[List[str]] = None,
-        article_url: Optional[str] = None,
-        author_type: str = "person",
-        author_id: Optional[str] = None
-    ) -> LinkedInPost:
+    def post_update(self, access_token: str, content: str, user_id: int, visibility: str = "PUBLIC") -> Dict[str, Any]:
         """
-        Create a LinkedIn post
+        Post an update to LinkedIn
         
         Args:
             access_token: OAuth access token
-            text: Post content
+            content: Post content (max 3000 characters)
+            user_id: User ID for audit logging
             visibility: Post visibility (PUBLIC, CONNECTIONS, LOGGED_IN)
-            media_assets: List of uploaded media asset URNs
-            article_url: URL to share
-            author_type: "person" or "organization"
-            author_id: Author ID (for organization posts)
             
         Returns:
-            Created post data
+            Dictionary containing post response data
         """
-        if len(text) > self.content_limits["post_text"]:
-            raise ValueError(f"Post text exceeds {self.content_limits['post_text']} characters")
-        
-        # Get author URN
-        if author_type == "person":
-            if not author_id:
-                profile = await self.get_user_profile(access_token)
-                author_id = profile["id"]
-            author_urn = f"urn:li:person:{author_id}"
-        else:
-            author_urn = f"urn:li:organization:{author_id}"
-        
-        # Build post data
-        post_data = {
-            "author": author_urn,
-            "lifecycleState": "PUBLISHED",
-            "specificContent": {
-                "com.linkedin.ugc.ShareContent": {
-                    "shareCommentary": {
-                        "text": text
-                    },
-                    "shareMediaCategory": "NONE"
-                }
-            },
-            "visibility": {
-                "com.linkedin.ugc.MemberNetworkVisibility": visibility
-            }
-        }
-        
-        # Add media if provided
-        if media_assets:
-            post_data["specificContent"]["com.linkedin.ugc.ShareContent"]["shareMediaCategory"] = "IMAGE" if len(media_assets) == 1 else "MULTIPLE_IMAGES"
-            post_data["specificContent"]["com.linkedin.ugc.ShareContent"]["media"] = [
-                {
-                    "status": "READY",
-                    "description": {
-                        "text": "Media content"
-                    },
-                    "media": asset_urn,
-                    "title": {
-                        "text": "Shared Media"
-                    }
-                }
-                for asset_urn in media_assets
-            ]
-        
-        # Add article link if provided
-        if article_url:
-            post_data["specificContent"]["com.linkedin.ugc.ShareContent"]["shareMediaCategory"] = "ARTICLE"
-            post_data["specificContent"]["com.linkedin.ugc.ShareContent"]["media"] = [{
-                "status": "READY",
-                "originalUrl": article_url
-            }]
-        
-        response = await self._make_request("POST", self.endpoints["posts"], access_token, data=post_data)
-        
-        post_id = response.get("id", "")
-        
-        # Create LinkedInPost object
-        return LinkedInPost(
-            id=post_id,
-            text=text,
-            author_id=author_id,
-            created_at=datetime.utcnow(),
-            visibility=visibility,
-            engagement_metrics={},
-            media_urls=[],
-            article_url=article_url,
-            company_page_id=author_id if author_type == "organization" else None
-        )
-    
-    async def upload_media(
-        self,
-        access_token: str,
-        media_data: bytes,
-        media_type: str,
-        filename: str,
-        description: Optional[str] = None
-    ) -> str:
-        """
-        Upload media to LinkedIn
-        
-        Args:
-            access_token: OAuth access token
-            media_data: Binary media data
-            media_type: Media MIME type
-            filename: Original filename
-            description: Media description
+        try:
+            # Validate content length
+            if len(content) > self.MAX_POST_LENGTH:
+                raise LinkedInAPIError(f"Post content too long: {len(content)} > {self.MAX_POST_LENGTH}")
             
-        Returns:
-            Media asset URN
-        """
-        # Get upload URL
-        upload_request = {
-            "registerUploadRequest": {
-                "recipes": [
-                    "urn:li:digitalmediaRecipe:feedshare-image" if media_type.startswith("image") else "urn:li:digitalmediaRecipe:feedshare-video"
-                ],
-                "owner": f"urn:li:person:{await self._get_user_id(access_token)}",
-                "serviceRelationships": [
-                    {
-                        "relationshipType": "OWNER",
-                        "identifier": "urn:li:userGeneratedContent"
-                    }
-                ]
-            }
-        }
-        
-        upload_response = await self._make_request("POST", self.endpoints["media_upload"], access_token, data=upload_request)
-        
-        upload_mechanism = upload_response.get("value", {}).get("uploadMechanism", {})
-        upload_url = upload_mechanism.get("com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest", {}).get("uploadUrl")
-        asset_urn = upload_response.get("value", {}).get("asset")
-        
-        if not upload_url or not asset_urn:
-            raise Exception("Failed to get upload URL from LinkedIn")
-        
-        # Upload media data
-        async with httpx.AsyncClient() as client:
-            headers = {"Authorization": f"Bearer {access_token}"}
-            files = {"file": (filename, media_data, media_type)}
+            session = self._get_authenticated_session(access_token)
             
-            upload_result = await client.post(upload_url, headers=headers, files=files)
+            # Check rate limits
+            if not self._check_rate_limit("ugcPosts"):
+                raise LinkedInAPIError("Rate limit exceeded for posts endpoint")
             
-            if upload_result.status_code not in [200, 201]:
-                raise Exception(f"Media upload failed: {upload_result.text}")
-        
-        logger.info(f"Successfully uploaded media to LinkedIn: {asset_urn}")
-        return asset_urn
-    
-    async def _get_user_id(self, access_token: str) -> str:
-        """Get the authenticated user's LinkedIn ID"""
-        profile = await self.get_user_profile(access_token)
-        return profile["id"]
-    
-    async def create_article(
-        self,
-        access_token: str,
-        title: str,
-        content: str,
-        visibility: str = "PUBLIC",
-        tags: Optional[List[str]] = None
-    ) -> LinkedInArticle:
-        """
-        Create a LinkedIn article
-        
-        Args:
-            access_token: OAuth access token
-            title: Article title
-            content: Article content (HTML supported)
-            visibility: Article visibility
-            tags: Article tags
+            # Get user profile to get author URN
+            user_info = self.get_user_info(access_token)
+            author_urn = f"urn:li:person:{user_info['id']}"
             
-        Returns:
-            Created article data
-        """
-        if len(title) > self.content_limits["article_title"]:
-            raise ValueError(f"Article title exceeds {self.content_limits['article_title']} characters")
-        
-        if len(content) > self.content_limits["article_content"]:
-            raise ValueError(f"Article content exceeds {self.content_limits['article_content']} characters")
-        
-        user_id = await self._get_user_id(access_token)
-        
-        article_data = {
-            "author": f"urn:li:person:{user_id}",
-            "title": {
-                "text": title
-            },
-            "content": {
-                "contentEntities": [
-                    {
-                        "entityLocation": "https://linkedin.com",
-                        "entity": {
+            # Prepare post payload
+            post_payload = {
+                "author": author_urn,
+                "lifecycleState": "PUBLISHED",
+                "specificContent": {
+                    "com.linkedin.ugc.ShareContent": {
+                        "shareCommentary": {
                             "text": content
-                        }
+                        },
+                        "shareMediaCategory": "NONE"
                     }
-                ]
-            },
-            "visibility": visibility,
-            "publishedAt": int(datetime.utcnow().timestamp() * 1000)
-        }
-        
-        if tags:
-            article_data["tags"] = tags
-        
-        response = await self._make_request("POST", self.endpoints["articles"], access_token, data=article_data)
-        
-        article_id = response.get("id", "")
-        
-        return LinkedInArticle(
-            id=article_id,
-            title=title,
-            content=content,
-            author_id=user_id,
-            published_at=datetime.utcnow(),
-            canonical_url=f"https://www.linkedin.com/pulse/{article_id}",
-            thumbnail_url=None,
-            view_count=0,
-            engagement_metrics={}
-        )
-    
-    async def get_post_analytics(
-        self,
-        access_token: str,
-        post_id: str,
-        time_range: str = "last30Days"
-    ) -> LinkedInAnalytics:
-        """
-        Get analytics for a LinkedIn post
-        
-        Args:
-            access_token: OAuth access token
-            post_id: Post ID
-            time_range: Time range for analytics
-            
-        Returns:
-            Post analytics data
-        """
-        # LinkedIn analytics require organization access
-        # This is a simplified implementation
-        params = {
-            "q": "organizationalEntity",
-            "organizationalEntity": f"urn:li:organization:{await self._get_user_id(access_token)}",
-            "timeIntervals.timeGranularityType": "DAY",
-            "timeIntervals.timeRange.start": int((datetime.utcnow() - timedelta(days=30)).timestamp() * 1000),
-            "timeIntervals.timeRange.end": int(datetime.utcnow().timestamp() * 1000)
-        }
-        
-        try:
-            response = await self._make_request("GET", self.endpoints["analytics"], access_token, params=params)
-            
-            # Extract analytics data (simplified)
-            elements = response.get("elements", [])
-            total_stats = {
-                "impressions": 0,
-                "clicks": 0,
-                "reactions": 0,
-                "comments": 0,
-                "shares": 0
+                },
+                "visibility": {
+                    "com.linkedin.ugc.MemberNetworkVisibility": visibility
+                }
             }
             
-            for element in elements:
-                stats = element.get("totalShareStatistics", {})
-                total_stats["impressions"] += stats.get("impressionCount", 0)
-                total_stats["clicks"] += stats.get("clickCount", 0)
-                total_stats["reactions"] += stats.get("likeCount", 0)
-                total_stats["comments"] += stats.get("commentCount", 0)
-                total_stats["shares"] += stats.get("shareCount", 0)
-            
-            # Calculate engagement rate
-            engagement_rate = 0
-            if total_stats["impressions"] > 0:
-                engagements = total_stats["reactions"] + total_stats["comments"] + total_stats["shares"]
-                engagement_rate = (engagements / total_stats["impressions"]) * 100
-            
-            # Calculate click-through rate
-            ctr = 0
-            if total_stats["impressions"] > 0:
-                ctr = (total_stats["clicks"] / total_stats["impressions"]) * 100
-            
-            return LinkedInAnalytics(
-                post_id=post_id,
-                impressions=total_stats["impressions"],
-                clicks=total_stats["clicks"],
-                reactions=total_stats["reactions"],
-                comments=total_stats["comments"],
-                shares=total_stats["shares"],
-                engagement_rate=engagement_rate,
-                unique_impressions=total_stats["impressions"],  # Simplified
-                click_through_rate=ctr,
-                fetched_at=datetime.utcnow()
+            # Post update
+            response = session.post(
+                f"{self.BASE_URL}/ugcPosts",
+                json=post_payload
             )
+            
+            self._update_rate_limit("ugcPosts", response)
+            
+            if response.status_code not in [200, 201]:
+                logger.error(f"Failed to post LinkedIn update: {response.status_code} - {response.text}")
+                raise LinkedInAPIError(f"Failed to post update: {response.text}")
+            
+            post_data = response.json()
+            post_id = post_data.get("id", "")
+            
+            # Log successful posting
+            log_content_event(
+                AuditEventType.CONTENT_PUBLISHED,
+                user_id=user_id,
+                resource=f"linkedin_post_{post_id}",
+                action="post_update",
+                additional_data={
+                    "post_id": post_id,
+                    "content_length": len(content),
+                    "visibility": visibility
+                }
+            )
+            
+            logger.info(f"Successfully posted LinkedIn update: {post_id}")
+            return {
+                "id": post_id,
+                "text": content,
+                "author_id": user_info['id'],
+                "visibility": visibility,
+                "created_at": datetime.utcnow().isoformat()
+            }
             
         except Exception as e:
-            logger.warning(f"Failed to get LinkedIn analytics: {e}")
-            # Return empty analytics
-            return LinkedInAnalytics(
-                post_id=post_id,
-                impressions=0,
-                clicks=0,
-                reactions=0,
-                comments=0,
-                shares=0,
-                engagement_rate=0.0,
-                unique_impressions=0,
-                click_through_rate=0.0,
-                fetched_at=datetime.utcnow()
+            logger.error(f"Failed to post LinkedIn update: {e}")
+            
+            # Log failed posting
+            log_content_event(
+                AuditEventType.CONTENT_PUBLISHED,
+                user_id=user_id,
+                resource="linkedin_post_failed",
+                action="post_update",
+                additional_data={
+                    "error": str(e),
+                    "content_length": len(content) if content else 0
+                }
             )
+            
+            raise LinkedInAPIError(f"Failed to post update: {e}")
     
-    async def get_company_pages(self, access_token: str) -> List[LinkedInCompanyPage]:
+    def get_post_metrics(self, access_token: str, post_id: str) -> Dict[str, Any]:
         """
-        Get company pages the user can manage
+        Get engagement metrics for a specific LinkedIn post
+        
+        Args:
+            access_token: OAuth access token
+            post_id: LinkedIn post ID
+            
+        Returns:
+            Dictionary containing post metrics
+        """
+        try:
+            session = self._get_authenticated_session(access_token)
+            
+            # Check rate limits
+            if not self._check_rate_limit("socialActions"):
+                raise LinkedInAPIError("Rate limit exceeded for post metrics endpoint")
+            
+            # Get social actions for the post
+            response = session.get(
+                f"{self.BASE_URL}/socialActions/{post_id}",
+                params={
+                    "projection": "(totalSocialActionCounts)"
+                }
+            )
+            
+            self._update_rate_limit("socialActions", response)
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to get LinkedIn post metrics: {response.status_code} - {response.text}")
+                # Return empty metrics if API call fails
+                return {
+                    "post_id": post_id,
+                    "likes_count": 0,
+                    "comments_count": 0,
+                    "shares_count": 0,
+                    "impressions_count": 0,
+                    "engagement_rate": 0.0,
+                    "retrieved_at": datetime.utcnow().isoformat()
+                }
+            
+            metrics_data = response.json()
+            social_counts = metrics_data.get("totalSocialActionCounts", {})
+            
+            # Extract metrics
+            likes_count = social_counts.get("numLikes", 0)
+            comments_count = social_counts.get("numComments", 0)
+            shares_count = social_counts.get("numShares", 0)
+            
+            # Calculate engagement (LinkedIn doesn't provide impressions in basic API)
+            engagement_count = likes_count + comments_count + shares_count
+            
+            processed_metrics = {
+                "post_id": post_id,
+                "likes_count": likes_count,
+                "comments_count": comments_count,
+                "shares_count": shares_count,
+                "impressions_count": 0,  # Not available in basic API
+                "engagement_rate": 0.0,  # Cannot calculate without impressions
+                "total_engagement": engagement_count,
+                "retrieved_at": datetime.utcnow().isoformat()
+            }
+            
+            logger.info(f"Retrieved LinkedIn metrics for post {post_id}: {engagement_count} total engagements")
+            return processed_metrics
+            
+        except Exception as e:
+            logger.error(f"Failed to get LinkedIn post metrics: {e}")
+            # Return empty metrics on error
+            return {
+                "post_id": post_id,
+                "likes_count": 0,
+                "comments_count": 0,
+                "shares_count": 0,
+                "impressions_count": 0,
+                "engagement_rate": 0.0,
+                "retrieved_at": datetime.utcnow().isoformat(),
+                "error": str(e)
+            }
+    
+    def validate_connection(self, access_token: str) -> Dict[str, Any]:
+        """
+        Validate LinkedIn connection by making a test API call
         
         Args:
             access_token: OAuth access token
             
         Returns:
-            List of company pages
+            Dictionary containing validation results
         """
-        params = {
-            "q": "roleAssignee",
-            "role": "ADMINISTRATOR",
-            "projection": "(elements*(organization~(id,name,description,numFollowers,logoV2,industries,staffRange,website)))"
-        }
-        
         try:
-            response = await self._make_request("GET", self.endpoints["organization_posts"], access_token, params=params)
+            # Test connection by getting user info
+            user_info = self.get_user_info(access_token)
             
-            elements = response.get("elements", [])
-            company_pages = []
-            
-            for element in elements:
-                org_data = element.get("organization~", {})
-                if org_data:
-                    company_page = LinkedInCompanyPage(
-                        id=org_data.get("id", ""),
-                        name=org_data.get("name", {}).get("localized", {}).get("en_US", ""),
-                        description=org_data.get("description", {}).get("localized", {}).get("en_US", ""),
-                        follower_count=org_data.get("numFollowers", 0),
-                        logo_url=self._extract_company_logo(org_data.get("logoV2", {})),
-                        industry=self._extract_first_industry(org_data.get("industries", [])),
-                        company_size=self._extract_company_size(org_data.get("staffRange", {})),
-                        website_url=org_data.get("website", {}).get("localized", {}).get("en_US", "")
-                    )
-                    company_pages.append(company_page)
-            
-            return company_pages
+            return {
+                "is_valid": True,
+                "user_id": user_info["id"],
+                "display_name": f"{user_info['first_name']} {user_info['last_name']}".strip(),
+                "headline": user_info.get("headline", ""),
+                "connections_count": user_info.get("connections", 0),
+                "followers_count": user_info.get("followers", 0),
+                "industry": user_info.get("industry", ""),
+                "validated_at": datetime.utcnow().isoformat()
+            }
             
         except Exception as e:
-            logger.error(f"Failed to get company pages: {e}")
-            return []
-    
-    def _extract_company_logo(self, logo_data: Dict) -> str:
-        """Extract company logo URL"""
-        try:
-            cropped = logo_data.get("cropped~", {})
-            elements = cropped.get("elements", [])
-            if elements:
-                identifiers = elements[0].get("identifiers", [])
-                if identifiers:
-                    return identifiers[0].get("identifier", "")
-            return ""
-        except Exception:
-            return ""
-    
-    def _extract_first_industry(self, industries: List[Dict]) -> str:
-        """Extract first industry name"""
-        try:
-            if industries:
-                return industries[0].get("localized", {}).get("en_US", "")
-            return ""
-        except Exception:
-            return ""
-    
-    def _extract_company_size(self, staff_range: Dict) -> str:
-        """Extract company size description"""
-        try:
-            return staff_range.get("localized", {}).get("en_US", "")
-        except Exception:
-            return ""
-    
-    async def delete_post(self, access_token: str, post_id: str) -> bool:
-        """
-        Delete a LinkedIn post
-        
-        Args:
-            access_token: OAuth access token
-            post_id: Post ID to delete
-            
-        Returns:
-            Success status
-        """
-        try:
-            endpoint = f"/ugcPosts/{post_id}"
-            await self._make_request("DELETE", endpoint, access_token)
-            
-            logger.info(f"Successfully deleted LinkedIn post {post_id}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Failed to delete LinkedIn post {post_id}: {e}")
-            return False
+            logger.error(f"LinkedIn connection validation failed: {e}")
+            return {
+                "is_valid": False,
+                "error": str(e),
+                "validated_at": datetime.utcnow().isoformat()
+            }
     
     def validate_post_content(self, text: str) -> Tuple[bool, str]:
         """
@@ -680,8 +488,8 @@ class LinkedInAPIClient:
         if not text or not text.strip():
             return False, "Post content cannot be empty"
         
-        if len(text) > self.content_limits["post_text"]:
-            return False, f"Post content too long ({len(text)}/{self.content_limits['post_text']} characters)"
+        if len(text) > self.MAX_POST_LENGTH:
+            return False, f"Post content too long ({len(text)}/{self.MAX_POST_LENGTH} characters)"
         
         return True, ""
     
@@ -721,22 +529,47 @@ class LinkedInAPIClient:
                 text = text.replace(hashtag, '')
         
         return text.strip()
+
+
+# Helper functions for common operations
+
+def create_linkedin_client() -> LinkedInClient:
+    """Create and return a LinkedInClient instance"""
+    return LinkedInClient()
+
+def format_content_for_linkedin(content: str) -> str:
+    """
+    Format content specifically for LinkedIn's professional audience
     
-    async def get_user_token(self, user_id: int) -> Optional[str]:
-        """
-        Get stored LinkedIn access token for user
+    Args:
+        content: Original content to format
         
-        Args:
-            user_id: User ID
-            
-        Returns:
-            LinkedIn access token or None if not found
-        """
-        try:
-            return await oauth_manager.get_user_access_token(user_id, "linkedin")
-        except Exception as e:
-            logger.error(f"Failed to get LinkedIn token for user {user_id}: {e}")
-            return None
+    Returns:
+        LinkedIn-optimized content
+    """
+    # Add line breaks for better readability
+    if len(content) > 300:
+        # Add paragraph breaks for longer content
+        sentences = content.split('. ')
+        formatted_sentences = []
+        current_paragraph = ""
+        
+        for sentence in sentences:
+            if len(current_paragraph + sentence) > 200:
+                if current_paragraph:
+                    formatted_sentences.append(current_paragraph.strip() + '.')
+                    current_paragraph = sentence
+                else:
+                    formatted_sentences.append(sentence + '.')
+            else:
+                current_paragraph += sentence + '. ' if not sentence.endswith('.') else sentence + ' '
+        
+        if current_paragraph:
+            formatted_sentences.append(current_paragraph.strip())
+        
+        content = '\n\n'.join(formatted_sentences)
+    
+    return content
 
 # Global LinkedIn client instance
-linkedin_client = LinkedInAPIClient()
+linkedin_client = LinkedInClient()

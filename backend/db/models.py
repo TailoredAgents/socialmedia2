@@ -569,3 +569,226 @@ class RefreshTokenBlacklist(Base):
         Index('idx_blacklist_token_user', token_jti, user_id),
         Index('idx_blacklist_expires', expires_at),
     )
+
+
+# Social Platform Connection Models
+
+class SocialPlatformConnection(Base):
+    """Stores OAuth tokens and connection details for social platforms"""
+    __tablename__ = "social_platform_connections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    platform = Column(String, nullable=False, index=True)  # twitter, linkedin, instagram, facebook
+    
+    # Platform account details
+    platform_user_id = Column(String, nullable=False, index=True)  # ID from the platform
+    platform_username = Column(String, nullable=False)  # @username or handle
+    platform_display_name = Column(String)  # Full name or display name
+    profile_image_url = Column(String)
+    profile_url = Column(String)
+    
+    # OAuth tokens (encrypted at rest)
+    access_token = Column(Text, nullable=False)  # Encrypted OAuth access token
+    refresh_token = Column(Text)  # Encrypted OAuth refresh token (if available)
+    token_expires_at = Column(DateTime(timezone=True))  # Token expiration
+    
+    # Token metadata
+    token_type = Column(String, default="Bearer")  # Token type (Bearer, etc.)
+    scope = Column(String)  # OAuth scopes granted
+    
+    # Connection status
+    is_active = Column(Boolean, default=True, index=True)
+    is_verified = Column(Boolean, default=False)  # Platform verification status
+    connection_status = Column(String, default="connected")  # connected, expired, revoked, error
+    
+    # Platform-specific metadata
+    platform_metadata = Column(JSON, default={})  # Follower count, verified status, etc.
+    
+    # Rate limiting info
+    rate_limit_remaining = Column(Integer)
+    rate_limit_reset = Column(DateTime(timezone=True))
+    daily_post_count = Column(Integer, default=0)
+    daily_post_limit = Column(Integer)  # Platform-specific limits
+    
+    # Error tracking
+    last_error = Column(Text)
+    error_count = Column(Integer, default=0)
+    last_error_at = Column(DateTime(timezone=True))
+    
+    # Posting preferences for this connection
+    auto_post_enabled = Column(Boolean, default=True)
+    preferred_posting_times = Column(JSON, default={})  # {"weekdays": "09:00", "weekends": "10:00"}
+    content_filters = Column(JSON, default={})  # Content type preferences, hashtag rules, etc.
+    
+    # Timestamps
+    connected_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_used_at = Column(DateTime(timezone=True))
+    last_refreshed_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User")
+    posts = relationship("SocialPost", back_populates="connection")
+    
+    # Unique constraint: one connection per platform per user
+    __table_args__ = (
+        Index('idx_social_conn_user_platform', user_id, platform),
+        Index('idx_social_conn_platform_user', platform, platform_user_id),
+    )
+
+
+class SocialPost(Base):
+    """Tracks posts made to social platforms with detailed metadata"""
+    __tablename__ = "social_posts"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    connection_id = Column(Integer, ForeignKey("social_platform_connections.id"), nullable=False)
+    content_item_id = Column(String, ForeignKey("content_items.id"), nullable=True)  # Link to original content
+    
+    # Platform details
+    platform = Column(String, nullable=False, index=True)
+    platform_post_id = Column(String, nullable=False, index=True)  # ID from the platform
+    platform_url = Column(String)  # Direct URL to the post
+    
+    # Post content
+    content_text = Column(Text)
+    media_urls = Column(JSON, default=[])  # Images, videos attached
+    hashtags = Column(JSON, default=[])
+    mentions = Column(JSON, default=[])
+    
+    # Post type and format
+    post_type = Column(String, default="text")  # text, image, video, carousel, story, reel
+    post_format = Column(String)  # single, thread, article (for LinkedIn)
+    
+    # Scheduling and timing
+    scheduled_for = Column(DateTime(timezone=True))
+    posted_at = Column(DateTime(timezone=True), index=True)
+    
+    # Status tracking
+    status = Column(String, default="draft", index=True)  # draft, scheduled, posted, failed, deleted
+    failure_reason = Column(Text)
+    retry_count = Column(Integer, default=0)
+    
+    # Performance metrics (updated by background jobs)
+    likes_count = Column(Integer, default=0)
+    shares_count = Column(Integer, default=0)  # retweets, reposts, etc.
+    comments_count = Column(Integer, default=0)
+    reach_count = Column(Integer, default=0)  # impressions, views
+    click_count = Column(Integer, default=0)
+    engagement_rate = Column(Float, default=0.0)
+    
+    # Performance tracking
+    last_metrics_update = Column(DateTime(timezone=True))
+    metrics_update_count = Column(Integer, default=0)
+    peak_engagement_time = Column(DateTime(timezone=True))
+    
+    # Platform-specific metrics
+    platform_metrics = Column(JSON, default={})  # Platform-specific engagement data
+    
+    # Content analysis
+    sentiment = Column(String)  # positive, negative, neutral
+    topics = Column(JSON, default=[])  # AI-extracted topics
+    keywords = Column(JSON, default=[])
+    
+    # Campaign and tracking
+    campaign_id = Column(String, index=True)
+    utm_parameters = Column(JSON, default={})  # UTM tracking for links
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User")
+    connection = relationship("SocialPlatformConnection", back_populates="posts")
+    content_item = relationship("ContentItem")
+    
+    # Indexes for performance
+    __table_args__ = (
+        Index('idx_social_post_user_platform', user_id, platform),
+        Index('idx_social_post_connection_status', connection_id, status),
+        Index('idx_social_post_posted_engagement', posted_at, engagement_rate),
+        Index('idx_social_post_campaign', campaign_id),
+    )
+
+
+class PlatformMetricsSnapshot(Base):
+    """Time-series snapshots of account metrics across platforms"""
+    __tablename__ = "platform_metrics_snapshots"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    connection_id = Column(Integer, ForeignKey("social_platform_connections.id"), nullable=False)
+    snapshot_time = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    
+    # Account metrics
+    followers_count = Column(Integer, default=0)
+    following_count = Column(Integer, default=0)
+    posts_count = Column(Integer, default=0)
+    
+    # Engagement metrics
+    avg_likes_per_post = Column(Float, default=0.0)
+    avg_comments_per_post = Column(Float, default=0.0)
+    avg_shares_per_post = Column(Float, default=0.0)
+    overall_engagement_rate = Column(Float, default=0.0)
+    
+    # Growth metrics (calculated)
+    followers_growth = Column(Integer, default=0)  # Since last snapshot
+    posts_growth = Column(Integer, default=0)
+    engagement_growth = Column(Float, default=0.0)
+    
+    # Platform-specific metrics
+    platform_specific_metrics = Column(JSON, default={})
+    
+    # Relationships
+    connection = relationship("SocialPlatformConnection")
+    
+    __table_args__ = (
+        Index('idx_metrics_snapshot_conn_time', connection_id, snapshot_time),
+    )
+
+
+class SocialPostTemplate(Base):
+    """Platform-specific post templates with formatting rules"""
+    __tablename__ = "social_post_templates"
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String, nullable=False)
+    description = Column(Text)
+    
+    # Platform and formatting
+    platform = Column(String, nullable=False, index=True)
+    post_type = Column(String, nullable=False)  # text, image, video, thread
+    
+    # Template content
+    template_text = Column(Text, nullable=False)  # With variables like {topic}, {insight}
+    hashtag_template = Column(String)  # Hashtag pattern
+    
+    # Platform-specific formatting
+    max_length = Column(Integer)  # Character limit
+    thread_split_rules = Column(JSON, default={})  # For Twitter threads
+    formatting_rules = Column(JSON, default={})  # Bold, italic, links, etc.
+    
+    # Usage and performance
+    usage_count = Column(Integer, default=0)
+    avg_engagement_rate = Column(Float, default=0.0)
+    
+    # Template metadata
+    variables = Column(JSON, default=[])  # List of template variables
+    required_media = Column(Boolean, default=False)
+    
+    # Status
+    is_active = Column(Boolean, default=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User")
+    
+    __table_args__ = (
+        Index('idx_social_template_user_platform', user_id, platform),
+    )

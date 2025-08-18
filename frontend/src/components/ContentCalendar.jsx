@@ -12,8 +12,7 @@ const platforms = [
   { name: 'LinkedIn', color: '#0077B5', icon: '💼' },
   { name: 'Twitter', color: '#1DA1F2', icon: '🐦' },
   { name: 'Instagram', color: '#E4405F', icon: '📸' },
-  { name: 'Facebook', color: '#1877F2', icon: '👥' },
-  { name: 'TikTok', color: '#000000', icon: '🎵' }
+  { name: 'Facebook', color: '#1877F2', icon: '👥' }
 ]
 
 // Post Card Component

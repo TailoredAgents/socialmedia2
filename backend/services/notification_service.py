@@ -1,26 +1,29 @@
 """
-Goal Milestone Notification Service
-Handles milestone detection and notification generation for goal progress tracking
+Real-time Notification Service with WebSocket Support
+Handles notifications, real-time delivery, and event triggers for goals and social media
 """
 import logging
-from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime, timedelta
-from dataclasses import dataclass
-from enum import Enum
+import json
 import asyncio
+from typing import Dict, List, Optional, Any, Set
+from datetime import datetime, timezone, timedelta
+from enum import Enum
+from dataclasses import dataclass
+import uuid
+
+from fastapi import WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_
 
-from backend.db.models import Goal, GoalProgress, User
-from backend.core.config import get_settings
+from backend.db.database import get_db
+from backend.db.models import Notification, User, SocialPost, SocialPlatformConnection, Goal, GoalProgress
+from backend.core.audit_logger import log_content_event, AuditEventType
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-settings = get_settings()
-
-class NotificationType(Enum):
-    """Types of goal notifications"""
+class NotificationType(str, Enum):
+    """Notification types for the system"""
+    # Goal tracking notifications (existing)
     MILESTONE_25 = "milestone_25"
     MILESTONE_50 = "milestone_50" 
     MILESTONE_75 = "milestone_75"
@@ -30,13 +33,40 @@ class NotificationType(Enum):
     GOAL_AT_RISK = "goal_at_risk"
     PROGRESS_STAGNANT = "progress_stagnant"
     EXCEPTIONAL_PROGRESS = "exceptional_progress"
+    
+    # Social media events (new)
+    POST_PUBLISHED = "post_published"
+    POST_FAILED = "post_failed"
+    ENGAGEMENT_MILESTONE = "engagement_milestone"
+    PLATFORM_CONNECTED = "platform_connected"
+    PLATFORM_DISCONNECTED = "platform_disconnected"
+    OAUTH_EXPIRED = "oauth_expired"
+    
+    # System events (new)
+    SYSTEM_MAINTENANCE = "system_maintenance"
+    SYSTEM_ERROR = "system_error"
+    FEATURE_ANNOUNCEMENT = "feature_announcement"
+    SECURITY_ALERT = "security_alert"
+    
+    # Content events (new)
+    CONTENT_GENERATED = "content_generated"
+    CONTENT_SCHEDULED = "content_scheduled"
+    WORKFLOW_COMPLETED = "workflow_completed"
+    WORKFLOW_FAILED = "workflow_failed"
+
+class NotificationPriority(str, Enum):
+    """Notification priority levels"""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    URGENT = "urgent"
 
 @dataclass
 class NotificationMessage:
     """Notification message structure"""
     id: str
     user_id: int
-    goal_id: str
+    goal_id: Optional[str]
     notification_type: NotificationType
     title: str
     message: str
@@ -47,69 +77,368 @@ class NotificationMessage:
     
     def __post_init__(self):
         if self.created_at is None:
-            self.created_at = datetime.utcnow()
+            self.created_at = datetime.now(timezone.utc)
+
+class WebSocketManager:
+    """Manages WebSocket connections for real-time notifications"""
+    
+    def __init__(self):
+        # Store active connections by user_id
+        self.active_connections: Dict[int, Set[WebSocket]] = {}
+        self.connection_metadata: Dict[WebSocket, Dict[str, Any]] = {}
+    
+    async def connect(self, websocket: WebSocket, user_id: int, client_info: Optional[Dict] = None):
+        """Accept WebSocket connection and register user"""
+        await websocket.accept()
+        
+        if user_id not in self.active_connections:
+            self.active_connections[user_id] = set()
+        
+        self.active_connections[user_id].add(websocket)
+        self.connection_metadata[websocket] = {
+            "user_id": user_id,
+            "connected_at": datetime.now(timezone.utc),
+            "client_info": client_info or {}
+        }
+        
+        logger.info(f"User {user_id} connected via WebSocket. Total connections: {self._get_total_connections()}")
+        
+        # Send welcome message with current notification count
+        await self._send_welcome_message(websocket, user_id)
+    
+    async def disconnect(self, websocket: WebSocket):
+        """Remove WebSocket connection"""
+        if websocket in self.connection_metadata:
+            user_id = self.connection_metadata[websocket]["user_id"]
+            
+            # Remove from active connections
+            if user_id in self.active_connections:
+                self.active_connections[user_id].discard(websocket)
+                if not self.active_connections[user_id]:
+                    del self.active_connections[user_id]
+            
+            # Remove metadata
+            del self.connection_metadata[websocket]
+            
+            logger.info(f"User {user_id} disconnected from WebSocket. Total connections: {self._get_total_connections()}")
+    
+    async def send_notification_to_user(self, user_id: int, notification_data: Dict[str, Any]):
+        """Send notification to all connections for a specific user"""
+        if user_id not in self.active_connections:
+            logger.debug(f"No active connections for user {user_id}")
+            return
+        
+        # Prepare notification message
+        message = {
+            "type": "notification",
+            "data": notification_data,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+        # Send to all user connections
+        disconnected_connections = set()
+        for websocket in self.active_connections[user_id].copy():
+            try:
+                await websocket.send_text(json.dumps(message))
+                logger.debug(f"Sent notification to user {user_id}")
+            except Exception as e:
+                logger.warning(f"Failed to send notification to user {user_id}: {e}")
+                disconnected_connections.add(websocket)
+        
+        # Clean up disconnected connections
+        for websocket in disconnected_connections:
+            await self.disconnect(websocket)
+    
+    async def broadcast_system_notification(self, notification_data: Dict[str, Any], exclude_users: Optional[List[int]] = None):
+        """Broadcast notification to all connected users"""
+        exclude_users = exclude_users or []
+        
+        message = {
+            "type": "system_notification",
+            "data": notification_data,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+        for user_id, connections in self.active_connections.items():
+            if user_id in exclude_users:
+                continue
+            
+            disconnected_connections = set()
+            for websocket in connections.copy():
+                try:
+                    await websocket.send_text(json.dumps(message))
+                except Exception as e:
+                    logger.warning(f"Failed to broadcast to user {user_id}: {e}")
+                    disconnected_connections.add(websocket)
+            
+            # Clean up disconnected connections
+            for websocket in disconnected_connections:
+                await self.disconnect(websocket)
+    
+    async def _send_welcome_message(self, websocket: WebSocket, user_id: int):
+        """Send welcome message with unread notification count"""
+        try:
+            db = next(get_db())
+            unread_count = db.query(Notification).filter(
+                and_(
+                    Notification.user_id == user_id,
+                    Notification.is_read == False
+                )
+            ).count()
+            
+            welcome_message = {
+                "type": "welcome",
+                "data": {
+                    "user_id": user_id,
+                    "unread_notifications": unread_count,
+                    "connection_status": "connected"
+                },
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            
+            await websocket.send_text(json.dumps(welcome_message))
+            
+        except Exception as e:
+            logger.error(f"Failed to send welcome message to user {user_id}: {e}")
+        finally:
+            db.close()
+    
+    def _get_total_connections(self) -> int:
+        """Get total number of active connections"""
+        return sum(len(connections) for connections in self.active_connections.values())
+    
+    def get_connection_stats(self) -> Dict[str, Any]:
+        """Get WebSocket connection statistics"""
+        return {
+            "total_connections": self._get_total_connections(),
+            "connected_users": len(self.active_connections),
+            "connections_per_user": {
+                user_id: len(connections) 
+                for user_id, connections in self.active_connections.items()
+            }
+        }
+
+# Global WebSocket manager instance
+websocket_manager = WebSocketManager()
 
 class NotificationService:
-    """Service for managing notifications"""
+    """Enhanced service for creating, managing, and delivering notifications"""
     
     def __init__(self):
-        self.logger = logging.getLogger(__name__)
-    
-    def create_notification(
-        self,
-        db: Session,
-        user_id: int,
-        notification_type: str,
-        title: str,
-        message: str,
-        metadata: Optional[Dict[str, Any]] = None
-    ):
-        """Create a new notification"""
-        from backend.db.models import Notification
-        
-        notification = Notification(
-            user_id=user_id,
-            notification_type=notification_type,
-            title=title,
-            message=message,
-            notification_metadata=metadata or {},
-            is_read=False,
-            priority="medium"
-        )
-        
-        db.add(notification)
-        db.commit()
-        db.refresh(notification)
-        
-        return notification
-    
-    async def check_all_goals(self, db: Session, user_id: int) -> List[Any]:
-        """Check all goals for notifications"""
-        # Implementation would check for goal milestones and create notifications
-        return []
-
-class GoalNotificationService:
-    """
-    Goal Milestone Notification Service
-    
-    Features:
-    - Progress milestone detection (25%, 50%, 75%, 90%, 100%)
-    - Goal completion notifications
-    - Overdue goal alerts
-    - At-risk goal warnings (slow progress near deadline)
-    - Stagnant progress detection
-    - Exceptional progress recognition
-    - Smart notification timing to avoid spam
-    """
-    
-    def __init__(self):
-        """Initialize the notification service"""
+        self.websocket_manager = websocket_manager
         self.milestone_thresholds = [25, 50, 75, 90, 100]
         self.notification_cooldown = timedelta(hours=6)  # Minimum time between similar notifications
         self.at_risk_days_threshold = 7  # Days before deadline to warn about slow progress
         self.stagnant_days_threshold = 14  # Days without progress to consider stagnant
+    
+    async def create_notification(
+        self,
+        user_id: int,
+        title: str,
+        message: str,
+        notification_type: NotificationType,
+        priority: NotificationPriority = NotificationPriority.MEDIUM,
+        goal_id: Optional[str] = None,
+        content_id: Optional[str] = None,
+        workflow_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        auto_send: bool = True
+    ) -> Notification:
+        """Create a new notification and optionally send it in real-time"""
         
-        logger.info("GoalNotificationService initialized with milestone tracking")
+        db = next(get_db())
+        try:
+            # Create notification record
+            notification = Notification(
+                user_id=user_id,
+                title=title,
+                message=message,
+                notification_type=notification_type.value,
+                priority=priority.value,
+                goal_id=goal_id,
+                content_id=content_id,
+                workflow_id=workflow_id,
+                notification_metadata=metadata or {}
+            )
+            
+            db.add(notification)
+            db.commit()
+            db.refresh(notification)
+            
+            logger.info(f"Created notification {notification.id} for user {user_id}: {title}")
+            
+            # Log audit event
+            log_content_event(
+                AuditEventType.SYSTEM_ACCESS,
+                user_id=user_id,
+                resource="notification",
+                action="create",
+                additional_data={
+                    "notification_id": notification.id,
+                    "type": notification_type.value,
+                    "priority": priority.value,
+                    "title": title
+                }
+            )
+            
+            # Send real-time notification if requested
+            if auto_send:
+                await self._send_real_time_notification(notification)
+            
+            return notification
+            
+        except Exception as e:
+            logger.error(f"Failed to create notification for user {user_id}: {e}")
+            db.rollback()
+            raise
+        finally:
+            db.close()
+    
+    async def _send_real_time_notification(self, notification: Notification):
+        """Send notification via WebSocket"""
+        try:
+            notification_data = {
+                "id": notification.id,
+                "title": notification.title,
+                "message": notification.message,
+                "type": notification.notification_type,
+                "priority": notification.priority,
+                "goal_id": notification.goal_id,
+                "content_id": notification.content_id,
+                "workflow_id": notification.workflow_id,
+                "metadata": notification.notification_metadata,
+                "created_at": notification.created_at.isoformat(),
+                "is_read": notification.is_read
+            }
+            
+            await self.websocket_manager.send_notification_to_user(
+                notification.user_id,
+                notification_data
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to send real-time notification {notification.id}: {e}")
+    
+    async def mark_as_read(self, notification_id: str, user_id: int) -> bool:
+        """Mark notification as read"""
+        db = next(get_db())
+        try:
+            notification = db.query(Notification).filter(
+                and_(
+                    Notification.id == notification_id,
+                    Notification.user_id == user_id
+                )
+            ).first()
+            
+            if not notification:
+                return False
+            
+            notification.is_read = True
+            notification.read_at = datetime.now(timezone.utc)
+            db.commit()
+            
+            logger.info(f"Marked notification {notification_id} as read for user {user_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to mark notification {notification_id} as read: {e}")
+            db.rollback()
+            return False
+        finally:
+            db.close()
+    
+    async def mark_all_as_read(self, user_id: int) -> int:
+        """Mark all unread notifications as read for a user"""
+        db = next(get_db())
+        try:
+            updated_count = db.query(Notification).filter(
+                and_(
+                    Notification.user_id == user_id,
+                    Notification.is_read == False
+                )
+            ).update({
+                "is_read": True,
+                "read_at": datetime.now(timezone.utc)
+            })
+            
+            db.commit()
+            
+            logger.info(f"Marked {updated_count} notifications as read for user {user_id}")
+            return updated_count
+            
+        except Exception as e:
+            logger.error(f"Failed to mark all notifications as read for user {user_id}: {e}")
+            db.rollback()
+            return 0
+        finally:
+            db.close()
+    
+    def get_user_notifications(
+        self,
+        user_id: int,
+        unread_only: bool = False,
+        notification_types: Optional[List[NotificationType]] = None,
+        limit: int = 50,
+        offset: int = 0
+    ) -> List[Notification]:
+        """Get user notifications with filtering"""
+        db = next(get_db())
+        try:
+            query = db.query(Notification).filter(Notification.user_id == user_id)
+            
+            if unread_only:
+                query = query.filter(Notification.is_read == False)
+            
+            if notification_types:
+                type_values = [nt.value for nt in notification_types]
+                query = query.filter(Notification.notification_type.in_(type_values))
+            
+            notifications = query.order_by(
+                Notification.created_at.desc()
+            ).offset(offset).limit(limit).all()
+            
+            return notifications
+            
+        finally:
+            db.close()
+    
+    def get_notification_stats(self, user_id: int) -> Dict[str, Any]:
+        """Get notification statistics for a user"""
+        db = next(get_db())
+        try:
+            total_notifications = db.query(Notification).filter(
+                Notification.user_id == user_id
+            ).count()
+            
+            unread_notifications = db.query(Notification).filter(
+                and_(
+                    Notification.user_id == user_id,
+                    Notification.is_read == False
+                )
+            ).count()
+            
+            # Count by type
+            type_counts = {}
+            for notification_type in NotificationType:
+                count = db.query(Notification).filter(
+                    and_(
+                        Notification.user_id == user_id,
+                        Notification.notification_type == notification_type.value
+                    )
+                ).count()
+                type_counts[notification_type.value] = count
+            
+            return {
+                "total_notifications": total_notifications,
+                "unread_notifications": unread_notifications,
+                "read_notifications": total_notifications - unread_notifications,
+                "notifications_by_type": type_counts
+            }
+            
+        finally:
+            db.close()
+    
+    # Goal notification methods (preserved from original implementation)
     
     def detect_milestone_achievements(
         self, 
@@ -117,17 +446,7 @@ class GoalNotificationService:
         old_progress: float, 
         new_progress: float
     ) -> List[NotificationType]:
-        """
-        Detect which milestones were achieved with this progress update
-        
-        Args:
-            goal: Goal object
-            old_progress: Previous progress percentage (0-100)
-            new_progress: New progress percentage (0-100)
-            
-        Returns:
-            List of achieved milestone notification types
-        """
+        """Detect which milestones were achieved with this progress update"""
         achieved_milestones = []
         
         for threshold in self.milestone_thresholds:
@@ -146,168 +465,63 @@ class GoalNotificationService:
         
         return achieved_milestones
     
-    def detect_exceptional_progress(
+    async def process_goal_progress_update(
         self, 
+        db: Session, 
         goal: Goal, 
-        progress_change: float, 
-        time_period: timedelta
-    ) -> bool:
-        """
-        Detect if progress change is exceptionally good
+        old_value: float, 
+        new_value: float
+    ) -> List[NotificationMessage]:
+        """Process a goal progress update and generate appropriate notifications"""
+        notifications = []
         
-        Args:
-            goal: Goal object
-            progress_change: Progress percentage change
-            time_period: Time period over which change occurred
+        if goal.target_value <= 0:
+            return notifications
+        
+        # Calculate progress percentages
+        old_progress = (old_value / goal.target_value) * 100
+        new_progress = (new_value / goal.target_value) * 100
+        
+        # Detect milestone achievements
+        achieved_milestones = self.detect_milestone_achievements(goal, old_progress, new_progress)
+        
+        for milestone_type in achieved_milestones:
+            # Generate and create notification
+            notification_content = self._get_milestone_content(goal, milestone_type, new_progress)
             
-        Returns:
-            True if progress is exceptional
-        """
-        # Calculate daily progress rate
-        if time_period.days == 0:
-            return False
+            notification = await self.create_notification(
+                user_id=goal.user_id,
+                title=notification_content["title"],
+                message=notification_content["message"],
+                notification_type=milestone_type,
+                priority=NotificationPriority(notification_content["priority"]),
+                goal_id=goal.id,
+                metadata={
+                    "goal_title": goal.title,
+                    "progress_percentage": new_progress,
+                    "target_value": goal.target_value,
+                    "current_value": goal.current_value,
+                    "goal_type": goal.goal_type,
+                    "platform": goal.platform
+                }
+            )
             
-        daily_progress_rate = progress_change / time_period.days
+            # Convert to NotificationMessage for compatibility
+            notifications.append(NotificationMessage(
+                id=notification.id,
+                user_id=notification.user_id,
+                goal_id=notification.goal_id,
+                notification_type=milestone_type,
+                title=notification.title,
+                message=notification.message,
+                priority=notification.priority,
+                action_url=f"/goals/{goal.id}",
+                metadata=notification.notification_metadata,
+                created_at=notification.created_at
+            ))
         
-        # Determine if progress rate is exceptional based on goal type
-        exceptional_thresholds = {
-            "follower_growth": 5.0,  # 5% per day
-            "engagement_rate": 3.0,  # 3% per day
-            "reach_increase": 4.0,   # 4% per day
-            "content_volume": 10.0,  # 10% per day (easier to achieve)
-            "custom": 5.0            # Default threshold
-        }
-        
-        threshold = exceptional_thresholds.get(goal.goal_type, 5.0)
-        return daily_progress_rate >= threshold
-    
-    def detect_at_risk_goals(self, db: Session, user_id: int) -> List[Goal]:
-        """
-        Detect goals that are at risk of not being completed
-        
-        Args:
-            db: Database session
-            user_id: User ID
-            
-        Returns:
-            List of at-risk goals
-        """
-        at_risk_goals = []
-        cutoff_date = datetime.utcnow() + timedelta(days=self.at_risk_days_threshold)
-        
-        # Get active goals approaching deadline
-        goals = db.query(Goal).filter(
-            Goal.user_id == user_id,
-            Goal.status == "active",
-            Goal.target_date <= cutoff_date
-        ).all()
-        
-        for goal in goals:
-            progress_percentage = (goal.current_value / goal.target_value) * 100 if goal.target_value > 0 else 0
-            days_remaining = (goal.target_date - datetime.utcnow()).days
-            
-            # Calculate required daily progress to meet goal
-            remaining_progress = 100 - progress_percentage
-            required_daily_progress = remaining_progress / max(days_remaining, 1)
-            
-            # Get recent progress rate
-            recent_progress = self._get_recent_progress_rate(db, goal.id, days=7)
-            
-            # Goal is at risk if recent progress is significantly slower than required
-            if required_daily_progress > recent_progress * 2 and remaining_progress > 10:
-                at_risk_goals.append(goal)
-        
-        return at_risk_goals
-    
-    def detect_stagnant_goals(self, db: Session, user_id: int) -> List[Goal]:
-        """
-        Detect goals with stagnant progress
-        
-        Args:
-            db: Database session
-            user_id: User ID
-            
-        Returns:
-            List of stagnant goals
-        """
-        stagnant_goals = []
-        cutoff_date = datetime.utcnow() - timedelta(days=self.stagnant_days_threshold)
-        
-        # Get active goals
-        goals = db.query(Goal).filter(
-            Goal.user_id == user_id,
-            Goal.status == "active"
-        ).all()
-        
-        for goal in goals:
-            # Check if there's been any progress in the threshold period
-            recent_progress = db.query(GoalProgress).filter(
-                GoalProgress.goal_id == goal.id,
-                GoalProgress.recorded_at >= cutoff_date,
-                GoalProgress.change_amount > 0
-            ).first()
-            
-            if not recent_progress:
-                stagnant_goals.append(goal)
-        
-        return stagnant_goals
-    
-    def _get_recent_progress_rate(self, db: Session, goal_id: str, days: int) -> float:
-        """Get average daily progress rate over recent period"""
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
-        
-        progress_logs = db.query(GoalProgress).filter(
-            GoalProgress.goal_id == goal_id,
-            GoalProgress.recorded_at >= cutoff_date,
-            GoalProgress.change_amount > 0
-        ).all()
-        
-        if not progress_logs:
-            return 0.0
-        
-        total_change = sum(log.change_amount for log in progress_logs)
-        return total_change / days
-    
-    def generate_milestone_notification(
-        self, 
-        goal: Goal, 
-        milestone_type: NotificationType,
-        progress_percentage: float
-    ) -> NotificationMessage:
-        """
-        Generate notification message for milestone achievement
-        
-        Args:
-            goal: Goal object
-            milestone_type: Type of milestone achieved
-            progress_percentage: Current progress percentage
-            
-        Returns:
-            Notification message
-        """
-        import uuid
-        
-        # Generate notification content based on milestone type
-        notification_content = self._get_milestone_content(goal, milestone_type, progress_percentage)
-        
-        return NotificationMessage(
-            id=str(uuid.uuid4()),
-            user_id=goal.user_id,
-            goal_id=goal.id,
-            notification_type=milestone_type,
-            title=notification_content["title"],
-            message=notification_content["message"],
-            priority=notification_content["priority"],
-            action_url=f"/goals/{goal.id}",
-            metadata={
-                "goal_title": goal.title,
-                "progress_percentage": progress_percentage,
-                "target_value": goal.target_value,
-                "current_value": goal.current_value,
-                "goal_type": goal.goal_type,
-                "platform": goal.platform
-            }
-        )
+        logger.info(f"Generated {len(notifications)} notifications for goal {goal.id} progress update")
+        return notifications
     
     def _get_milestone_content(
         self, 
@@ -370,120 +584,118 @@ class GoalNotificationService:
             "message": f"Update on your goal '{goal.title}'",
             "priority": "medium"
         })
-    
-    async def process_goal_progress_update(
-        self, 
-        db: Session, 
-        goal: Goal, 
-        old_value: float, 
-        new_value: float
-    ) -> List[NotificationMessage]:
-        """
-        Process a goal progress update and generate appropriate notifications
-        
-        Args:
-            db: Database session
-            goal: Goal object
-            old_value: Previous goal value
-            new_value: New goal value
-            
-        Returns:
-            List of notification messages to send
-        """
-        notifications = []
-        
-        if goal.target_value <= 0:
-            return notifications
-        
-        # Calculate progress percentages
-        old_progress = (old_value / goal.target_value) * 100
-        new_progress = (new_value / goal.target_value) * 100
-        
-        # Detect milestone achievements
-        achieved_milestones = self.detect_milestone_achievements(goal, old_progress, new_progress)
-        
-        for milestone_type in achieved_milestones:
-            notification = self.generate_milestone_notification(goal, milestone_type, new_progress)
-            notifications.append(notification)
-        
-        # Check for exceptional progress
-        progress_change = new_progress - old_progress
-        if progress_change > 0:
-            # Assume update happened today for exceptional progress detection
-            if self.detect_exceptional_progress(goal, progress_change, timedelta(days=1)):
-                exceptional_notification = self.generate_milestone_notification(
-                    goal, NotificationType.EXCEPTIONAL_PROGRESS, new_progress
-                )
-                notifications.append(exceptional_notification)
-        
-        logger.info(f"Generated {len(notifications)} notifications for goal {goal.id} progress update")
-        return notifications
-    
-    async def check_all_user_goals(self, db: Session, user_id: int) -> List[NotificationMessage]:
-        """
-        Check all user goals for various notification conditions
-        
-        Args:
-            db: Database session
-            user_id: User ID
-            
-        Returns:
-            List of notification messages
-        """
-        notifications = []
-        
-        # Check for at-risk goals
-        at_risk_goals = self.detect_at_risk_goals(db, user_id)
-        for goal in at_risk_goals:
-            progress_percentage = (goal.current_value / goal.target_value) * 100 if goal.target_value > 0 else 0
-            notification = self.generate_milestone_notification(goal, NotificationType.GOAL_AT_RISK, progress_percentage)
-            notifications.append(notification)
-        
-        # Check for stagnant goals
-        stagnant_goals = self.detect_stagnant_goals(db, user_id)
-        for goal in stagnant_goals:
-            progress_percentage = (goal.current_value / goal.target_value) * 100 if goal.target_value > 0 else 0
-            notification = self.generate_milestone_notification(goal, NotificationType.PROGRESS_STAGNANT, progress_percentage)
-            notifications.append(notification)
-        
-        # Check for overdue goals
-        overdue_goals = db.query(Goal).filter(
-            Goal.user_id == user_id,
-            Goal.status == "active",
-            Goal.target_date < datetime.utcnow().date()
-        ).all()
-        
-        for goal in overdue_goals:
-            progress_percentage = (goal.current_value / goal.target_value) * 100 if goal.target_value > 0 else 0
-            notification = self.generate_milestone_notification(goal, NotificationType.GOAL_OVERDUE, progress_percentage)
-            notifications.append(notification)
-        
-        logger.info(f"Generated {len(notifications)} notifications for user {user_id} goal check")
-        return notifications
-    
-    def format_notification_for_display(self, notification: NotificationMessage) -> Dict[str, Any]:
-        """
-        Format notification for frontend display
-        
-        Args:
-            notification: Notification message
-            
-        Returns:
-            Formatted notification for API response
-        """
-        return {
-            "id": notification.id,
-            "user_id": notification.user_id,
-            "goal_id": notification.goal_id,
-            "type": notification.notification_type.value,
-            "title": notification.title,
-            "message": notification.message,
-            "priority": notification.priority,
-            "action_url": notification.action_url,
-            "metadata": notification.metadata,
-            "created_at": notification.created_at.isoformat(),
-            "is_read": False  # Default to unread
-        }
 
 # Global notification service instance
-notification_service = GoalNotificationService()
+notification_service = NotificationService()
+
+# Social media notification trigger functions
+
+async def trigger_post_published_notification(user_id: int, platform: str, post_id: str, content: str):
+    """Trigger notification when a post is successfully published"""
+    await notification_service.create_notification(
+        user_id=user_id,
+        title=f"Post Published on {platform.title()}!",
+        message=f"Your post has been successfully published to {platform}. Content: {content[:100]}{'...' if len(content) > 100 else ''}",
+        notification_type=NotificationType.POST_PUBLISHED,
+        priority=NotificationPriority.MEDIUM,
+        content_id=post_id,
+        metadata={
+            "platform": platform,
+            "post_id": post_id,
+            "content_preview": content[:200]
+        }
+    )
+
+async def trigger_post_failed_notification(user_id: int, platform: str, content: str, error: str):
+    """Trigger notification when a post fails to publish"""
+    await notification_service.create_notification(
+        user_id=user_id,
+        title=f"Post Failed on {platform.title()}",
+        message=f"Failed to publish your post to {platform}. Error: {error}",
+        notification_type=NotificationType.POST_FAILED,
+        priority=NotificationPriority.HIGH,
+        metadata={
+            "platform": platform,
+            "error": error,
+            "content_preview": content[:200]
+        }
+    )
+
+async def trigger_platform_connected_notification(user_id: int, platform: str, username: str):
+    """Trigger notification when a social platform is connected"""
+    await notification_service.create_notification(
+        user_id=user_id,
+        title=f"{platform.title()} Connected!",
+        message=f"Successfully connected your {platform} account (@{username}). You can now start posting!",
+        notification_type=NotificationType.PLATFORM_CONNECTED,
+        priority=NotificationPriority.MEDIUM,
+        metadata={
+            "platform": platform,
+            "username": username
+        }
+    )
+
+async def trigger_oauth_expired_notification(user_id: int, platform: str):
+    """Trigger notification when OAuth token expires"""
+    await notification_service.create_notification(
+        user_id=user_id,
+        title=f"{platform.title()} Connection Expired",
+        message=f"Your {platform} connection has expired. Please reconnect to continue posting.",
+        notification_type=NotificationType.OAUTH_EXPIRED,
+        priority=NotificationPriority.HIGH,
+        metadata={
+            "platform": platform,
+            "action_required": "reconnect"
+        }
+    )
+
+async def trigger_goal_progress_notification(user_id: int, goal_id: str, progress: float, milestone: str):
+    """Trigger notification for goal progress milestones"""
+    await notification_service.create_notification(
+        user_id=user_id,
+        title=f"Goal Progress: {milestone}",
+        message=f"Great progress! You've reached {progress:.1f}% of your goal.",
+        notification_type=NotificationType.GOAL_PROGRESS,
+        priority=NotificationPriority.MEDIUM,
+        goal_id=goal_id,
+        metadata={
+            "progress_percentage": progress,
+            "milestone": milestone
+        }
+    )
+
+async def trigger_goal_completed_notification(user_id: int, goal_id: str, goal_title: str):
+    """Trigger notification when a goal is completed"""
+    await notification_service.create_notification(
+        user_id=user_id,
+        title="🎉 Goal Completed!",
+        message=f"Congratulations! You've completed your goal: {goal_title}",
+        notification_type=NotificationType.GOAL_COMPLETED,
+        priority=NotificationPriority.HIGH,
+        goal_id=goal_id,
+        metadata={
+            "goal_title": goal_title,
+            "celebration": True
+        }
+    )
+
+# Legacy compatibility - GoalNotificationService alias
+GoalNotificationService = NotificationService
+
+# Export the main components
+__all__ = [
+    "NotificationService",
+    "GoalNotificationService",  # Legacy compatibility
+    "WebSocketManager", 
+    "NotificationType",
+    "NotificationPriority",
+    "NotificationMessage",
+    "notification_service",
+    "websocket_manager",
+    "trigger_post_published_notification",
+    "trigger_post_failed_notification",
+    "trigger_platform_connected_notification",
+    "trigger_oauth_expired_notification",
+    "trigger_goal_progress_notification",
+    "trigger_goal_completed_notification"
+]

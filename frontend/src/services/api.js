@@ -458,6 +458,53 @@ class ApiService {
     return this.request('/api/notifications/types')
   }
 
+  // Social Platform endpoints
+  async connectSocialPlatform(platform) {
+    return this.request(`/api/social/connect/${platform}`)
+  }
+
+  async getSocialConnections() {
+    return this.request('/api/social/connections')
+  }
+
+  async disconnectSocialPlatform(connectionId) {
+    return this.request(`/api/social/connections/${connectionId}`, {
+      method: 'DELETE'
+    })
+  }
+
+  async validateSocialConnection(platform) {
+    return this.request(`/api/social/validate/${platform}`, {
+      method: 'POST'
+    })
+  }
+
+  async postToSocialPlatforms(content, platforms, mediaUrls = null, scheduleFor = null) {
+    return this.request('/api/social/post', {
+      method: 'POST',
+      body: {
+        content,
+        platforms,
+        media_urls: mediaUrls,
+        schedule_for: scheduleFor
+      }
+    })
+  }
+
+  async getSocialPosts(platform = null, limit = 20, offset = 0) {
+    const params = new URLSearchParams({ limit, offset })
+    if (platform) params.append('platform', platform)
+    return this.request(`/api/social/posts?${params}`)
+  }
+
+  async getSocialMetrics(platform) {
+    return this.request(`/api/social/metrics/${platform}`)
+  }
+
+  async getSocialAnalytics() {
+    return this.request('/api/social/analytics/overview')
+  }
+
   // Health and system endpoints
   async getHealth() {
     return this.request('/health')

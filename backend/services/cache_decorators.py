@@ -216,8 +216,7 @@ class CacheManager:
             "twitter": ["profile", "recent_tweets"],
             "instagram": ["profile", "recent_posts"],
             "facebook": ["profile", "page_info"],
-            "linkedin": ["profile", "recent_posts"],
-            "tiktok": ["profile", "recent_videos"]
+            "linkedin": ["profile", "recent_posts"]
         }
         
         for platform in platforms:

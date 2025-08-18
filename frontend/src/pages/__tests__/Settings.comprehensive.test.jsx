@@ -63,7 +63,6 @@ describe('Settings Page', () => {
       linkedin: { connected: true, username: 'John Doe' },
       instagram: { connected: false, username: null },
       facebook: { connected: true, username: 'John Doe' },
-      tiktok: { connected: false, username: null }
     }
   }
 

@@ -31,8 +31,7 @@ class SocialOAuthManager:
     - Twitter (OAuth 2.0 with PKCE)
     - LinkedIn (OAuth 2.0)
     - Instagram (Facebook OAuth)
-    - Facebook (OAuth 2.0) 
-    - TikTok (OAuth 2.0)
+    - Facebook (OAuth 2.0)
     """
     
     def __init__(self):
@@ -73,15 +72,6 @@ class SocialOAuthManager:
                 "scope": "pages_manage_posts,pages_read_engagement,publish_to_groups",
                 "requires_pkce": False,
                 "api_base": "https://graph.facebook.com/v18.0"
-            },
-            "tiktok": {
-                "client_id": settings.tiktok_client_id,
-                "client_secret": settings.tiktok_client_secret,
-                "auth_url": "https://www.tiktok.com/auth/authorize/",
-                "token_url": "https://open-api.tiktok.com/oauth/access_token/",
-                "scope": "user.info.basic,video.list,video.upload",
-                "requires_pkce": True,
-                "api_base": "https://open-api.tiktok.com"
             }
         }
         
@@ -91,7 +81,7 @@ class SocialOAuthManager:
         # Token storage and management
         self.token_refresh_threshold = 300  # Refresh if expires in 5 minutes
         
-        logger.info("SocialOAuthManager initialized with support for 5 platforms")
+        logger.info("SocialOAuthManager initialized with support for 4 platforms")
     
     def generate_oauth_state(self, user_id: int, platform: str) -> str:
         """
@@ -429,8 +419,7 @@ class SocialOAuthManager:
             "twitter": "/users/me",
             "linkedin": "/people/~",
             "instagram": "/me",
-            "facebook": "/me",
-            "tiktok": "/user/info/"
+            "facebook": "/me"
         }
         
         endpoint = profile_endpoints.get(platform)
@@ -485,8 +474,7 @@ class SocialOAuthManager:
             "twitter": lambda d: d.get("data", {}).get("id") or d.get("id"),
             "linkedin": lambda d: d.get("id"),
             "instagram": lambda d: d.get("id"),
-            "facebook": lambda d: d.get("id"),
-            "tiktok": lambda d: d.get("data", {}).get("user", {}).get("open_id")
+            "facebook": lambda d: d.get("id")
         }
         return str(extractors.get(platform, lambda d: None)(profile_data) or "")
     
@@ -496,8 +484,7 @@ class SocialOAuthManager:
             "twitter": lambda d: d.get("data", {}).get("username") or d.get("username"),
             "linkedin": lambda d: d.get("localizedLastName", ""),  # LinkedIn doesn't have usernames
             "instagram": lambda d: d.get("username"),
-            "facebook": lambda d: d.get("name"),  # Facebook uses name instead of username
-            "tiktok": lambda d: d.get("data", {}).get("user", {}).get("display_name")
+            "facebook": lambda d: d.get("name")  # Facebook uses name instead of username
         }
         return extractors.get(platform, lambda d: "")(profile_data) or ""
     
@@ -507,8 +494,7 @@ class SocialOAuthManager:
             "twitter": lambda d: d.get("data", {}).get("name") or d.get("name"),
             "linkedin": lambda d: f"{d.get('localizedFirstName', '')} {d.get('localizedLastName', '')}".strip(),
             "instagram": lambda d: d.get("name"),
-            "facebook": lambda d: d.get("name"),
-            "tiktok": lambda d: d.get("data", {}).get("user", {}).get("display_name")
+            "facebook": lambda d: d.get("name")
         }
         return extractors.get(platform, lambda d: "")(profile_data) or ""
     
@@ -518,8 +504,7 @@ class SocialOAuthManager:
             "twitter": lambda d: d.get("data", {}).get("profile_image_url") or d.get("profile_image_url"),
             "linkedin": lambda d: d.get("profilePicture", {}).get("displayImage"),
             "instagram": lambda d: d.get("profile_picture_url"),
-            "facebook": lambda d: d.get("picture", {}).get("data", {}).get("url"),
-            "tiktok": lambda d: d.get("data", {}).get("user", {}).get("avatar_url")
+            "facebook": lambda d: d.get("picture", {}).get("data", {}).get("url")
         }
         return extractors.get(platform, lambda d: "")(profile_data) or ""
     
@@ -529,8 +514,7 @@ class SocialOAuthManager:
             "twitter": lambda d: d.get("data", {}).get("public_metrics", {}).get("followers_count", 0),
             "linkedin": lambda d: 0,  # LinkedIn API doesn't provide follower count in basic profile
             "instagram": lambda d: d.get("followers_count", 0),
-            "facebook": lambda d: 0,  # Facebook doesn't provide follower count in basic profile
-            "tiktok": lambda d: d.get("data", {}).get("user", {}).get("follower_count", 0)
+            "facebook": lambda d: 0  # Facebook doesn't provide follower count in basic profile
         }
         return extractors.get(platform, lambda d: 0)(profile_data) or 0
     
@@ -540,8 +524,7 @@ class SocialOAuthManager:
             "twitter": lambda d: d.get("data", {}).get("verified", False) or d.get("verified", False),
             "linkedin": lambda d: False,  # LinkedIn doesn't have public verification status
             "instagram": lambda d: d.get("is_verified", False),
-            "facebook": lambda d: d.get("verified", False),
-            "tiktok": lambda d: d.get("data", {}).get("user", {}).get("is_verified", False)
+            "facebook": lambda d: d.get("verified", False)
         }
         return extractors.get(platform, lambda d: False)(profile_data) or False
     

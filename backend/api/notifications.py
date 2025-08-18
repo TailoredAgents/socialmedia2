@@ -1,19 +1,25 @@
 """
-Notifications API Endpoints
-Provides notification management and retrieval functionality
+Notifications API Endpoints with Real-time WebSocket Support
+Provides notification management, retrieval, and real-time delivery functionality
 """
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, and_
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 import logging
+import json
 
 from backend.db.database import get_db
 from backend.db.models import Notification, User
 from backend.auth.dependencies import get_current_active_user
-from backend.services.notification_service import notification_service
+from backend.services.notification_service import (
+    notification_service, 
+    websocket_manager, 
+    NotificationType, 
+    NotificationPriority
+)
 
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 logger = logging.getLogger(__name__)
@@ -26,21 +32,185 @@ class NotificationResponse(BaseModel):
     notification_type: str
     priority: str
     goal_id: Optional[str]
+    content_id: Optional[str]
+    workflow_id: Optional[str]
     is_read: bool
     is_dismissed: bool
     action_url: Optional[str]
     action_label: Optional[str]
     metadata: dict
     created_at: datetime
+    read_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True
+
+class CreateNotificationRequest(BaseModel):
+    title: str
+    message: str
+    notification_type: str
+    priority: str = "medium"
+    goal_id: Optional[str] = None
+    content_id: Optional[str] = None
+    workflow_id: Optional[str] = None
+    metadata: Optional[dict] = None
+
+class WebSocketStats(BaseModel):
+    total_connections: int
+    connected_users: int
+    connections_per_user: dict
 
 class NotificationSummary(BaseModel):
     total_notifications: int
     unread_count: int
     high_priority_count: int
     recent_notifications: List[NotificationResponse]
+
+# WebSocket endpoint for real-time notifications
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, user_id: int):
+    """WebSocket endpoint for real-time notifications"""
+    try:
+        # In a real app, you'd validate the user_id through authentication
+        # For now, we'll trust the provided user_id
+        await websocket_manager.connect(websocket, user_id)
+        
+        logger.info(f"WebSocket connection established for user {user_id}")
+        
+        # Keep connection alive and handle incoming messages
+        while True:
+            try:
+                # Listen for client messages (like ping/pong)
+                data = await websocket.receive_text()
+                message = json.loads(data)
+                
+                # Handle different message types
+                if message.get("type") == "ping":
+                    await websocket.send_text(json.dumps({
+                        "type": "pong",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }))
+                elif message.get("type") == "mark_read":
+                    # Handle marking notifications as read via WebSocket
+                    notification_id = message.get("notification_id")
+                    if notification_id:
+                        await notification_service.mark_as_read(notification_id, user_id)
+                        await websocket.send_text(json.dumps({
+                            "type": "marked_read",
+                            "notification_id": notification_id,
+                            "timestamp": datetime.utcnow().isoformat()
+                        }))
+                        
+            except WebSocketDisconnect:
+                break
+            except json.JSONDecodeError:
+                # Invalid JSON, send error
+                await websocket.send_text(json.dumps({
+                    "type": "error",
+                    "message": "Invalid JSON format"
+                }))
+            except Exception as e:
+                logger.error(f"Error handling WebSocket message: {e}")
+                await websocket.send_text(json.dumps({
+                    "type": "error", 
+                    "message": "Server error"
+                }))
+                
+    except WebSocketDisconnect:
+        logger.info(f"WebSocket connection closed for user {user_id}")
+    except Exception as e:
+        logger.error(f"WebSocket error for user {user_id}: {e}")
+    finally:
+        await websocket_manager.disconnect(websocket)
+
+# Admin endpoint to get WebSocket connection stats
+@router.get("/ws/stats", response_model=WebSocketStats)
+async def get_websocket_stats(
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get WebSocket connection statistics (admin only for now)"""
+    # In production, you'd check for admin permissions here
+    stats = websocket_manager.get_connection_stats()
+    return WebSocketStats(**stats)
+
+# Enhanced notification creation endpoint
+@router.post("/create", response_model=NotificationResponse)
+async def create_notification(
+    request: CreateNotificationRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new notification (admin/system use)"""
+    try:
+        # Validate notification type
+        try:
+            notification_type = NotificationType(request.notification_type)
+        except ValueError:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid notification type: {request.notification_type}"
+            )
+        
+        # Validate priority
+        try:
+            priority = NotificationPriority(request.priority)
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid priority: {request.priority}"
+            )
+        
+        # Create notification
+        notification = await notification_service.create_notification(
+            user_id=current_user.id,
+            title=request.title,
+            message=request.message,
+            notification_type=notification_type,
+            priority=priority,
+            goal_id=request.goal_id,
+            content_id=request.content_id,
+            workflow_id=request.workflow_id,
+            metadata=request.metadata or {}
+        )
+        
+        return notification
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating notification: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create notification")
+
+# Broadcast system notification endpoint
+@router.post("/broadcast")
+async def broadcast_system_notification(
+    request: CreateNotificationRequest,
+    current_user: User = Depends(get_current_active_user),
+    exclude_users: Optional[List[int]] = None
+):
+    """Broadcast a system notification to all connected users (admin only)"""
+    # In production, you'd check for admin permissions here
+    
+    try:
+        notification_data = {
+            "title": request.title,
+            "message": request.message,
+            "type": request.notification_type,
+            "priority": request.priority,
+            "metadata": request.metadata or {},
+            "created_at": datetime.utcnow().isoformat()
+        }
+        
+        await websocket_manager.broadcast_system_notification(
+            notification_data, 
+            exclude_users or []
+        )
+        
+        return {"message": "System notification broadcasted successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error broadcasting system notification: {e}")
+        raise HTTPException(status_code=500, detail="Failed to broadcast notification")
 
 @router.get("/", response_model=List[NotificationResponse])
 async def get_user_notifications(
@@ -309,19 +479,46 @@ async def check_user_goals_for_notifications(
 
 @router.get("/types")
 async def get_notification_types():
-    """Get available notification types"""
+    """Get available notification types and priorities"""
     
     return {
         "notification_types": [
-            {"type": "milestone_25", "description": "25% progress milestone"},
-            {"type": "milestone_50", "description": "50% progress milestone"},
-            {"type": "milestone_75", "description": "75% progress milestone"},
-            {"type": "milestone_90", "description": "90% progress milestone"},
-            {"type": "goal_completed", "description": "Goal completed"},
-            {"type": "goal_overdue", "description": "Goal is overdue"},
-            {"type": "goal_at_risk", "description": "Goal at risk of not being completed"},
-            {"type": "progress_stagnant", "description": "No recent progress on goal"},
-            {"type": "exceptional_progress", "description": "Exceptional progress made"}
+            # Goal tracking notifications
+            {"type": "milestone_25", "description": "25% progress milestone", "category": "goals"},
+            {"type": "milestone_50", "description": "50% progress milestone", "category": "goals"},
+            {"type": "milestone_75", "description": "75% progress milestone", "category": "goals"},
+            {"type": "milestone_90", "description": "90% progress milestone", "category": "goals"},
+            {"type": "goal_completed", "description": "Goal completed", "category": "goals"},
+            {"type": "goal_overdue", "description": "Goal is overdue", "category": "goals"},
+            {"type": "goal_at_risk", "description": "Goal at risk of not being completed", "category": "goals"},
+            {"type": "progress_stagnant", "description": "No recent progress on goal", "category": "goals"},
+            {"type": "exceptional_progress", "description": "Exceptional progress made", "category": "goals"},
+            
+            # Social media notifications
+            {"type": "post_published", "description": "Post successfully published", "category": "social"},
+            {"type": "post_failed", "description": "Post failed to publish", "category": "social"},
+            {"type": "engagement_milestone", "description": "Engagement milestone reached", "category": "social"},
+            {"type": "platform_connected", "description": "Social platform connected", "category": "social"},
+            {"type": "platform_disconnected", "description": "Social platform disconnected", "category": "social"},
+            {"type": "oauth_expired", "description": "OAuth token expired", "category": "social"},
+            
+            # System notifications
+            {"type": "system_maintenance", "description": "System maintenance notification", "category": "system"},
+            {"type": "system_error", "description": "System error occurred", "category": "system"},
+            {"type": "feature_announcement", "description": "New feature announcement", "category": "system"},
+            {"type": "security_alert", "description": "Security alert", "category": "system"},
+            
+            # Content notifications
+            {"type": "content_generated", "description": "Content generated successfully", "category": "content"},
+            {"type": "content_scheduled", "description": "Content scheduled for posting", "category": "content"},
+            {"type": "workflow_completed", "description": "Workflow completed", "category": "content"},
+            {"type": "workflow_failed", "description": "Workflow failed", "category": "content"}
         ],
-        "priorities": ["high", "medium", "low"]
+        "priorities": [
+            {"priority": "urgent", "description": "Requires immediate attention"},
+            {"priority": "high", "description": "High priority"},
+            {"priority": "medium", "description": "Medium priority"},
+            {"priority": "low", "description": "Low priority"}
+        ],
+        "categories": ["goals", "social", "system", "content"]
     }

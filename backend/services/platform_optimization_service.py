@@ -137,31 +137,6 @@ class PlatformOptimizationService:
                 'video': {'max_size': '5GB', 'max_duration': 600}
             }
         )
-        
-        # TikTok optimizations
-        self.platform_configs['tiktok'] = PlatformOptimization(
-            platform='tiktok',
-            strategy=OptimizationStrategy.ENGAGEMENT_MAXIMIZATION,
-            max_requests_per_hour=100,
-            optimal_posting_times=['06:00', '10:00', '19:00', '20:00'],
-            content_type_preferences={
-                'video': 1.0,
-                'duet': 1.2,
-                'stitch': 1.1,
-                'live': 1.4
-            },
-            hashtag_limits={'max_hashtags': 100, 'optimal_hashtags': 5},
-            character_limits={'caption': 300, 'bio': 80},
-            media_specifications={
-                'video': {
-                    'aspect_ratio': '9:16',
-                    'max_size': '287MB',
-                    'max_duration': 600,
-                    'min_duration': 15,
-                    'recommended_duration': '15-30s'
-                }
-            }
-        )
     
     @with_circuit_breaker("content_optimization")
     async def optimize_content_for_platform(
@@ -355,20 +330,6 @@ class PlatformOptimizationService:
                     }
                 ])
             
-            elif platform == 'tiktok':
-                recommendations.extend([
-                    {
-                        'type': 'trending_audio',
-                        'message': 'Use trending audio for better algorithm performance',
-                        'priority': 'high'
-                    },
-                    {
-                        'type': 'hook',
-                        'message': 'Start with a strong hook in first 3 seconds',
-                        'priority': 'high'
-                    }
-                ])
-            
             return recommendations
             
         except Exception as e:
@@ -494,8 +455,7 @@ class PlatformOptimizationService:
             'twitter': {'min': 3, 'max': 15, 'optimal': 7},
             'instagram': {'min': 1, 'max': 3, 'optimal': 1},
             'facebook': {'min': 1, 'max': 2, 'optimal': 1},
-            'linkedin': {'min': 2, 'max': 5, 'optimal': 3},
-            'tiktok': {'min': 1, 'max': 4, 'optimal': 2}
+            'linkedin': {'min': 2, 'max': 5, 'optimal': 3}
         }
         
         return frequency_map.get(platform, {'min': 1, 'max': 3, 'optimal': 1})
@@ -616,12 +576,6 @@ class PlatformOptimizationService:
                     'optimal_post_length': 150,
                     'best_content_types': ['video', 'document', 'article'],
                     'peak_engagement_hours': [8, 12, 17, 18]
-                },
-                'tiktok': {
-                    'engagement_rate': 5.96,
-                    'optimal_video_length': 21,  # seconds
-                    'best_content_types': ['video', 'duet', 'challenge'],
-                    'peak_engagement_hours': [6, 10, 19, 20]
                 }
             }
             

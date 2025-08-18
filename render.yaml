@@ -80,10 +80,6 @@ services:
         sync: false
       - key: FACEBOOK_APP_SECRET
         sync: false
-      - key: TIKTOK_CLIENT_ID
-        sync: false
-      - key: TIKTOK_CLIENT_SECRET
-        sync: false
       # CORS Configuration
       - key: CORS_ORIGINS
         value: https://ai-social-frontend.onrender.com,http://localhost:5173

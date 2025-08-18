@@ -352,8 +352,7 @@ const Settings = ({ darkMode, searchQuery }) => {
                 { name: 'LinkedIn', icon: '💼', connected: true, color: 'blue' },
                 { name: 'Twitter', icon: '🐦', connected: true, color: 'sky' },
                 { name: 'Instagram', icon: '📸', connected: false, color: 'pink' },
-                { name: 'Facebook', icon: '👥', connected: true, color: 'indigo' },
-                { name: 'TikTok', icon: '🎵', connected: false, color: 'gray' }
+                { name: 'Facebook', icon: '👥', connected: true, color: 'indigo' }
               ].map((platform) => (
                 <div key={platform.name} className="flex items-center justify-between p-4 rounded-lg border border-gray-200/20">
                   <div className="flex items-center space-x-3">

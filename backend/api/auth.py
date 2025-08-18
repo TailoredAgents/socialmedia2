@@ -1,17 +1,17 @@
 """
 Authentication API endpoints
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request, Cookie
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+from datetime import datetime
 
 from backend.db.database import get_db
-from backend.db.models import User, UserSetting
+from backend.db.models import User, UserSetting, RefreshTokenBlacklist
 from backend.auth.dependencies import get_current_user, get_current_active_user, AuthUser
 from backend.auth.jwt_handler import jwt_handler
-from backend.auth.auth0 import auth0_user_manager
-from backend.auth.config_validator import auth_config_validator
+from backend.core.feature_flags import ff
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
@@ -43,7 +43,7 @@ class UserProfile(BaseModel):
     created_at: str
 
 @router.post("/register", response_model=TokenResponse)
-async def register_user(request: RegisterRequest, db: Session = Depends(get_db)):
+async def register_user(request: RegisterRequest, response: Response, db: Session = Depends(get_db)):
     """Register new user with local authentication"""
     
     # Check if user already exists
@@ -90,22 +90,32 @@ async def register_user(request: RegisterRequest, db: Session = Depends(get_db))
     db.add(user_settings)
     db.commit()
     
-    # Create access token
-    access_token = jwt_handler.create_user_token(
+    # Create access and refresh tokens
+    tokens = jwt_handler.create_user_tokens(
         user_id=str(new_user.id),
         email=new_user.email,
         username=new_user.username
     )
     
+    # Set refresh token as HTTP-only cookie
+    response.set_cookie(
+        key="refresh_token",
+        value=tokens["refresh_token"],
+        httponly=True,
+        secure=True,  # Use HTTPS in production
+        samesite="strict",
+        max_age=jwt_handler.refresh_token_expire_seconds
+    )
+    
     return TokenResponse(
-        access_token=access_token,
+        access_token=tokens["access_token"],
         user_id=str(new_user.id),
         email=new_user.email,
         username=new_user.username
     )
 
 @router.post("/login", response_model=TokenResponse)
-async def login_user(request: LoginRequest, db: Session = Depends(get_db)):
+async def login_user(request: LoginRequest, response: Response, db: Session = Depends(get_db)):
     """Login user with local authentication"""
     
     # Find user by email
@@ -131,21 +141,31 @@ async def login_user(request: LoginRequest, db: Session = Depends(get_db)):
                 detail="Invalid email or password"
             )
     elif user.auth_provider == "local" and not user.hashed_password:
-        # User exists but has no password (created via Auth0)
+        # User exists but has no password (legacy user)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Please use Auth0 login for this account"
+            detail="Please reset your password"
         )
     
-    # Create access token
-    access_token = jwt_handler.create_user_token(
+    # Create access and refresh tokens
+    tokens = jwt_handler.create_user_tokens(
         user_id=str(user.id),
         email=user.email,
         username=user.username
     )
     
+    # Set refresh token as HTTP-only cookie
+    response.set_cookie(
+        key="refresh_token",
+        value=tokens["refresh_token"],
+        httponly=True,
+        secure=True,  # Use HTTPS in production
+        samesite="strict",
+        max_age=jwt_handler.refresh_token_expire_seconds
+    )
+    
     return TokenResponse(
-        access_token=access_token,
+        access_token=tokens["access_token"],
         user_id=str(user.id),
         email=user.email,
         username=user.username
@@ -166,35 +186,122 @@ async def get_current_user_profile(
         created_at=current_user.created_at.isoformat() if current_user.created_at else ""
     )
 
-@router.post("/refresh")
-async def refresh_token(current_user: AuthUser = Depends(get_current_user)):
-    """Refresh access token"""
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh_token(
+    response: Response, 
+    refresh_token: Optional[str] = Cookie(None),
+    db: Session = Depends(get_db)
+):
+    """Refresh access token using refresh token from cookie"""
     
-    # Create new access token
-    access_token = jwt_handler.create_user_token(
-        user_id=current_user.user_id,
-        email=current_user.email,
-        username=current_user.username
-    )
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token not found"
+        )
     
-    return TokenResponse(
-        access_token=access_token,
-        user_id=current_user.user_id,
-        email=current_user.email,
-        username=current_user.username
-    )
+    try:
+        # Verify refresh token
+        payload = jwt_handler.verify_token(refresh_token)
+        
+        # Check if it's a refresh token
+        if payload.get("type") != "refresh":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token type"
+            )
+        
+        # Check if token is blacklisted
+        jti = payload.get("jti")
+        if jti:
+            blacklisted = db.query(RefreshTokenBlacklist).filter(
+                RefreshTokenBlacklist.token_jti == jti
+            ).first()
+            if blacklisted:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token has been revoked"
+                )
+        
+        user_id = payload.get("sub")
+        email = payload.get("email")
+        username = payload.get("username")
+        
+        if not all([user_id, email, username]):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token payload"
+            )
+        
+        # Create new tokens
+        new_tokens = jwt_handler.create_user_tokens(user_id, email, username)
+        
+        # Blacklist old refresh token
+        if jti:
+            old_token_blacklist = RefreshTokenBlacklist(
+                token_jti=jti,
+                user_id=int(user_id),
+                expires_at=datetime.fromtimestamp(payload.get("exp"))
+            )
+            db.add(old_token_blacklist)
+            db.commit()
+        
+        # Set new refresh token cookie
+        response.set_cookie(
+            key="refresh_token",
+            value=new_tokens["refresh_token"],
+            httponly=True,
+            secure=True,
+            samesite="strict",
+            max_age=jwt_handler.refresh_token_expire_seconds
+        )
+        
+        return TokenResponse(
+            access_token=new_tokens["access_token"],
+            user_id=user_id,
+            email=email,
+            username=username
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token"
+        )
 
 @router.post("/logout")
-async def logout_user(current_user: AuthUser = Depends(get_current_user)):
-    """Logout user (client should remove token)"""
+async def logout_user(
+    response: Response,
+    refresh_token: Optional[str] = Cookie(None),
+    db: Session = Depends(get_db)
+):
+    """Logout user and blacklist refresh token"""
+    
+    # Clear refresh token cookie
+    response.delete_cookie(key="refresh_token")
+    
+    # Blacklist refresh token if present
+    if refresh_token:
+        try:
+            payload = jwt_handler.verify_token(refresh_token)
+            jti = payload.get("jti")
+            user_id = payload.get("sub")
+            
+            if jti and user_id:
+                blacklist_entry = RefreshTokenBlacklist(
+                    token_jti=jti,
+                    user_id=int(user_id),
+                    expires_at=datetime.fromtimestamp(payload.get("exp"))
+                )
+                db.add(blacklist_entry)
+                db.commit()
+        except Exception:
+            # Token already invalid, just clear cookie
+            pass
+    
     return {"message": "Successfully logged out"}
-
-@router.get("/auth0/callback")
-async def auth0_callback(code: str, db: Session = Depends(get_db)):
-    """Handle Auth0 callback (for future implementation)"""
-    # This would handle the Auth0 authorization code flow
-    # For now, return a placeholder response
-    return {"message": "Auth0 callback received", "code": code}
 
 @router.get("/verify")
 async def verify_token(current_user: AuthUser = Depends(get_current_user)):
@@ -204,10 +311,5 @@ async def verify_token(current_user: AuthUser = Depends(get_current_user)):
         "user_id": current_user.user_id,
         "email": current_user.email,
         "username": current_user.username,
-        "auth_method": current_user.auth_method
+        "auth_method": "local"
     }
-
-@router.get("/config")
-async def get_auth_config():
-    """Get authentication configuration status"""
-    return auth_config_validator.get_auth_status()

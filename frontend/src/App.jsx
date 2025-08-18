@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // Context Providers
 import { AuthProvider } from './contexts/AuthContext'
+import { WebSocketProvider } from './contexts/WebSocketContext'
 
 // Error handling
 import { ErrorBoundary } from './utils/errorReporter.jsx'
@@ -11,7 +12,7 @@ import { ErrorBoundary } from './utils/errorReporter.jsx'
 // Components
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
-import NotificationContainer from './components/Notifications/NotificationContainer'
+import RealTimeNotificationContainer from './components/Notifications/RealTimeNotificationContainer'
 
 // Pages
 import Login from './pages/Login'
@@ -118,8 +119,8 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       
-      {/* Global Notification System */}
-      <NotificationContainer />
+      {/* Real-time Notification System */}
+      <RealTimeNotificationContainer />
     </div>
   )
 }
@@ -129,9 +130,11 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <Router>
-            <AppRoutes />
-          </Router>
+          <WebSocketProvider>
+            <Router>
+              <AppRoutes />
+            </Router>
+          </WebSocketProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>

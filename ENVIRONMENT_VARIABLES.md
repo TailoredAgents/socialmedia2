@@ -180,13 +180,6 @@ REDIS_URL=redis://username:password@host:port/0
 | `FACEBOOK_PAGE_ID` | No | - | Facebook page ID |
 | `FACEBOOK_PAGE_ACCESS_TOKEN` | No | - | Facebook page access token |
 
-#### **TikTok API (Future)**
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `TIKTOK_CLIENT_KEY` | No | - | TikTok client key |
-| `TIKTOK_CLIENT_SECRET` | No | - | TikTok client secret |
-| `TIKTOK_ACCESS_TOKEN` | No | - | TikTok access token |
-
 **Example:**
 ```bash
 # Twitter

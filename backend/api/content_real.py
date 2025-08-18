@@ -22,8 +22,12 @@ logger = logging.getLogger(__name__)
 # Initialize services
 image_service = ImageGenerationService()
 
-# In-memory storage for content (temporary solution until database is implemented)
-content_storage: Dict[str, Dict[str, Any]] = {}
+# Import database service for content persistence
+from backend.services.content_persistence_service import ContentPersistenceService
+from backend.db.database import get_db
+from backend.auth.fastapi_users_config import current_active_user, UserTable
+from sqlalchemy.orm import Session
+from fastapi import Depends
 
 class ImageGenerationRequest(BaseModel):
     prompt: str
@@ -60,44 +64,71 @@ class ContentCreateRequest(BaseModel):
     tags: List[str] = []
 
 @router.get("/")
-async def get_content(page: int = 1, limit: int = 20):
-    """Get recent generated content"""
-    # Return content from in-memory storage
-    content_list = list(content_storage.values())
-    
-    # Sort by created_at descending (newest first)
-    content_list.sort(key=lambda x: x.get('created_at', ''), reverse=True)
-    
-    # Apply pagination
-    start_idx = (page - 1) * limit
-    end_idx = start_idx + limit
-    paginated_content = content_list[start_idx:end_idx]
-    
-    return {
-        "content": paginated_content,
-        "total": len(content_list),
-        "page": page,
-        "limit": limit
-    }
+async def get_content(
+    page: int = 1, 
+    limit: int = 20,
+    platform: Optional[str] = None,
+    status: Optional[str] = None,
+    current_user: UserTable = Depends(current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get recent generated content for the authenticated user"""
+    try:
+        content_service = ContentPersistenceService(db)
+        return content_service.get_content_list(
+            user_id=current_user.id,
+            page=page,
+            limit=limit,
+            platform=platform,
+            status=status
+        )
+    except Exception as e:
+        logger.error(f"Error getting content: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve content")
 
 @router.post("/")
-async def create_content(request: ContentCreateRequest):
-    """Create new content"""
+async def create_content(
+    request: ContentCreateRequest,
+    current_user: UserTable = Depends(current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create new content for the authenticated user"""
     try:
-        content_id = str(uuid.uuid4())
+        content_service = ContentPersistenceService(db)
         
-        # Create content object
+        # Parse scheduled_at if provided
+        scheduled_datetime = None
+        if request.scheduled_at:
+            try:
+                scheduled_datetime = datetime.fromisoformat(request.scheduled_at.replace('Z', '+00:00'))
+            except ValueError:
+                pass  # Invalid date format, will be None
+        
+        # Create content in database
+        content_log = content_service.create_content(
+            user_id=current_user.id,
+            title=request.title,
+            content=request.content,
+            platform=request.platform,
+            content_type=request.content_type,
+            status=request.status,
+            scheduled_at=scheduled_datetime,
+            tags=request.tags
+        )
+        
+        # Format response to match expected structure
+        engagement_data = content_log.engagement_data or {}
         content_obj = {
-            "id": content_id,
-            "title": request.title,
-            "content": request.content,
-            "platform": request.platform,
-            "content_type": request.content_type,
-            "status": request.status,
-            "scheduled_at": request.scheduled_at,
-            "tags": request.tags,
-            "created_at": datetime.utcnow().isoformat() + "Z",
-            "updated_at": datetime.utcnow().isoformat() + "Z",
+            "id": content_log.id,
+            "title": engagement_data.get("title", request.title),
+            "content": content_log.content,
+            "platform": content_log.platform,
+            "content_type": content_log.content_type,
+            "status": content_log.status,
+            "scheduled_at": content_log.scheduled_for.isoformat() + "Z" if content_log.scheduled_for else None,
+            "tags": engagement_data.get("tags", request.tags),
+            "created_at": content_log.created_at.isoformat() + "Z",
+            "updated_at": content_log.updated_at.isoformat() + "Z" if content_log.updated_at else None,
             "generated_by_ai": request.dict().get('generated_by_ai', False),
             "industry_context": request.dict().get('industry_context', ''),
             "image_url": request.dict().get('image_url', None),
@@ -110,12 +141,9 @@ async def create_content(request: ContentCreateRequest):
             }
         }
         
-        # Store in memory
-        content_storage[content_id] = content_obj
-        
         return {
             "success": True,
-            "content_id": content_id,
+            "content_id": content_log.id,
             "message": "Content created successfully",
             "content": content_obj
         }
@@ -124,21 +152,40 @@ async def create_content(request: ContentCreateRequest):
         raise HTTPException(status_code=500, detail=f"Content creation failed: {str(e)}")
 
 @router.get("/scheduled/upcoming")
-async def get_upcoming_scheduled():
-    """Get upcoming scheduled content"""
-    # Filter scheduled content from storage
-    scheduled_content = [
-        content for content in content_storage.values()
-        if content.get('status') == 'scheduled' and content.get('scheduled_at')
-    ]
-    
-    # Sort by scheduled date
-    scheduled_content.sort(key=lambda x: x.get('scheduled_at', ''))
-    
-    return {
-        "scheduled_content": scheduled_content,
-        "total": len(scheduled_content)
-    }
+async def get_upcoming_scheduled(
+    current_user: UserTable = Depends(current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get upcoming scheduled content for the authenticated user"""
+    try:
+        from datetime import timedelta
+        content_service = ContentPersistenceService(db)
+        scheduled_content = content_service.get_scheduled_content(
+            user_id=current_user.id,
+            before=datetime.utcnow() + timedelta(days=30)  # Next 30 days
+        )
+        
+        # Format content for response
+        formatted_content = []
+        for content_log in scheduled_content:
+            engagement_data = content_log.engagement_data or {}
+            formatted_content.append({
+                "id": content_log.id,
+                "title": engagement_data.get("title", ""),
+                "content": content_log.content,
+                "platform": content_log.platform,
+                "status": content_log.status,
+                "scheduled_at": content_log.scheduled_for.isoformat() + "Z" if content_log.scheduled_for else None,
+                "created_at": content_log.created_at.isoformat() + "Z"
+            })
+        
+        return {
+            "scheduled_content": formatted_content,
+            "total": len(formatted_content)
+        }
+    except Exception as e:
+        logger.error(f"Error getting scheduled content: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve scheduled content")
 
 @router.post("/generate")
 async def generate_content(request: ContentGenerationRequest):
@@ -406,28 +453,61 @@ async def get_content_by_id(content_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to get content: {str(e)}")
 
 @router.put("/{content_id}")
-async def update_content(content_id: str, request: ContentUpdateRequest):
-    """Update existing content"""
+async def update_content(
+    content_id: int,
+    request: ContentUpdateRequest,
+    current_user: UserTable = Depends(current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update existing content for the authenticated user"""
     try:
-        if content_id not in content_storage:
-            raise HTTPException(status_code=404, detail="Content not found")
+        content_service = ContentPersistenceService(db)
         
-        # Update only provided fields
-        updated_fields = {}
+        # Prepare updates dict
+        updates = {}
         for field, value in request.dict().items():
             if value is not None:
-                content_storage[content_id][field] = value
-                updated_fields[field] = value
+                if field == "scheduled_at" and value:
+                    # Parse datetime
+                    try:
+                        updates["scheduled_for"] = datetime.fromisoformat(value.replace('Z', '+00:00'))
+                    except ValueError:
+                        pass  # Skip invalid dates
+                elif field in ["title", "content", "platform", "status", "tags"]:
+                    updates[field] = value
         
-        # Update the updated_at timestamp
-        content_storage[content_id]['updated_at'] = datetime.utcnow().isoformat() + "Z"
+        # Update content in database
+        updated_content = content_service.update_content(
+            user_id=current_user.id,
+            content_id=content_id,
+            updates=updates
+        )
+        
+        if not updated_content:
+            raise HTTPException(status_code=404, detail="Content not found")
+        
+        # Format response
+        engagement_data = updated_content.engagement_data or {}
+        content_obj = {
+            "id": updated_content.id,
+            "title": engagement_data.get("title", ""),
+            "content": updated_content.content,
+            "platform": updated_content.platform,
+            "content_type": updated_content.content_type,
+            "status": updated_content.status,
+            "scheduled_at": updated_content.scheduled_for.isoformat() + "Z" if updated_content.scheduled_for else None,
+            "published_at": updated_content.published_at.isoformat() + "Z" if updated_content.published_at else None,
+            "tags": engagement_data.get("tags", []),
+            "created_at": updated_content.created_at.isoformat() + "Z",
+            "updated_at": updated_content.updated_at.isoformat() + "Z" if updated_content.updated_at else None
+        }
         
         return {
             "success": True,
-            "content_id": content_id,
+            "content_id": updated_content.id,
             "message": "Content updated successfully",
-            "updated_fields": updated_fields,
-            "content": content_storage[content_id]
+            "updated_fields": list(updates.keys()),
+            "content": content_obj
         }
     except HTTPException:
         raise
@@ -436,14 +516,18 @@ async def update_content(content_id: str, request: ContentUpdateRequest):
         raise HTTPException(status_code=500, detail=f"Content update failed: {str(e)}")
 
 @router.delete("/{content_id}")
-async def delete_content(content_id: str):
-    """Delete content"""
+async def delete_content(
+    content_id: int,
+    current_user: UserTable = Depends(current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete content for the authenticated user"""
     try:
-        if content_id not in content_storage:
-            raise HTTPException(status_code=404, detail="Content not found")
+        content_service = ContentPersistenceService(db)
+        success = content_service.delete_content(current_user.id, content_id)
         
-        # Remove from storage
-        del content_storage[content_id]
+        if not success:
+            raise HTTPException(status_code=404, detail="Content not found")
         
         return {
             "success": True,

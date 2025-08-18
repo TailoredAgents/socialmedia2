@@ -28,7 +28,6 @@ class Platform(Enum):
     INSTAGRAM = "instagram"
     FACEBOOK = "facebook"
     LINKEDIN = "linkedin"
-    TIKTOK = "tiktok"
 
 @dataclass
 class UnifiedMetrics:
@@ -89,8 +88,7 @@ class SocialMediaMetricsCollector:
             Platform.TWITTER: timedelta(minutes=15),    # Twitter has good real-time data
             Platform.INSTAGRAM: timedelta(hours=1),     # Instagram updates less frequently
             Platform.FACEBOOK: timedelta(hours=1),      # Facebook similar to Instagram
-            Platform.LINKEDIN: timedelta(hours=2),      # LinkedIn updates even less frequently
-            Platform.TIKTOK: timedelta(hours=2)         # TikTok when implemented
+            Platform.LINKEDIN: timedelta(hours=2)       # LinkedIn updates even less frequently
         }
         
         self.retry_config = {
@@ -103,8 +101,7 @@ class SocialMediaMetricsCollector:
             Platform.TWITTER: 50,      # Twitter API allows good batch sizes
             Platform.INSTAGRAM: 25,    # Instagram is more restrictive
             Platform.FACEBOOK: 25,     # Facebook similar to Instagram
-            Platform.LINKEDIN: 20,     # LinkedIn most restrictive
-            Platform.TIKTOK: 30        # TikTok when implemented
+            Platform.LINKEDIN: 20      # LinkedIn most restrictive
         }
         
         logger.info("SocialMediaMetricsCollector initialized")
@@ -142,8 +139,6 @@ class SocialMediaMetricsCollector:
                 task = self._collect_facebook_metrics(db, force_collection)
             elif platform == Platform.LINKEDIN:
                 task = self._collect_linkedin_metrics(db, force_collection)
-            elif platform == Platform.TIKTOK:
-                task = self._collect_tiktok_metrics(db, force_collection)
             else:
                 continue
             
@@ -518,20 +513,6 @@ class SocialMediaMetricsCollector:
                 collection_time=datetime.utcnow()
             )
     
-    async def _collect_tiktok_metrics(
-        self,
-        db: Session,
-        force_collection: bool = False
-    ) -> MetricsCollectionResult:
-        """Collect metrics from TikTok (placeholder for future implementation)"""
-        logger.info("TikTok metrics collection not yet implemented")
-        return MetricsCollectionResult(
-            success=True,
-            platform="tiktok",
-            metrics_collected=0,
-            errors=["TikTok integration not yet implemented"],
-            collection_time=datetime.utcnow()
-        )
     
     def _should_collect_metrics(
         self,

@@ -59,10 +59,7 @@ class PerformanceCache:
             "instagram_profile": 3600,
             "instagram_insights": 1800,
             "facebook_profile": 7200,
-            "facebook_insights": 1800,
-            "tiktok_profile": 3600,  # 1 hour
-            "tiktok_analytics": 1800,  # 30 minutes
-            "tiktok_trending": 900    # 15 minutes for trending content
+            "facebook_insights": 1800
         }
         
         logger.info(f"Performance cache initialized: max_size={max_size}, default_ttl={default_ttl}s")
@@ -273,8 +270,7 @@ class RateLimiter:
             "twitter": {"requests": 300, "window": 900, "burst": 50},
             "linkedin": {"requests": 100, "window": 3600, "burst": 20},
             "instagram": {"requests": 200, "window": 3600, "burst": 25},
-            "facebook": {"requests": 600, "window": 600, "burst": 100},
-            "tiktok": {"requests": 10, "window": 86400, "burst": 5}  # Very strict limits
+            "facebook": {"requests": 600, "window": 600, "burst": 100}
         }
         
         self.request_history: Dict[str, list] = {}
@@ -521,6 +517,3 @@ def cached_facebook_request(operation: str, cache_ttl: Optional[int] = None):
     """Decorator for cached Facebook requests"""
     return performance_optimizer.cached_request("facebook", operation, cache_ttl)
 
-def cached_tiktok_request(operation: str, cache_ttl: Optional[int] = None):
-    """Decorator for cached TikTok requests"""
-    return performance_optimizer.cached_request("tiktok", operation, cache_ttl)

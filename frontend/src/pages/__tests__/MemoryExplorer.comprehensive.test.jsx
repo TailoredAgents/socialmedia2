@@ -109,8 +109,7 @@ describe('MemoryExplorer Page', () => {
       LinkedIn: 45,
       Twitter: 38,
       Instagram: 32,
-      Facebook: 25,
-      TikTok: 16
+      Facebook: 25
     }
   }
 

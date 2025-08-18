@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Production-ready FastAPI app with comprehensive error handling
+Production-ready FastAPI app with comprehensive security hardening
 """
 import sys
 import os
@@ -28,7 +28,6 @@ if str(backend_path) not in sys.path:
 # Import FastAPI with fallback
 try:
     from fastapi import FastAPI, Request, HTTPException
-    from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse
     logger.info("FastAPI imported successfully")
 except ImportError as e:
@@ -36,42 +35,76 @@ except ImportError as e:
     logger.error("Please ensure FastAPI is installed: pip install fastapi")
     sys.exit(1)
 
+# Validate environment on startup
+try:
+    from backend.core.env_validator_simple import validate_on_startup
+    validate_on_startup()
+    logger.info("Environment validation completed")
+except Exception as e:
+    logger.warning("Environment validation failed: {}".format(e))
+
 # Create FastAPI app
+environment = os.getenv("ENVIRONMENT", "production").lower()
 app = FastAPI(
     title="AI Social Media Content Agent",
-    description="Complete autonomous social media management platform",
+    description="Complete autonomous social media management platform with security hardening",
     version="2.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
+    docs_url="/docs" if environment != "production" else None,  # Disable docs in production
+    redoc_url="/redoc" if environment != "production" else None  # Disable redoc in production
 )
 
-# Add CORS middleware with specific configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://ai-social-frontend.onrender.com",
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-        "http://localhost:3000",
-        "http://localhost:4173",
-        "*"  # Allow all as fallback
-    ],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=[
-        "Accept",
-        "Accept-Language",
-        "Content-Language",
-        "Content-Type",
-        "Authorization",
-        "X-Requested-With",
-        "Origin",
-        "Cache-Control"
-    ],
-    expose_headers=["*"],
-    max_age=86400,  # 24 hours
-)
+# Setup comprehensive security middleware
+try:
+    from backend.core.security_middleware import setup_security_middleware
+    from backend.core.audit_logger import AuditTrackingMiddleware
+    
+    # Add audit tracking first
+    app.add_middleware(AuditTrackingMiddleware)
+    
+    # Setup all security middleware
+    setup_security_middleware(app, environment=environment)
+    
+    logger.info("Security middleware configured for {} environment".format(environment))
+except Exception as e:
+    logger.error("Failed to setup security middleware: {}".format(e))
+    # Fallback to basic CORS
+    from fastapi.middleware.cors import CORSMiddleware
+    
+    if environment == "development":
+        # Development: Allow all origins
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"]
+        )
+    else:
+        # Production: Restrict origins
+        allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
+        allowed_origins = [origin.strip() for origin in allowed_origins if origin.strip()]
+        
+        if not allowed_origins:
+            # Default safe origins
+            allowed_origins = [
+                "https://ai-social-frontend.onrender.com",
+                "http://localhost:3000"
+            ]
+        
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=allowed_origins,
+            allow_credentials=True,
+            allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            allow_headers=[
+                "Accept",
+                "Accept-Language", 
+                "Content-Language",
+                "Content-Type",
+                "Authorization",
+                "X-Requested-With"
+            ]
+        )
 
 # Add error tracking middleware
 try:
@@ -86,40 +119,33 @@ except Exception as e:
 loaded_routers = []
 failed_routers = []
 
-# Define all routers to load (routers define their own prefixes)
-routers_config = [
-    ("system_logs", "backend.api.system_logs"),
-    ("content", "backend.api.content_real"),
-    ("autonomous", "backend.api.autonomous"),
-    ("memory", "backend.api.memory"),
-    ("goals", "backend.api.goals"),
-    ("notifications_stub", "backend.api.notifications_stub"),
-    ("workflow_stub", "backend.api.workflow_stub"),
-    ("metrics", "backend.api.metrics_stub"),
-    ("diagnostics", "backend.api.diagnostics_simple"),
-]
-
-# Load routers with detailed error handling - app will start even if routers fail
-for router_name, module_path in routers_config:
-    try:
-        logger.info("Attempting to load {} router from {}".format(router_name, module_path))
-        module = __import__(module_path, fromlist=['router'])
-        router = getattr(module, 'router', None)
-        if router:
-            app.include_router(router, tags=[router_name])
+# Load routers from centralized registry
+try:
+    from backend.api._registry import ROUTERS
+    logger.info("Loading {} routers from registry".format(len(ROUTERS)))
+    
+    for router in ROUTERS:
+        try:
+            router_name = getattr(router, 'prefix', 'unknown').replace('/api/', '') or 'root'
+            app.include_router(router)
             loaded_routers.append(router_name)
             logger.info("✅ {} router loaded successfully".format(router_name))
-        else:
-            failed_routers.append((router_name, "No router attribute"))
-            logger.warning("⚠️ {}: No router attribute found".format(router_name))
-    except ImportError as e:
-        failed_routers.append((router_name, str(e)))
-        logger.warning("⚠️ {} router failed to load (ImportError): {}".format(router_name, e))
-    except Exception as e:
-        failed_routers.append((router_name, str(e)))
-        logger.error("❌ {} router error: {} - {}".format(router_name, type(e).__name__, e))
-        # Continue loading other routers even if one fails
-        continue
+        except Exception as e:
+            router_name = getattr(router, 'prefix', 'unknown')
+            failed_routers.append((router_name, str(e)))
+            logger.error("❌ {} router error: {} - {}".format(router_name, type(e).__name__, e))
+            continue
+            
+except ImportError as e:
+    logger.error("Failed to import router registry: {}".format(e))
+    # Fallback to minimal routers
+    try:
+        from backend.api import auth
+        app.include_router(auth.router)
+        loaded_routers.append("auth")
+        logger.info("✅ Fallback auth router loaded")
+    except Exception as fallback_e:
+        logger.error("❌ Even fallback auth router failed: {}".format(fallback_e))
 
 # Root endpoints
 @app.get("/")
@@ -145,6 +171,8 @@ async def health_check():
         "python_version": "{}.{}.{}".format(sys.version_info.major, sys.version_info.minor, sys.version_info.micro),
         "environment": os.getenv("ENVIRONMENT", "production"),
         "uptime": "Running",
+        "routers_loaded": len(loaded_routers),
+        "routers": loaded_routers,
         "features": {
             "environment": os.getenv("ENVIRONMENT", "production"),
             "available_features": loaded_routers,

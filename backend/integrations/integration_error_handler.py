@@ -146,7 +146,7 @@ class IntegrationErrorHandler:
     def _setup_circuit_breakers(self):
         """Setup circuit breakers for each platform"""
         
-        platforms = ["twitter", "linkedin", "instagram", "facebook", "tiktok"]
+        platforms = ["twitter", "linkedin", "instagram", "facebook"]
         
         for platform in platforms:
             self.circuit_breakers[platform] = {
@@ -217,16 +217,6 @@ class IntegrationErrorHandler:
                 return ErrorType.CONTENT_VALIDATION, ErrorSeverity.LOW
             if "page not found" in error_msg:
                 return ErrorType.CONTENT_VALIDATION, ErrorSeverity.LOW
-        
-        elif platform == "tiktok":
-            if "video not found" in error_msg:
-                return ErrorType.CONTENT_VALIDATION, ErrorSeverity.LOW
-            if "invalid video format" in error_msg:
-                return ErrorType.CONTENT_VALIDATION, ErrorSeverity.LOW
-            if "video too long" in error_msg or "video too short" in error_msg:
-                return ErrorType.CONTENT_VALIDATION, ErrorSeverity.LOW
-            if "upload limit exceeded" in error_msg:
-                return ErrorType.QUOTA_EXCEEDED, ErrorSeverity.HIGH
         
         # HTTP status code classification
         if isinstance(error, httpx.HTTPStatusError):

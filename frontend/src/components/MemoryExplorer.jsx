@@ -61,7 +61,7 @@ const mockMemoryData = [
     title: 'Video Marketing Statistics',
     type: 'Data Report',
     content: 'Latest statistics and trends in video marketing across all major social platforms.',
-    platform: 'TikTok',
+    platform: 'Facebook',
     createdAt: '2025-01-11T11:00:00Z',
     engagement: 3400,
     tags: ['Video', 'Marketing', 'Statistics', 'Report'],
@@ -210,7 +210,7 @@ const ContentDetailModal = ({ content, isOpen, onClose, darkMode }) => {
 // Search and Filter Component
 const SearchFilters = ({ globalFilter, setGlobalFilter, typeFilter, setTypeFilter, platformFilter, setPlatformFilter, darkMode }) => {
   const types = ['All', 'Research Article', 'Guide', 'Tool/Resource', 'Newsletter', 'Data Report']
-  const platforms = ['All', 'LinkedIn', 'Twitter', 'Instagram', 'Facebook', 'TikTok']
+  const platforms = ['All', 'LinkedIn', 'Twitter', 'Instagram', 'Facebook']
 
   return (
     <motion.div

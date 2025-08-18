@@ -29,7 +29,7 @@ The AI Social Media Content Agent is a sophisticated, enterprise-grade platform 
 ### 🚀 Key Features
 
 - **🤖 AI-Powered Content Generation**: CrewAI multi-agent system with GPT-4 integration
-- **📱 Multi-Platform Support**: Twitter/X, LinkedIn, Instagram, Facebook, TikTok
+- **📱 Multi-Platform Support**: Twitter/X, LinkedIn, Instagram, Facebook
 - **📊 Advanced Analytics**: Real-time performance tracking and insights
 - **🔍 Semantic Memory**: FAISS vector search with 40K+ embedding capacity
 - **⚡ Automated Workflows**: Intelligent content scheduling and optimization

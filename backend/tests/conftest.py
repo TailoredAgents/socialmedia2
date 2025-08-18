@@ -14,6 +14,9 @@ from backend.db.database import get_db, Base
 from backend.db.models import User, ContentItem, Goal, GoalProgress, Memory
 from backend.auth.dependencies import get_current_user, get_optional_user
 
+# Import multi-tenancy fixtures
+from backend.tests.fixtures.multi_tenant_fixtures import *
+
 # Test database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 

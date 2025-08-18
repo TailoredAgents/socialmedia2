@@ -5,6 +5,12 @@ from sqlalchemy.dialects.postgresql import UUID
 from backend.db.database import Base
 import uuid
 
+# Import multi-tenant models to ensure all relationships are properly established
+from backend.db.multi_tenant_models import (
+    Organization, Team, Role, Permission, OrganizationInvitation, 
+    UserOrganizationRole, user_teams, role_permissions
+)
+
 class User(Base):
     __tablename__ = "users"
 
@@ -18,6 +24,10 @@ class User(Base):
     is_verified = Column(Boolean, default=False)  # For FastAPI Users
     tier = Column(String, default="base")  # base, pro, enterprise
     auth_provider = Column(String, default="local")  # local, auth0
+    
+    # Multi-tenancy: Default organization for personal accounts
+    default_organization_id = Column(String, ForeignKey("organizations.id"), nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -28,6 +38,16 @@ class User(Base):
     goals = relationship("Goal", back_populates="user")
     workflow_executions = relationship("WorkflowExecution", back_populates="user")
     notifications = relationship("Notification", back_populates="user")
+    
+    # Multi-tenancy relationships
+    default_organization = relationship("Organization", foreign_keys=[default_organization_id])
+    teams = relationship("Team", secondary="user_teams", back_populates="members")
+    organization_roles = relationship("UserOrganizationRole", back_populates="user")
+    
+    # Organization ownership and invitations
+    owned_organizations = relationship("Organization", foreign_keys="Organization.owner_id")
+    sent_invitations = relationship("OrganizationInvitation", foreign_keys="OrganizationInvitation.invited_by_id")
+    received_invitations = relationship("OrganizationInvitation", foreign_keys="OrganizationInvitation.invited_user_id")
 
 class ContentLog(Base):
     __tablename__ = "content_logs"

@@ -86,6 +86,8 @@ class UserSetting(Base):
     creativity_level = Column(Float, default=0.7)  # 0-1 scale
     enable_images = Column(Boolean, default=True)
     enable_repurposing = Column(Boolean, default=True)
+    enable_autonomous_mode = Column(Boolean, default=False)  # For autonomous scheduling
+    timezone = Column(String, default="UTC")  # User timezone for scheduling
     
     # Integrations
     connected_accounts = Column(JSON, default={})

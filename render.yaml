@@ -8,7 +8,7 @@ services:
     env: python
     region: oregon
     plan: free
-    runtime: python-3.11
+    runtime: python-3.11.9
     rootDirectory: .
     buildCommand: |
       echo "🏗️ Building AI Social Media Content Agent..."
@@ -32,7 +32,7 @@ services:
     healthCheckPath: /render-health
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11
+        value: 3.11.9
       - key: ENVIRONMENT
         value: production
       - key: DEBUG

@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import apiService from '../services/api.js'
+import { info as logInfo, error as logError } from '../utils/logger.js'
 
 const AuthContext = createContext()
 
@@ -11,46 +13,203 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }) => {
-  // Simple authentication state without Auth0
-  const [user, setUser] = useState({
-    id: 'demo-user-1',
-    name: 'Demo User',
-    email: 'demo@example.com',
-    picture: 'https://via.placeholder.com/40x40?text=DU'
-  })
-  const [isAuthenticated, setIsAuthenticated] = useState(true) // Always authenticated in demo mode
-  const [isLoading, setIsLoading] = useState(false)
-  const [accessToken, setAccessToken] = useState('demo-token')
+  const [user, setUser] = useState(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [accessToken, setAccessToken] = useState(null)
+  const [authError, setAuthError] = useState(null)
 
-  // Mock authentication functions
-  const loginWithRedirect = () => {
-    console.log('Login functionality - running in demo mode')
-    setIsAuthenticated(true)
+  // Initialize authentication state on app start
+  useEffect(() => {
+    initializeAuth()
+  }, [])
+
+  const initializeAuth = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Try to get stored token
+      const storedToken = localStorage.getItem('accessToken')
+      if (storedToken) {
+        apiService.setToken(storedToken)
+        setAccessToken(storedToken)
+        
+        // Verify token is still valid and get user data
+        try {
+          const userData = await apiService.getCurrentUser()
+          setUser(userData)
+          setIsAuthenticated(true)
+          logInfo('User session restored successfully')
+        } catch (error) {
+          // Token is invalid, try to refresh
+          logError('Stored token invalid, attempting refresh', error)
+          await handleTokenRefresh()
+        }
+      } else {
+        // No stored token, try to refresh from cookie
+        await handleTokenRefresh()
+      }
+    } catch (error) {
+      logError('Auth initialization failed', error)
+      await logout()
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const logout = () => {
-    console.log('Logout functionality - running in demo mode')
-    setIsAuthenticated(false)
-    setUser(null)
-    setAccessToken(null)
+  const handleTokenRefresh = async () => {
+    try {
+      const response = await apiService.refreshToken()
+      const { access_token, user_id, email, username } = response
+      
+      setAccessToken(access_token)
+      apiService.setToken(access_token)
+      localStorage.setItem('accessToken', access_token)
+      
+      setUser({ id: user_id, email, username })
+      setIsAuthenticated(true)
+      setAuthError(null)
+      
+      logInfo('Token refreshed successfully')
+    } catch (error) {
+      logError('Token refresh failed', error)
+      await logout()
+    }
   }
 
-  const getAccessTokenSilently = () => {
-    return Promise.resolve(accessToken)
+  const login = async (credentials) => {
+    try {
+      setIsLoading(true)
+      setAuthError(null)
+      
+      const response = await apiService.login(credentials)
+      const { access_token, user_id, email, username } = response
+      
+      setAccessToken(access_token)
+      apiService.setToken(access_token)
+      localStorage.setItem('accessToken', access_token)
+      
+      setUser({ id: user_id, email, username })
+      setIsAuthenticated(true)
+      
+      logInfo('User logged in successfully')
+      return response
+    } catch (error) {
+      logError('Login failed', error)
+      setAuthError(error.message || 'Login failed')
+      throw error
+    } finally {
+      setIsLoading(false)
+    }
   }
+
+  const register = async (userData) => {
+    try {
+      setIsLoading(true)
+      setAuthError(null)
+      
+      const response = await apiService.register(userData)
+      const { access_token, user_id, email, username } = response
+      
+      setAccessToken(access_token)
+      apiService.setToken(access_token)
+      localStorage.setItem('accessToken', access_token)
+      
+      setUser({ id: user_id, email, username })
+      setIsAuthenticated(true)
+      
+      logInfo('User registered successfully')
+      return response
+    } catch (error) {
+      logError('Registration failed', error)
+      setAuthError(error.message || 'Registration failed')
+      throw error
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const logout = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Call backend logout to blacklist refresh token
+      try {
+        await apiService.logout()
+      } catch (error) {
+        logError('Backend logout failed', error)
+        // Continue with frontend logout even if backend fails
+      }
+      
+      // Clear local state
+      setUser(null)
+      setIsAuthenticated(false)
+      setAccessToken(null)
+      setAuthError(null)
+      
+      // Clear stored token
+      localStorage.removeItem('accessToken')
+      apiService.setToken(null)
+      
+      logInfo('User logged out successfully')
+    } catch (error) {
+      logError('Logout error', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const getAccessTokenSilently = async () => {
+    if (!accessToken) {
+      await handleTokenRefresh()
+    }
+    return accessToken
+  }
+
+  const updateUserProfile = async (updates) => {
+    try {
+      setUser(prevUser => ({ ...prevUser, ...updates }))
+      logInfo('User profile updated')
+    } catch (error) {
+      logError('Profile update failed', error)
+      throw error
+    }
+  }
+
+  // Set up automatic token refresh
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) return
+
+    // Refresh token 5 minutes before expiration (access token expires in 15 minutes)
+    const refreshInterval = setInterval(async () => {
+      try {
+        await handleTokenRefresh()
+      } catch (error) {
+        logError('Automatic token refresh failed', error)
+        await logout()
+      }
+    }, 10 * 60 * 1000) // Refresh every 10 minutes
+
+    return () => clearInterval(refreshInterval)
+  }, [isAuthenticated, accessToken])
 
   const contextValue = {
     user,
     isAuthenticated,
     isLoading,
     accessToken,
-    loginWithRedirect,
+    authError,
+    login,
+    register,
     logout,
     getAccessTokenSilently,
-    // Additional helper methods
-    updateUser: setUser,
-    setAuthenticated: setIsAuthenticated,
-    isDemo: true // Flag to indicate this is demo mode
+    updateUserProfile,
+    clearError: () => setAuthError(null),
+    // Legacy support for existing components
+    loginWithRedirect: () => {
+      throw new Error('loginWithRedirect is not supported in production mode. Use login() instead.')
+    },
+    isDemo: false // Production mode
   }
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>

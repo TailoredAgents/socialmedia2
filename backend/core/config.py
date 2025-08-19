@@ -71,6 +71,8 @@ class Settings(BaseSettings):
     demo_mode: str = "false"
     mock_social_apis: str = "false"
     show_sample_data: str = "false"
+    enable_registration: str = "true"
+    require_email_verification: str = "false"
     
     # Timezone Configuration
     timezone: str = "America/New_York"

@@ -16,6 +16,7 @@ import RealTimeNotificationContainer from './components/Notifications/RealTimeNo
 
 // Pages
 import Login from './pages/Login'
+import Register from './pages/Register'
 import Overview from './pages/Overview'
 import CreatePost from './pages/CreatePost'
 import Scheduler from './pages/Scheduler'
@@ -46,6 +47,7 @@ function AppRoutes() {
     <div className="min-h-screen bg-gray-50">
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route
           path="/"
           element={

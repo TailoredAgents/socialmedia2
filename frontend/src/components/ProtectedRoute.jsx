@@ -2,7 +2,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { Navigate, useLocation } from 'react-router-dom'
 
 const ProtectedRoute = ({ children, requiredPermission = null, requiredRole = null }) => {
-  const { isAuthenticated, isLoading, isDemo } = useAuth()
+  const { isAuthenticated, isLoading, user } = useAuth()
   const location = useLocation()
 
   if (isLoading) {
@@ -13,17 +13,18 @@ const ProtectedRoute = ({ children, requiredPermission = null, requiredRole = nu
     )
   }
 
-  // In demo mode, always allow access
-  if (isDemo) {
-    return children
-  }
-
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  // In demo mode, we don't enforce permissions or roles
-  // This can be extended later if needed
+  // Future: Add permission and role checking here
+  // if (requiredPermission && !user?.permissions?.includes(requiredPermission)) {
+  //   return <Navigate to="/unauthorized" replace />
+  // }
+  // 
+  // if (requiredRole && user?.role !== requiredRole) {
+  //   return <Navigate to="/unauthorized" replace />
+  // }
   
   return children
 }

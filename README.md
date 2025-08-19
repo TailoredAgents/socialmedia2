@@ -1,8 +1,8 @@
-# AI Social Media Content Agent 🤖
+# Lily AI Social Media 🤖
 
 **Enterprise-Grade AI-Powered Social Media Management Platform**
 
-*Created by [Tailored Agents](https://tailoredagents.com) - AI Development Specialists*
+*Transform your social media presence with intelligent automation and advanced analytics*
 
 ![Version](https://img.shields.io/badge/version-2.0-blue)
 ![Python](https://img.shields.io/badge/python-3.11+-green)
@@ -24,7 +24,7 @@
 
 ## 🌟 Overview
 
-The AI Social Media Content Agent is a sophisticated, enterprise-grade platform that leverages artificial intelligence to automate social media content creation, publishing, and analytics across multiple platforms. Built with modern technologies and designed for scalability, it provides comprehensive social media management capabilities for businesses, marketers, and content creators.
+Lily AI Social Media is a sophisticated, enterprise-grade platform that leverages artificial intelligence to automate social media content creation, publishing, and analytics across multiple platforms. Built with modern technologies and designed for scalability, it provides comprehensive social media management capabilities for businesses, marketers, and content creators.
 
 ### 🚀 Key Features
 
@@ -203,8 +203,8 @@ Before setting up the project, you'll need accounts and API access for the follo
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/ai-social-media-agent.git
-cd ai-social-media-agent
+git clone https://github.com/your-username/lily-ai-socialmedia.git
+cd lily-ai-socialmedia
 ```
 
 ### 2. Backend Setup
@@ -232,7 +232,7 @@ brew install postgresql
 brew services start postgresql
 
 # Create database
-sudo -u postgres createdb ai_social_media
+sudo -u postgres createdb lily_ai_socialmedia
 
 # Install Redis (Ubuntu/Debian)
 sudo apt install redis-server
@@ -300,7 +300,7 @@ API_VERSION=v1
 # ================================
 # DATABASE CONFIGURATION
 # ================================
-DATABASE_URL=postgresql://username:password@localhost:5432/ai_social_media
+DATABASE_URL=postgresql://username:password@localhost:5432/lily_ai_socialmedia
 REDIS_URL=redis://localhost:6379/0
 
 # ================================

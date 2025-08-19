@@ -4,7 +4,7 @@
 services:
   # Backend API Service
   - type: web
-    name: ai-social-backend
+    name: lily-ai-socialmedia-backend
     env: python
     region: oregon
     plan: free
@@ -39,12 +39,12 @@ services:
         value: false
       - key: DATABASE_URL
         fromDatabase:
-          name: ai-social-db
+          name: lily-ai-socialmedia-db
           property: connectionString
       - key: REDIS_URL
         fromService:
           type: redis
-          name: ai-social-redis
+          name: lily-ai-socialmedia-redis
           property: connectionString
       # API Keys (set these in Render dashboard)
       - key: OPENAI_API_KEY
@@ -82,13 +82,13 @@ services:
         sync: false
       # CORS Configuration
       - key: CORS_ORIGINS
-        value: https://ai-social-frontend.onrender.com,http://localhost:5173
+        value: https://www.lily-ai-socialmedia.com,http://localhost:5173
       - key: ALLOWED_HOSTS
-        value: ai-social-backend.onrender.com,localhost,127.0.0.1
+        value: api.lily-ai-socialmedia.com,localhost,127.0.0.1
 
   # Frontend Service
   - type: web
-    name: ai-social-frontend
+    name: lily-ai-socialmedia-frontend
     env: node
     region: oregon
     plan: free
@@ -101,7 +101,13 @@ services:
       npm run preview -- --host 0.0.0.0 --port $PORT
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://ai-social-backend.onrender.com
+        value: https://api.lily-ai-socialmedia.com
+      - key: VITE_APP_NAME
+        value: Lily AI Social Media
+      - key: VITE_APP_DOMAIN
+        value: lily-ai-socialmedia.com
+      - key: VITE_APP_URL
+        value: https://www.lily-ai-socialmedia.com
       - key: VITE_ENVIRONMENT
         value: production
         # Force rebuild to ensure environment variables take effect
@@ -114,7 +120,7 @@ services:
 
   # Redis Cache Service
   - type: redis
-    name: ai-social-redis
+    name: lily-ai-socialmedia-redis
     region: oregon
     plan: free
     maxmemoryPolicy: allkeys-lru
@@ -124,7 +130,7 @@ services:
 
 # Database Service
 databases:
-  - name: ai-social-db
-    databaseName: ai_social_media
+  - name: lily-ai-socialmedia-db
+    databaseName: lily_ai_socialmedia
     region: oregon
     plan: free

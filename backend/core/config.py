@@ -57,8 +57,8 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     
     # CORS & Security
-    allowed_hosts: str = "localhost,127.0.0.1"
-    cors_origins: str = "http://localhost:5173,http://localhost:3000"
+    allowed_hosts: str = "localhost,127.0.0.1,lily-ai-socialmedia.com,www.lily-ai-socialmedia.com,api.lily-ai-socialmedia.com"
+    cors_origins: str = "http://localhost:5173,http://localhost:3000,https://lily-ai-socialmedia.com,https://www.lily-ai-socialmedia.com"
     
     # Feature Flags
     feature_flags: str = ""

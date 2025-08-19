@@ -28,6 +28,9 @@ class User(Base):
     # Multi-tenancy: Default organization for personal accounts
     default_organization_id = Column(String, ForeignKey("organizations.id"), nullable=True)
     
+    # Registration key tracking
+    registration_key_id = Column(String, ForeignKey("registration_keys.id"), nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -48,6 +51,9 @@ class User(Base):
     owned_organizations = relationship("Organization", foreign_keys="Organization.owner_id")
     sent_invitations = relationship("OrganizationInvitation", foreign_keys="OrganizationInvitation.invited_by_id")
     received_invitations = relationship("OrganizationInvitation", foreign_keys="OrganizationInvitation.invited_user_id")
+    
+    # Registration key relationship
+    registered_with_key = relationship("RegistrationKey", foreign_keys=[registration_key_id])
 
 class ContentLog(Base):
     __tablename__ = "content_logs"

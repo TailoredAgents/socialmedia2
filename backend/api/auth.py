@@ -9,6 +9,7 @@ from datetime import datetime
 
 from backend.db.database import get_db
 from backend.db.models import User, UserSetting, RefreshTokenBlacklist
+from backend.db.admin_models import RegistrationKey
 from backend.auth.dependencies import get_current_user, get_current_active_user, AuthUser
 from backend.auth.jwt_handler import jwt_handler
 from backend.core.feature_flags import ff
@@ -25,6 +26,7 @@ class RegisterRequest(BaseModel):
     username: str
     password: str
     full_name: str = ""
+    registration_key: str
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -44,7 +46,30 @@ class UserProfile(BaseModel):
 
 @router.post("/register", response_model=TokenResponse)
 async def register_user(request: RegisterRequest, response: Response, db: Session = Depends(get_db)):
-    """Register new user with local authentication"""
+    """Register new user with local authentication - requires admin-generated registration key"""
+    
+    # Validate registration key first
+    registration_key = db.query(RegistrationKey).filter(
+        RegistrationKey.key == request.registration_key
+    ).first()
+    
+    if not registration_key:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid registration key"
+        )
+    
+    if not registration_key.is_valid():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Registration key is expired or has been used up"
+        )
+    
+    if not registration_key.can_register_email(request.email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Registration key is not valid for this email domain"
+        )
     
     # Check if user already exists
     existing_user = db.query(User).filter(
@@ -67,8 +92,12 @@ async def register_user(request: RegisterRequest, response: Response, db: Sessio
         hashed_password=hashed_password,
         is_active=True,
         tier="base",
-        auth_provider="local"
+        auth_provider="local",
+        registration_key_id=registration_key.id
     )
+    
+    # Increment registration key usage
+    registration_key.current_uses += 1
     
     db.add(new_user)
     db.commit()

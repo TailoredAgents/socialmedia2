@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '007_add_external_post_id'
-down_revision = '006_fix_metadata_column_names'
+down_revision = '006_fix_metadata_columns'
 branch_labels = None
 depends_on = None
 

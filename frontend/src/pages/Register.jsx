@@ -11,7 +11,8 @@ const Register = () => {
     username: '',
     password: '',
     confirmPassword: '',
-    full_name: ''
+    full_name: '',
+    registration_key: ''
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -77,6 +78,13 @@ const Register = () => {
       errors.full_name = 'Full name must be at least 2 characters'
     }
 
+    // Registration key validation
+    if (!formData.registration_key) {
+      errors.registration_key = 'Registration key is required'
+    } else if (formData.registration_key.length < 10) {
+      errors.registration_key = 'Registration key appears to be invalid'
+    }
+
     return errors
   }
 
@@ -97,7 +105,8 @@ const Register = () => {
         email: formData.email,
         username: formData.username,
         password: formData.password,
-        full_name: formData.full_name || formData.username
+        full_name: formData.full_name || formData.username,
+        registration_key: formData.registration_key
       })
       
       // Navigation is handled by the useEffect above
@@ -219,6 +228,32 @@ const Register = () => {
               {validationErrors.full_name && (
                 <p className="mt-1 text-sm text-red-600">{validationErrors.full_name}</p>
               )}
+            </div>
+
+            {/* Registration Key */}
+            <div>
+              <label htmlFor="registration_key" className="block text-sm font-medium text-gray-700">
+                Registration Key
+              </label>
+              <input
+                id="registration_key"
+                name="registration_key"
+                type="text"
+                required
+                className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
+                  validationErrors.registration_key ? 'border-red-300' : 'border-gray-300'
+                } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+                placeholder="Enter your registration key"
+                value={formData.registration_key}
+                onChange={handleInputChange}
+                disabled={isSubmitting}
+              />
+              {validationErrors.registration_key && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.registration_key}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                Registration keys are provided by administrators to control access to the platform.
+              </p>
             </div>
 
             {/* Password */}

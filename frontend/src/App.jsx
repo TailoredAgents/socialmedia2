@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // Context Providers
 import { AuthProvider } from './contexts/AuthContext'
+import { AdminAuthProvider } from './contexts/AdminAuthContext'
 import { WebSocketProvider } from './contexts/WebSocketContext'
 
 // Error handling
@@ -11,7 +12,9 @@ import { ErrorBoundary } from './utils/errorReporter.jsx'
 
 // Components
 import Layout from './components/Layout'
+import AdminLayout from './components/AdminLayout'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminProtectedRoute from './components/AdminProtectedRoute'
 import RealTimeNotificationContainer from './components/Notifications/RealTimeNotificationContainer'
 
 // Pages
@@ -24,6 +27,11 @@ import Content from './pages/Content'
 import MemoryExplorer from './pages/MemoryExplorer'
 import Settings from './pages/Settings'
 import ErrorLogs from './components/ErrorLogs'
+
+// Admin Pages
+import AdminLogin from './pages/admin/AdminLogin'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import UserManagement from './pages/admin/UserManagement'
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -46,6 +54,43 @@ function AppRoutes() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Routes>
+        {/* Admin Routes */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route 
+          path="/admin/dashboard" 
+          element={
+            <AdminProtectedRoute>
+              <AdminLayout>
+                <AdminDashboard />
+              </AdminLayout>
+            </AdminProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/users" 
+          element={
+            <AdminProtectedRoute>
+              <AdminLayout>
+                <UserManagement />
+              </AdminLayout>
+            </AdminProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/*" 
+          element={
+            <AdminProtectedRoute>
+              <AdminLayout>
+                <div className="text-center py-12">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Page Under Development</h3>
+                  <p className="text-sm text-gray-500">This admin feature is coming soon.</p>
+                </div>
+              </AdminLayout>
+            </AdminProtectedRoute>
+          } 
+        />
+
+        {/* User Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route
@@ -131,13 +176,15 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <WebSocketProvider>
-            <Router>
-              <AppRoutes />
-            </Router>
-          </WebSocketProvider>
-        </AuthProvider>
+        <AdminAuthProvider>
+          <AuthProvider>
+            <WebSocketProvider>
+              <Router>
+                <AppRoutes />
+              </Router>
+            </WebSocketProvider>
+          </AuthProvider>
+        </AdminAuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   )

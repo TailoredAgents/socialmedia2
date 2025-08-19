@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '008_add_social_platform_connections'
-down_revision = '007_add_external_post_id_to_contentlog'
+revision = '008a_add_social_platform_connections'
+down_revision = '008'
 branch_labels = None
 depends_on = None
 

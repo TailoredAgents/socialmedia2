@@ -16,7 +16,7 @@ import {
 } from '@heroicons/react/24/outline'
 
 const navigation = [
-  { name: 'Overview', href: '/', icon: HomeIcon },
+  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Create Post', href: '/create-post', icon: PlusIcon },
   { name: 'Content Library', href: '/content', icon: DocumentTextIcon },
   { name: 'Scheduler', href: '/calendar', icon: CalendarDaysIcon },

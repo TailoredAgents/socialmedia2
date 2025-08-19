@@ -12,7 +12,7 @@ import uuid
 
 # revision identifiers, used by Alembic.
 revision = '013'
-down_revision = '012'
+down_revision = '012_add_multi_tenant_schema'
 branch_labels = None
 depends_on = None
 

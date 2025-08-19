@@ -4,6 +4,8 @@ Centralized router registry for all API endpoints
 from . import (
     auth,
     auth_fastapi_users,
+    admin,
+    user_credentials,
     content,
     goals,
     memory,
@@ -27,7 +29,9 @@ from . import (
 # All routers to be registered with the FastAPI app
 ROUTERS = [
     auth_fastapi_users.router,  # FastAPI Users authentication (primary)
-    auth.router,  # Legacy auth endpoints (will be phased out)
+    auth.router,  # Real JWT auth endpoints with registration key validation
+    admin.router,  # Admin authentication and management system
+    user_credentials.router,  # User social media credentials management
     content.router,
     goals.router,
     memory.router,

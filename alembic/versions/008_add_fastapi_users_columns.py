@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 # revision identifiers
 revision = '008'
-down_revision = '007'
+down_revision = '007_add_external_post_id'
 branch_labels = None
 depends_on = None
 

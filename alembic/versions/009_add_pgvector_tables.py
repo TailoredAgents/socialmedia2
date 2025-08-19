@@ -11,7 +11,7 @@ from sqlalchemy import text
 
 # revision identifiers
 revision = '009'
-down_revision = '008'
+down_revision = '008a_add_social_platform_connections'
 branch_labels = None
 depends_on = None
 

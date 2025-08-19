@@ -119,6 +119,14 @@ async def register_user(request: RegisterRequest, response: Response, db: Sessio
     db.add(user_settings)
     db.commit()
     
+    # Create personal organization for multi-tenancy
+    try:
+        from backend.middleware.tenant_isolation import create_personal_organization
+        create_personal_organization(new_user, db)
+    except Exception as e:
+        # Log error but don't fail registration if org creation fails
+        print(f"Warning: Failed to create personal organization for user {new_user.id}: {e}")
+    
     # Create access and refresh tokens
     tokens = jwt_handler.create_user_tokens(
         user_id=str(new_user.id),

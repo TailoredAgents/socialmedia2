@@ -81,12 +81,16 @@ except Exception as e:
         )
     else:
         # Production: Restrict origins
-        allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
+        # Check both ALLOWED_ORIGINS and CORS_ORIGINS for compatibility
+        allowed_origins = os.getenv("ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS", "")
+        allowed_origins = allowed_origins.split(",")
         allowed_origins = [origin.strip() for origin in allowed_origins if origin.strip()]
         
         if not allowed_origins:
-            # Default safe origins
+            # Default safe origins including new domain
             allowed_origins = [
+                "https://www.lily-ai-socialmedia.com",
+                "https://lily-ai-socialmedia.com", 
                 "https://ai-social-frontend.onrender.com",
                 "http://localhost:3000"
             ]

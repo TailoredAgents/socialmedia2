@@ -296,13 +296,15 @@ def get_cors_middleware(environment: str = "production"):
         )
     else:
         # Production: Restrict origins
-        allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
+        # Check both ALLOWED_ORIGINS and CORS_ORIGINS for compatibility
+        allowed_origins = os.getenv("ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS", "")
+        allowed_origins = allowed_origins.split(",")
         allowed_origins = [origin.strip() for origin in allowed_origins if origin.strip()]
         
         if not allowed_origins:
             # Default safe origins if not specified
             allowed_origins = ["https://localhost", "http://localhost"]
-            logger.warning("No ALLOWED_ORIGINS specified, using default restrictive CORS policy")
+            logger.warning("No ALLOWED_ORIGINS or CORS_ORIGINS specified, using default restrictive CORS policy")
         
         return CORSMiddleware(
             allow_origins=allowed_origins,

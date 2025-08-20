@@ -82,18 +82,27 @@ except Exception as e:
     else:
         # Production: Restrict origins
         # Check both ALLOWED_ORIGINS and CORS_ORIGINS for compatibility
-        allowed_origins = os.getenv("ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS", "")
-        allowed_origins = allowed_origins.split(",")
-        allowed_origins = [origin.strip() for origin in allowed_origins if origin.strip()]
+        allowed_origins_env = os.getenv("ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS", "")
+        logger.info(f"CORS environment variables - ALLOWED_ORIGINS: {os.getenv('ALLOWED_ORIGINS')}")
+        logger.info(f"CORS environment variables - CORS_ORIGINS: {os.getenv('CORS_ORIGINS')}")
+        
+        if allowed_origins_env:
+            allowed_origins = allowed_origins_env.split(",")
+            allowed_origins = [origin.strip() for origin in allowed_origins if origin.strip()]
+        else:
+            allowed_origins = []
         
         if not allowed_origins:
-            # Default safe origins including new domain
+            # Always include the new domain as fallback
             allowed_origins = [
                 "https://www.lily-ai-socialmedia.com",
                 "https://lily-ai-socialmedia.com", 
                 "https://ai-social-frontend.onrender.com",
                 "http://localhost:3000"
             ]
+            logger.warning("No CORS environment variables found, using default origins")
+        
+        logger.info(f"CORS allowed origins: {allowed_origins}")
         
         app.add_middleware(
             CORSMiddleware,
@@ -157,12 +166,19 @@ except ImportError as e:
 @app.get("/")
 async def root():
     """Root endpoint with detailed status"""
+    # Get CORS configuration for debugging
+    cors_env = os.getenv("ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS", "")
     return {
         "message": "AI Social Media Content Agent API",
         "status": "operational",
         "version": "2.0.0",
         "environment": os.getenv("ENVIRONMENT", "production"),
         "loaded_modules": loaded_routers,
+        "cors_debug": {
+            "allowed_origins_env": os.getenv("ALLOWED_ORIGINS"),
+            "cors_origins_env": os.getenv("CORS_ORIGINS"),
+            "has_cors_config": bool(cors_env)
+        },
         "failed_modules": [f[0] for f in failed_routers],
         "total_routes": len(app.routes),
         "api_docs": "/docs"

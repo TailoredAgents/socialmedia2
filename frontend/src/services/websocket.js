@@ -1,6 +1,8 @@
 import { info, warn, error as logError } from '../utils/logger.js'
 
-const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000'
+// Use the API base URL to construct WebSocket URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || API_BASE_URL.replace('http://', 'ws://').replace('https://', 'wss://')
 
 class WebSocketService {
   constructor() {
@@ -27,13 +29,15 @@ class WebSocketService {
 
     this.isConnecting = true
     this.userId = userId
+    this.token = token
 
     return new Promise((resolve, reject) => {
       try {
-        // Construct WebSocket URL with authentication
+        // Construct WebSocket URL with user_id parameter
         const wsUrl = `${WS_BASE_URL}/api/notifications/ws?user_id=${userId}`
         
         info(`Connecting to WebSocket: ${wsUrl}`)
+        info(`WebSocket base URL derived from: ${API_BASE_URL}`)
         this.ws = new WebSocket(wsUrl)
 
         this.ws.onopen = () => {

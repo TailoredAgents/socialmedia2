@@ -6,18 +6,18 @@ import { info, warn, error as logError } from '../utils/logger'
 const WebSocketContext = createContext({})
 
 export const WebSocketProvider = ({ children }) => {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, accessToken } = useAuth()
   const [connectionStatus, setConnectionStatus] = useState('disconnected')
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
 
   // Connect WebSocket when user is authenticated
   useEffect(() => {
-    if (isAuthenticated && user?.id) {
+    if (isAuthenticated && user?.id && accessToken) {
       info('Initializing WebSocket connection for user', user.id)
       
       // Connect to WebSocket
-      wsService.connect(user.id, user.token)
+      wsService.connect(user.id, accessToken)
         .then(() => {
           setConnectionStatus('connected')
           info('WebSocket connected successfully')
@@ -123,7 +123,7 @@ export const WebSocketProvider = ({ children }) => {
         setConnectionStatus('disconnected')
       }
     }
-  }, [isAuthenticated, user])
+  }, [isAuthenticated, user, accessToken])
 
   // Mark notification as read
   const markAsRead = useCallback((notificationId) => {

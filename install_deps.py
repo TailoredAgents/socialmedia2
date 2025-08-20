@@ -32,7 +32,8 @@ def main():
         "uvicorn[standard]==0.32.1",
         "python-dotenv==1.1.1",
         "pydantic==2.11.7",
-        "pydantic-settings==2.10.1"
+        "pydantic-settings==2.10.1",
+        "requests==2.32.3"
     ]
     
     print("🔧 Installing critical production dependencies...")

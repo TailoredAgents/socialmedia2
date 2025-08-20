@@ -471,6 +471,63 @@ class ComplianceReporter:
         }
 
 
+class AuditTrackingMiddleware:
+    """FastAPI middleware for automatic audit logging of requests."""
+    
+    def __init__(self, app, audit_logger: AuditLogger):
+        self.app = app
+        self.audit_logger = audit_logger
+    
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        
+        request_time = time.time()
+        
+        # Extract request information
+        method = scope.get("method", "")
+        path = scope.get("path", "")
+        client_ip = scope.get("client", ["unknown", None])[0] if scope.get("client") else "unknown"
+        
+        # Get headers
+        headers = dict(scope.get("headers", []))
+        user_agent = headers.get(b"user-agent", b"").decode("utf-8", errors="ignore")
+        
+        response_status = 200
+        
+        async def send_wrapper(message):
+            nonlocal response_status
+            if message["type"] == "http.response.start":
+                response_status = message.get("status", 200)
+            await send(message)
+        
+        try:
+            await self.app(scope, receive, send_wrapper)
+            outcome = "success" if response_status < 400 else "failure"
+        except Exception as e:
+            outcome = "error"
+            response_status = 500
+        
+        # Log the request
+        execution_time = time.time() - request_time
+        
+        self.audit_logger.log_event(
+            event_type=AuditEventType.API_CALL,
+            ip_address=client_ip,
+            user_agent=user_agent,
+            resource=path,
+            action=method,
+            outcome=outcome,
+            details={
+                "status_code": response_status,
+                "execution_time": execution_time,
+                "path": path,
+                "method": method
+            }
+        )
+
+
 # Example usage
 if __name__ == "__main__":
     # Initialize audit logger

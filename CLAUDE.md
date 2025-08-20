@@ -2,3 +2,4 @@
 - Always write production ready code
 - Never create mock data, designs, or code
 - when making edits or additions, check any related API endpoints and ensure all are properly connected
+- when finished make changes, test build, commit to remote git repo

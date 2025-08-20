@@ -16,6 +16,7 @@ export default defineConfig({
   preview: {
     allowedHosts: [
       'ai-social-frontend.onrender.com',
+      'www.lily-ai-socialmedia.com',
       'localhost',
       '127.0.0.1'
     ]

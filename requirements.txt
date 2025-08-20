@@ -1,8 +1,9 @@
-# Core Web Framework - Production Ready (Force Rebuild: 2025-08-20-21:02)
+# CRITICAL PRODUCTION DEPENDENCIES - CACHE INVALIDATION 2025-08-20-21:09
+# These dependencies are REQUIRED for all API endpoints to function
 fastapi==0.115.6
 uvicorn[standard]==0.32.1
 
-# Configuration & Environment - Essential
+# Configuration & Environment - REQUIRED
 python-dotenv==1.1.1
 pydantic==2.11.7
 pydantic-settings==2.10.1
@@ -23,7 +24,7 @@ psutil==6.1.0
 sse-starlette==2.1.3
 websockets==12.0
 
-# Structured Logging (Required for production)
+# STRUCTURED LOGGING - CRITICAL FOR PRODUCTION (FORCE INSTALL)
 structlog==25.4.0
 
 # AI/ML Libraries
@@ -37,7 +38,7 @@ numpy==1.26.4
 crewai==0.148.0
 crewai-tools==0.17.0
 
-# Database & ORM (Required for all endpoints)
+# DATABASE & ORM - CRITICAL FOR ALL ENDPOINTS (FORCE INSTALL)
 sqlalchemy==2.0.36
 alembic==1.14.0
 psycopg2-binary==2.9.10

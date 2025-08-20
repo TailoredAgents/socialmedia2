@@ -532,8 +532,8 @@ async def generate_user_api_key(
 @router.delete("/users/{user_id}/api-key")
 async def revoke_user_api_key(
     user_id: int,
-    reason: str = "Admin revocation",
     request: Request,
+    reason: str = "Admin revocation",
     current_admin: AdminAuthUser = Depends(require_admin_or_higher),
     db: Session = Depends(get_db)
 ):

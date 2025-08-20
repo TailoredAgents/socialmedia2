@@ -33,7 +33,8 @@ def main():
         "python-dotenv==1.1.1",
         "pydantic==2.11.7",
         "pydantic-settings==2.10.1",
-        "requests==2.32.3"
+        "requests==2.32.3",
+        "pydantic_settings==2.10.1"
     ]
     
     print("🔧 Installing critical production dependencies...")

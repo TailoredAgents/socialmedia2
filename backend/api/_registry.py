@@ -5,6 +5,7 @@ from . import (
     auth,
     auth_fastapi_users,
     admin,
+    two_factor,
     user_credentials,
     content,
     goals,
@@ -30,6 +31,7 @@ from . import (
 ROUTERS = [
     auth_fastapi_users.router,  # FastAPI Users authentication (primary)
     auth.router,  # Real JWT auth endpoints with registration key validation
+    two_factor.router,  # Two-Factor Authentication endpoints
     admin.router,  # Admin authentication and management system
     user_credentials.router,  # User social media credentials management
     content.router,

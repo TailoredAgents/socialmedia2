@@ -25,6 +25,11 @@ class User(Base):
     tier = Column(String, default="base")  # base, pro, enterprise
     auth_provider = Column(String, default="local")  # local, auth0
     
+    # Two-Factor Authentication
+    two_factor_enabled = Column(Boolean, default=False)
+    two_factor_secret = Column(String, nullable=True)  # Base32 secret for TOTP
+    two_factor_backup_codes = Column(JSON, nullable=True)  # Recovery codes
+    
     # Multi-tenancy: Default organization for personal accounts
     default_organization_id = Column(String, ForeignKey("organizations.id"), nullable=True)
     

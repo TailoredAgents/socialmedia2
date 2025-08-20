@@ -1,1 +1,4 @@
 - Only write production-ready code, no mock, fake, demo, or placeholder code
+- Always write production ready code
+- Never create mock data, designs, or code
+- when making edits or additions, check any related API endpoints and ensure all are properly connected

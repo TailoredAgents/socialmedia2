@@ -140,12 +140,14 @@ except ImportError as e:
     logger.error("Failed to import router registry: {}".format(e))
     # Fallback to minimal routers
     try:
-        from backend.api import auth
+        from backend.api import auth, two_factor
         app.include_router(auth.router)
+        app.include_router(two_factor.router)
         loaded_routers.append("auth")
-        logger.info("✅ Fallback auth router loaded")
+        loaded_routers.append("two_factor")
+        logger.info("✅ Fallback auth and 2FA routers loaded")
     except Exception as fallback_e:
-        logger.error("❌ Even fallback auth router failed: {}".format(fallback_e))
+        logger.error("❌ Fallback routers failed: {}".format(fallback_e))
 
 # Root endpoints
 @app.get("/")

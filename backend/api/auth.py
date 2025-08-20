@@ -3,7 +3,7 @@ Authentication API endpoints
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request, Cookie
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator
 from typing import Dict, Any, Optional
 from datetime import datetime
 
@@ -12,6 +12,7 @@ from backend.db.models import User, UserSetting, RefreshTokenBlacklist
 from backend.db.admin_models import RegistrationKey
 from backend.auth.dependencies import get_current_user, get_current_active_user, AuthUser
 from backend.auth.jwt_handler import jwt_handler
+from backend.auth.two_factor import two_factor_service
 from backend.core.feature_flags import ff
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
@@ -20,6 +21,22 @@ router = APIRouter(prefix="/api/auth", tags=["authentication"])
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+    totp_code: Optional[str] = None
+    backup_code: Optional[str] = None
+    
+    @validator('totp_code')
+    def validate_totp_code(cls, v):
+        if v is not None and (len(v) != 6 or not v.isdigit()):
+            raise ValueError('TOTP code must be 6 digits')
+        return v
+    
+    @validator('backup_code')
+    def validate_backup_code(cls, v):
+        if v is not None:
+            v = v.replace(" ", "").replace("-", "").upper()
+            if len(v) != 8 or not all(c.isalnum() for c in v):
+                raise ValueError('Invalid backup code format')
+        return v
 
 class RegisterRequest(BaseModel):
     email: EmailStr
@@ -34,6 +51,12 @@ class TokenResponse(BaseModel):
     user_id: str
     email: str
     username: str
+
+
+class TwoFactorChallengeResponse(BaseModel):
+    requires_2fa: bool = True
+    message: str = "Two-factor authentication code required"
+    backup_code_available: bool = True
 
 class UserProfile(BaseModel):
     id: int
@@ -151,9 +174,9 @@ async def register_user(request: RegisterRequest, response: Response, db: Sessio
         username=new_user.username
     )
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login")
 async def login_user(request: LoginRequest, response: Response, db: Session = Depends(get_db)):
-    """Login user with local authentication"""
+    """Login user with local authentication and 2FA support"""
     
     # Find user by email
     user = db.query(User).filter(User.email == request.email).first()
@@ -183,6 +206,49 @@ async def login_user(request: LoginRequest, response: Response, db: Session = De
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Please reset your password"
         )
+    
+    # Check if 2FA is required
+    if user.two_factor_enabled:
+        # If no 2FA code provided, challenge for it
+        if not request.totp_code and not request.backup_code:
+            return TwoFactorChallengeResponse(
+                backup_code_available=bool(user.two_factor_backup_codes)
+            )
+        
+        # Verify 2FA code
+        verification_valid = False
+        used_backup_code = None
+        
+        # Try TOTP code first
+        if request.totp_code and user.two_factor_secret:
+            try:
+                secret = two_factor_service.decrypt_secret(user.two_factor_secret)
+                verification_valid = two_factor_service.verify_token(secret, request.totp_code)
+            except Exception:
+                pass
+        
+        # Try backup code if TOTP failed
+        if not verification_valid and request.backup_code and user.two_factor_backup_codes:
+            is_valid, code_hash = two_factor_service.verify_backup_code(
+                request.backup_code, user.two_factor_backup_codes
+            )
+            if is_valid:
+                verification_valid = True
+                used_backup_code = code_hash
+        
+        if not verification_valid:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid two-factor authentication code"
+            )
+        
+        # Remove used backup code
+        if used_backup_code:
+            user.two_factor_backup_codes = [
+                code for code in user.two_factor_backup_codes 
+                if code != used_backup_code
+            ]
+            db.commit()
     
     # Create access and refresh tokens
     tokens = jwt_handler.create_user_tokens(

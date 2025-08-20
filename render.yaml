@@ -10,26 +10,9 @@ services:
     plan: free
     runtime: python-3.11.9
     rootDirectory: .
-    buildCommand: |
-      echo "🏗️ Building AI Social Media Content Agent..."
-      echo "Current directory: $(pwd)"
-      echo "Directory contents: $(ls -la)"
-      echo "Python version: $(python --version)"
-      echo "Installing dependencies from requirements.txt..."
-      pip install --upgrade pip setuptools wheel
-      pip install numpy==1.26.4
-      pip install sqlalchemy==2.0.36
-      pip install -r requirements.txt || echo "Some packages failed, continuing..."
-      pip list | grep -E "(fastapi|sqlalchemy|numpy|uvicorn)"
-      echo "✅ Build completed successfully"
-    startCommand: |
-      echo "🚀 Starting AI Social Media Content Agent..."
-      echo "Working directory: $(pwd)"
-      echo "Python version: $(python3 --version)"
-      echo "Python3 location: $(which python3)"
-      echo "Uvicorn location: $(which uvicorn)"
-      python3 -m uvicorn app:app --host 0.0.0.0 --port $PORT --log-level info
-    healthCheckPath: /render-health
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
@@ -46,14 +29,12 @@ services:
           type: redis
           name: lily-ai-socialmedia-redis
           property: connectionString
-      # API Keys (set these in Render dashboard)
+      - key: SECRET_KEY
+        value: Cc5NOfxEP9KrY0d2k9+tXvZmGpR7sJ8wL3nQ6uA4eF1iH9kN2pS5vY8zA3dG6j
       - key: OPENAI_API_KEY
         sync: false
       - key: SERPER_API_KEY
         sync: false
-      - key: SECRET_KEY
-        generateValue: true
-      # Social Media API Keys
       - key: TWITTER_API_KEY
         sync: false
       - key: TWITTER_API_SECRET
@@ -80,11 +61,10 @@ services:
         sync: false
       - key: FACEBOOK_APP_SECRET
         sync: false
-      # CORS Configuration
       - key: CORS_ORIGINS
-        value: https://www.lily-ai-socialmedia.com,http://localhost:5173
+        value: https://www.lily-ai-socialmedia.com,https://lily-ai-socialmedia-frontend.onrender.com
       - key: ALLOWED_HOSTS
-        value: api.lily-ai-socialmedia.com,localhost,127.0.0.1
+        value: lily-ai-socialmedia-backend.onrender.com,localhost,127.0.0.1
 
   # Frontend Service
   - type: web
@@ -92,16 +72,13 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: |
-      cd frontend &&
-      npm ci &&
-      npm run build
-    startCommand: |
-      cd frontend &&
-      npm run preview -- --host 0.0.0.0 --port $PORT
+    buildCommand: cd frontend && npm ci && npm run build
+    startCommand: cd frontend && npm run preview -- --host 0.0.0.0 --port $PORT
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://api.lily-ai-socialmedia.com
+        value: https://lily-ai-socialmedia-backend.onrender.com
+      - key: VITE_WS_BASE_URL
+        value: wss://lily-ai-socialmedia-backend.onrender.com
       - key: VITE_APP_NAME
         value: Lily AI Social Media
       - key: VITE_APP_DOMAIN
@@ -110,13 +87,6 @@ services:
         value: https://www.lily-ai-socialmedia.com
       - key: VITE_ENVIRONMENT
         value: production
-        # Force rebuild to ensure environment variables take effect
-      - key: VITE_AUTH0_DOMAIN
-        sync: false
-      - key: VITE_AUTH0_CLIENT_ID
-        sync: false
-      - key: VITE_AUTH0_AUDIENCE
-        sync: false
 
   # Redis Cache Service
   - type: redis
@@ -124,9 +94,6 @@ services:
     region: oregon
     plan: free
     maxmemoryPolicy: allkeys-lru
-    ipAllowList:
-      - source: 0.0.0.0/0
-        description: Allow all connections
 
 # Database Service
 databases:

@@ -32,6 +32,9 @@ services:
   - type: redis
     name: lily-ai-socialmedia-redis
     plan: free
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: Allow all connections
 
 databases:
   - name: lily-ai-socialmedia-db

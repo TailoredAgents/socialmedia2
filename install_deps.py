@@ -34,7 +34,7 @@ def main():
         "pydantic==2.11.7",
         "pydantic-settings==2.10.1",
         "requests==2.32.3",
-        "pydantic_settings==2.10.1"
+        "python-jose[cryptography]==3.3.0"
     ]
     
     print("🔧 Installing critical production dependencies...")

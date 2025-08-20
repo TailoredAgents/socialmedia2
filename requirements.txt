@@ -1,8 +1,8 @@
-# Core Web Framework (Updated: 2025-08-20)
+# Core Web Framework - Production Ready (Force Rebuild: 2025-08-20-21:02)
 fastapi==0.115.6
 uvicorn[standard]==0.32.1
 
-# Configuration & Environment
+# Configuration & Environment - Essential
 python-dotenv==1.1.1
 pydantic==2.11.7
 pydantic-settings==2.10.1

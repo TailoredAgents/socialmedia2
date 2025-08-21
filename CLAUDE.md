@@ -3,3 +3,4 @@
 - Never create mock data, designs, or code
 - when making edits or additions, check any related API endpoints and ensure all are properly connected
 - when finished make changes, test build, commit to remote git repo
+- Unless explicity required, you (claude) will do everything you can to avoid manual intervention during the process of fixing, update, or editing this project

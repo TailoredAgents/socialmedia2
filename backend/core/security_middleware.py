@@ -283,17 +283,17 @@ class RequestValidationMiddleware(BaseHTTPMiddleware):
         
         return await call_next(request)
 
-def get_cors_middleware(environment: str = "production"):
+def get_cors_middleware_config(environment: str = "production"):
     """Get CORS middleware configuration based on environment"""
     
     if environment.lower() == "development":
         # Development: Allow all origins
-        return CORSMiddleware(
-            allow_origins=["*"],
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"]
-        )
+        return {
+            "allow_origins": ["*"],
+            "allow_credentials": True,
+            "allow_methods": ["*"],
+            "allow_headers": ["*"]
+        }
     else:
         # Production: Restrict origins
         # Check both ALLOWED_ORIGINS and CORS_ORIGINS for compatibility
@@ -320,11 +320,11 @@ def get_cors_middleware(environment: str = "production"):
         
         logger.info(f"Security middleware CORS allowed origins: {allowed_origins}")
         
-        return CORSMiddleware(
-            allow_origins=allowed_origins,
-            allow_credentials=True,
-            allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-            allow_headers=[
+        return {
+            "allow_origins": allowed_origins,
+            "allow_credentials": True,
+            "allow_methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            "allow_headers": [
                 "Accept",
                 "Accept-Language",
                 "Content-Language", 
@@ -332,7 +332,7 @@ def get_cors_middleware(environment: str = "production"):
                 "Authorization",
                 "X-Requested-With"
             ]
-        )
+        }
 
 def get_trusted_host_middleware(environment: str = "production"):
     """Get trusted host middleware for production"""
@@ -372,9 +372,9 @@ def setup_security_middleware(app, environment: str = "production"):
     app.add_middleware(SecurityHeadersMiddleware, environment=environment)
     
     # 4. CORS (if needed)
-    cors_middleware = get_cors_middleware(environment)
-    if cors_middleware:
-        app.add_middleware(CORSMiddleware, **cors_middleware.__dict__)
+    cors_config = get_cors_middleware_config(environment)
+    if cors_config:
+        app.add_middleware(CORSMiddleware, **cors_config)
     
     # 5. Trusted hosts (production only)
     trusted_host_middleware = get_trusted_host_middleware(environment)

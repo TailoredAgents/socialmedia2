@@ -8,7 +8,7 @@ services:
     env: python
     region: oregon
     plan: free
-    runtime: python-3.11.9
+    runtime: python-3.12.6
     rootDirectory: .
     buildCommand: |
       echo "🏗️ Building AI Social Media Content Agent..."

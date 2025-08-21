@@ -72,4 +72,4 @@ Pillow==11.0.0
 
 # Monitoring & Observability
 prometheus-fastapi-instrumentator==7.0.0
-sentry-sdk[fastapi]==1.48.0
+sentry-sdk[fastapi]==2.35.0

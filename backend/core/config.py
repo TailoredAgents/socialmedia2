@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import Field
 from functools import lru_cache
 import os
 from dotenv import load_dotenv
@@ -29,7 +30,7 @@ class Settings(BaseSettings):
     jwt_refresh_ttl_seconds: int = 1209600  # 14 days
     
     # Redis/Celery
-    redis_url: str = "redis://localhost:6379/0"
+    redis_url: str = Field(default="redis://localhost:6379/0", env="REDIS_URL")
     celery_broker_url: str = ""  # Will default to redis_url if empty
     celery_result_backend: str = ""  # Will default to redis_url if empty
     

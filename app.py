@@ -56,10 +56,11 @@ app = FastAPI(
 # Setup comprehensive security middleware
 try:
     from backend.core.security_middleware import setup_security_middleware
-    from backend.core.audit_logger import AuditTrackingMiddleware
+    from backend.core.audit_logger import AuditTrackingMiddleware, AuditLogger
     
-    # Add audit tracking first
-    app.add_middleware(AuditTrackingMiddleware)
+    # Initialize audit logger and add audit tracking middleware
+    audit_logger = AuditLogger()
+    app.add_middleware(AuditTrackingMiddleware, audit_logger=audit_logger)
     
     # Setup all security middleware
     setup_security_middleware(app, environment=environment)

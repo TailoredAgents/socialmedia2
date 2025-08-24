@@ -12,7 +12,9 @@ import json
 
 from backend.core.config import get_settings
 from backend.integrations.twitter_client import twitter_client, TwitterAnalytics
-from backend.integrations.linkedin_client import linkedin_client, LinkedInAnalytics
+# LinkedIn integration removed - using stubs
+linkedin_client = None
+LinkedInAnalytics = None
 from backend.integrations.instagram_client import instagram_client, InstagramInsight
 from backend.integrations.facebook_client import facebook_client, FacebookInsights
 from backend.db.database import get_db_session
@@ -97,7 +99,7 @@ class SocialMetricsCollector:
         self.collection_jobs: Dict[str, MetricsCollectionJob] = {}
         self.platform_clients = {
             MetricsPlatform.TWITTER: twitter_client,
-            MetricsPlatform.LINKEDIN: linkedin_client,
+            # MetricsPlatform.LINKEDIN: removed - LinkedIn integration disabled
             MetricsPlatform.INSTAGRAM: instagram_client,
             MetricsPlatform.FACEBOOK: facebook_client
         }

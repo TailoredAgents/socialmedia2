@@ -18,7 +18,8 @@ from backend.agents.crew_config import (
 from backend.services.research_automation_service import research_automation_service, ResearchType
 from backend.services.metrics_collection_service import metrics_collector
 from backend.integrations.twitter_client import twitter_client
-from backend.integrations.linkedin_client import linkedin_client
+# LinkedIn integration removed - using stub
+linkedin_client = None
 from backend.integrations.instagram_client import instagram_client
 from backend.integrations.facebook_client import facebook_client
 from backend.core.vector_store import vector_store
@@ -154,7 +155,7 @@ class ContentGenerationService:
         # Platform clients
         self.platform_clients = {
             Platform.TWITTER: twitter_client,
-            Platform.LINKEDIN: linkedin_client,
+            # Platform.LINKEDIN: removed - LinkedIn integration disabled
             Platform.INSTAGRAM: instagram_client,
             Platform.FACEBOOK: facebook_client
         }

@@ -130,7 +130,7 @@ class EndToEndWorkflowTester:
             
             validation_results = {
                 "twitter": {"valid": True, "length": len(content["text"])},
-                "linkedin": {"valid": True, "length": len(content["text"])},
+                : {"valid": True, "length": len(content["text"])},
                 "instagram": {"valid": True, "length": len(content["text"])},
                 "facebook": {"valid": True, "length": len(content["text"])}
             }
@@ -159,7 +159,7 @@ class EndToEndWorkflowTester:
             
             optimized_content = {
                 "twitter": content["text"][:280],  # Twitter limit
-                "linkedin": content["text"] + "\n\nWhat are your thoughts on AI automation?",
+                : content["text"] + "\n\nWhat are your thoughts on AI automation?",
                 "instagram": content["text"] + "\n\n#TechInnovation #DigitalTransformation",
                 "facebook": content["text"] + "\n\nShare your experiences with social media automation!"
             }
@@ -186,7 +186,7 @@ class EndToEndWorkflowTester:
             # Simulate posting to multiple platforms
             posting_results = {}
             
-            for platform in ["twitter", "linkedin", "instagram", "facebook"]:
+            for platform in ["twitter", , "instagram", "facebook"]:
                 await asyncio.sleep(0.2)  # Simulate API call
                 posting_results[platform] = {
                     "success": True,
@@ -244,7 +244,7 @@ class EndToEndWorkflowTester:
             
             discovered_posts = {
                 "twitter": [f"tweet_{i}" for i in range(5)],
-                "linkedin": [f"post_{i}" for i in range(3)],
+                : [f"post_{i}" for i in range(3)],
                 "instagram": [f"media_{i}" for i in range(4)],
                 "facebook": [f"fb_post_{i}" for i in range(6)]
             }
@@ -365,7 +365,7 @@ class EndToEndWorkflowTester:
             
             auth_status = {
                 "twitter": "authenticated",
-                "linkedin": "authenticated", 
+                : "authenticated", 
                 "instagram": "authenticated",
                 "facebook": "authenticated"
             }
@@ -401,7 +401,7 @@ class EndToEndWorkflowTester:
             
             tasks = [
                 post_to_platform("twitter"),
-                post_to_platform("linkedin"),
+                post_to_platform(),
                 post_to_platform("instagram"),
                 post_to_platform("facebook")
             ]

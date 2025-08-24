@@ -89,7 +89,7 @@ POST /api/content
 Body: { 
   title: string,
   content: string,
-  platform: "twitter|linkedin|instagram|facebook",
+  platform: "twitter||instagram|facebook",
   scheduled_for?: datetime,
   tags?: string[]
 }
@@ -186,7 +186,7 @@ GET /api/analytics/dashboard?period=7d
 Response: {
   content_metrics: { total_posts, avg_engagement, top_performing },
   goal_progress: { active_goals, completion_rate, milestones },
-  platform_stats: { twitter: {...}, linkedin: {...} },
+  platform_stats: { twitter: {...}, : {...} },
   trending_topics: [{ topic, mentions, growth_rate }]
 }
 

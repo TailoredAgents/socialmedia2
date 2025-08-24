@@ -661,7 +661,7 @@ function ContentEditModal({ content, isOpen, onClose, onSave, isLoading }) {
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="twitter">Twitter</option>
-                      <option value="linkedin">LinkedIn</option>
+                      <option value=>LinkedIn</option>
                       <option value="instagram">Instagram</option>
                       <option value="facebook">Facebook</option>
                     </select>
@@ -848,7 +848,7 @@ function ContentCreateModal({ isOpen, onClose, onSave, isLoading }) {
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="twitter">Twitter</option>
-                      <option value="linkedin">LinkedIn</option>
+                      <option value=>LinkedIn</option>
                       <option value="instagram">Instagram</option>
                       <option value="facebook">Facebook</option>
                     </select>

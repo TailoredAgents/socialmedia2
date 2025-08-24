@@ -5,7 +5,7 @@ import { useNotifications } from '../../hooks/useNotifications'
 
 const platforms = {
   twitter: { color: 'bg-sky-500', textColor: 'text-sky-500', lightBg: 'bg-sky-50', label: 'Twitter' },
-  linkedin: { color: 'bg-blue-600', textColor: 'text-blue-600', lightBg: 'bg-blue-50', label: 'LinkedIn' },
+   { color: 'bg-blue-600', textColor: 'text-blue-600', lightBg: 'bg-blue-50', label: 'LinkedIn' },
   instagram: { color: 'bg-pink-600', textColor: 'text-pink-600', lightBg: 'bg-pink-50', label: 'Instagram' },
   facebook: { color: 'bg-indigo-600', textColor: 'text-indigo-600', lightBg: 'bg-indigo-50', label: 'Facebook' },
 }

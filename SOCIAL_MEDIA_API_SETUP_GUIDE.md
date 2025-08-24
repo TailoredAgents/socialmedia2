@@ -13,7 +13,7 @@ This guide walks you through connecting all social media APIs to make your AI So
 
 ### **Supported Platforms:**
 - 🐦 **Twitter/X** (API v2)
-- 💼 **LinkedIn** (Company & Personal Pages)
+- 💼 **** (Company & Personal Pages)
 - 📸 **Instagram** (Business Accounts)
 - 👥 **Facebook** (Pages & Business)
 - 🎵 **TikTok** (Business API)
@@ -114,19 +114,19 @@ TWITTER_BEARER_TOKEN=your_bearer_token_here
 
 ---
 
-# 2. 💼 **LinkedIn API Setup**
+# 2. 💼 ** API Setup**
 
-## **Step 1: Create LinkedIn Developer Account**
+## **Step 1: Create  Developer Account**
 
-1. **Visit LinkedIn Developers**
-   - Go to: https://www.linkedin.com/developers/
-   - Sign in with your LinkedIn business account
+1. **Visit  Developers**
+   - Go to: https://www..com/developers/
+   - Sign in with your  business account
    - Click "Create app"
 
 2. **Create New Application**
    ```
    App name: AI Social Media Agent
-   LinkedIn Page: [Your Company Page]
+    Page: [Your Company Page]
    Privacy policy URL: [Your privacy policy]
    App logo: [Upload your logo]
    ```
@@ -144,8 +144,8 @@ Request the following permissions:
 
 Add these redirect URLs:
 ```
-http://localhost:8000/auth/linkedin/callback
-https://yourdomain.com/auth/linkedin/callback
+http://localhost:8000/auth//callback
+https://yourdomain.com/auth//callback
 ```
 
 ## **Step 4: Get API Credentials**
@@ -159,15 +159,15 @@ Client Secret: [Your Client Secret]
 
 ## **Step 5: Generate Access Token**
 
-Use LinkedIn's OAuth 2.0 flow or test with their authorization URL:
+Use 's OAuth 2.0 flow or test with their authorization URL:
 ```
-https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=[CLIENT_ID]&redirect_uri=[REDIRECT_URI]&scope=r_liteprofile%20r_emailaddress%20w_member_social
+https://www..com/oauth/v2/authorization?response_type=code&client_id=[CLIENT_ID]&redirect_uri=[REDIRECT_URI]&scope=r_liteprofile%20r_emailaddress%20w_member_social
 ```
 
 ## **Step 6: Update Environment Variables**
 
 ```bash
-# LinkedIn API Configuration
+#  API Configuration
 LINKEDIN_CLIENT_ID=your_client_id_here
 LINKEDIN_CLIENT_SECRET=your_client_secret_here
 LINKEDIN_ACCESS_TOKEN=your_access_token_here
@@ -403,11 +403,11 @@ TWITTER_CLIENT_ID=your_twitter_client_id_here
 TWITTER_CLIENT_SECRET=your_twitter_client_secret_here
 TWITTER_BEARER_TOKEN=your_twitter_bearer_token_here
 
-# LinkedIn API
-LINKEDIN_CLIENT_ID=your_linkedin_client_id_here
-LINKEDIN_CLIENT_SECRET=your_linkedin_client_secret_here
-LINKEDIN_ACCESS_TOKEN=your_linkedin_access_token_here
-LINKEDIN_USER_ID=your_linkedin_user_id_here
+#  API
+LINKEDIN_CLIENT_ID=your__client_id_here
+LINKEDIN_CLIENT_SECRET=your__client_secret_here
+LINKEDIN_ACCESS_TOKEN=your__access_token_here
+LINKEDIN_USER_ID=your__user_id_here
 
 # Instagram Business API
 INSTAGRAM_APP_ID=your_instagram_app_id_here
@@ -455,7 +455,7 @@ python -m uvicorn backend.main:app --reload
 
 # Test individual APIs
 curl -X GET "http://localhost:8000/api/test/twitter"
-curl -X GET "http://localhost:8000/api/test/linkedin" 
+curl -X GET "http://localhost:8000/api/test/" 
 curl -X GET "http://localhost:8000/api/test/instagram"
 curl -X GET "http://localhost:8000/api/test/facebook"
 curl -X GET "http://localhost:8000/api/test/tiktok"
@@ -486,10 +486,10 @@ curl -X GET "http://localhost:8000/api/test/tiktok"
 ✅ Check: Bearer token is correctly set for v2 API calls
 ```
 
-### **LinkedIn API Issues**
+### ** API Issues**
 ```
 ❌ Error: "Invalid redirect_uri"
-✅ Solution: Add exact redirect URI in LinkedIn app settings
+✅ Solution: Add exact redirect URI in  app settings
 ✅ Check: URI matches exactly (including trailing slashes)
 ```
 
@@ -519,7 +519,7 @@ curl -X GET "http://localhost:8000/api/test/tiktok"
 Each platform has different rate limits:
 
 - **Twitter**: 300 requests per 15 minutes (varies by endpoint)
-- **LinkedIn**: 1000 requests per day per member
+- ****: 1000 requests per day per member
 - **Instagram**: 200 requests per hour
 - **Facebook**: Varies by app usage level
 - **TikTok**: 10,000 requests per day
@@ -529,7 +529,7 @@ Each platform has different rate limits:
 Most tokens expire and need refresh:
 
 - **Twitter**: OAuth tokens don't expire, but can be revoked
-- **LinkedIn**: Access tokens expire in 60 days
+- ****: Access tokens expire in 60 days
 - **Instagram**: Long-lived tokens expire in 60 days
 - **Facebook**: Same as Instagram
 - **TikTok**: Access tokens expire in 24 hours
@@ -540,7 +540,7 @@ Most tokens expire and need refresh:
 
 ## **Official Documentation**
 - 🐦 [Twitter API v2 Docs](https://developer.twitter.com/en/docs/twitter-api)
-- 💼 [LinkedIn API Docs](https://docs.microsoft.com/en-us/linkedin/)
+- 💼 [ API Docs](https://docs.microsoft.com/en-us//)
 - 📸 [Instagram Graph API](https://developers.facebook.com/docs/instagram-api)
 - 👥 [Facebook Graph API](https://developers.facebook.com/docs/graph-api)
 - 🎵 [TikTok API Docs](https://developers.tiktok.com/doc)
@@ -550,7 +550,7 @@ Most tokens expire and need refresh:
 - **Postman Collections**: Available for each API
 - **Graph API Explorer**: For Facebook/Instagram testing
 - **Twitter API Tester**: Built-in developer tools
-- **LinkedIn API Console**: Test endpoints directly
+- ** API Console**: Test endpoints directly
 
 ## **Need Help?**
 

@@ -81,7 +81,7 @@ class IntegrationEdgeCaseTester:
         print("Test 2: LinkedIn content validation...")
         try:
             long_content = "a" * 3500  # Exceeds LinkedIn limit
-            is_valid, error_msg = linkedin_client.validate_post_content(long_content)
+            is_valid, error_msg = validate_post_content(long_content)
             
             success = not is_valid and "too long" in error_msg.lower()
             self.record_test_result(category, "linkedin_content_limit", success,
@@ -125,7 +125,7 @@ class IntegrationEdgeCaseTester:
             test_text = "Testing #AI #MachineLearning #SocialMedia #Automation #Testing"
             
             twitter_hashtags = twitter_client.extract_hashtags(test_text)
-            linkedin_hashtags = linkedin_client.extract_hashtags(test_text)
+            linkedin_hashtags = extract_hashtags(test_text)
             instagram_hashtags = instagram_client.extract_hashtags(test_text)
             facebook_hashtags = facebook_client.extract_hashtags(test_text)
             
@@ -165,7 +165,7 @@ class IntegrationEdgeCaseTester:
         
         # Test LinkedIn with invalid token
         try:
-            await linkedin_client.get_user_profile(invalid_token)
+            await get_user_profile(invalid_token)
             platforms_tested += 1
         except Exception as e:
             platforms_tested += 1
@@ -182,7 +182,7 @@ class IntegrationEdgeCaseTester:
         try:
             rate_limit_configs = {
                 "twitter": hasattr(twitter_client, 'rate_limits') and len(twitter_client.rate_limits) > 0,
-                "linkedin": hasattr(linkedin_client, 'rate_limits') and len(linkedin_client.rate_limits) > 0,
+                : hasattr(linkedin_client, 'rate_limits') and len(rate_limits) > 0,
                 "instagram": hasattr(instagram_client, 'rate_limits') and len(instagram_client.rate_limits) > 0,
                 "facebook": hasattr(facebook_client, 'rate_limits') and len(facebook_client.rate_limits) > 0
             }
@@ -204,7 +204,7 @@ class IntegrationEdgeCaseTester:
         try:
             content_limits = {
                 "twitter": hasattr(twitter_client, 'endpoints') and len(twitter_client.endpoints) > 0,
-                "linkedin": hasattr(linkedin_client, 'content_limits') and len(linkedin_client.content_limits) > 0,
+                : hasattr(linkedin_client, 'content_limits') and len(content_limits) > 0,
                 "instagram": hasattr(instagram_client, 'content_limits') and len(instagram_client.content_limits) > 0,
                 "facebook": hasattr(facebook_client, 'content_limits') and len(facebook_client.content_limits) > 0
             }
@@ -226,7 +226,7 @@ class IntegrationEdgeCaseTester:
         try:
             clients_with_error_handling = {
                 "twitter": hasattr(twitter_client, '_make_request'),
-                "linkedin": hasattr(linkedin_client, '_make_request'),
+                : hasattr(linkedin_client, '_make_request'),
                 "instagram": hasattr(instagram_client, '_make_request'),
                 "facebook": hasattr(facebook_client, '_make_request')
             }
@@ -251,7 +251,7 @@ class IntegrationEdgeCaseTester:
             # Test each platform's handling of None/empty tokens
             test_cases = [
                 ("twitter", twitter_client.get_user_profile, None),
-                ("linkedin", linkedin_client.get_user_profile, ""),
+                (, get_user_profile, ""),
             ]
             
             for platform, method, invalid_token in test_cases:

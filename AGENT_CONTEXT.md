@@ -124,7 +124,7 @@ Currently supports 5 major platforms with full API integration:
 - Track engagement metrics
 - Trending topic analysis
 
-#### LinkedIn
+#### 
 - Professional content publishing
 - Company page management
 - Article creation

@@ -102,8 +102,8 @@ ADMIN_ACCESS_TOKEN_EXPIRE_MINUTES=30
 # Social Media API Keys (if applicable)
 TWITTER_API_KEY=your_twitter_api_key
 TWITTER_API_SECRET=your_twitter_api_secret
-LINKEDIN_CLIENT_ID=your_linkedin_client_id
-LINKEDIN_CLIENT_SECRET=your_linkedin_client_secret
+LINKEDIN_CLIENT_ID=your__client_id
+LINKEDIN_CLIENT_SECRET=your__client_secret
 
 # Email Configuration (for notifications)
 SMTP_HOST=smtp.gmail.com

@@ -64,8 +64,8 @@ async def test_integrations():
         valid_post = "Hello LinkedIn!"
         invalid_post = "x" * 4000  # Too long
         
-        valid_result, _ = linkedin_client.validate_post_content(valid_post)
-        invalid_result, error_msg = linkedin_client.validate_post_content(invalid_post)
+        valid_result, _ = validate_post_content(valid_post)
+        invalid_result, error_msg = validate_post_content(invalid_post)
         
         if valid_result and not invalid_result:
             print("   PASS LinkedIn content validation working")
@@ -111,7 +111,7 @@ async def test_integrations():
     
     try:
         twitter_hashtags = twitter_client.extract_hashtags(test_text)
-        linkedin_hashtags = linkedin_client.extract_hashtags(test_text)
+        linkedin_hashtags = extract_hashtags(test_text)
         instagram_hashtags = instagram_client.extract_hashtags(test_text)
         facebook_hashtags = facebook_client.extract_hashtags(test_text)
         
@@ -146,7 +146,7 @@ async def test_integrations():
     
     # Test LinkedIn error handling
     try:
-        await linkedin_client.get_user_profile(invalid_token)
+        await get_user_profile(invalid_token)
         print("   FAIL LinkedIn should have failed with invalid token")
     except Exception as e:
         if any(keyword in str(e).lower() for keyword in ["token", "auth", "invalid", "401", "403"]):

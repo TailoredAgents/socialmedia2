@@ -126,9 +126,14 @@ class RedisCache:
                 "insights": 1800,     # 30 minutes
                 "page_insights": 3600 # 1 hour
             },
-            "linkedin": {
+            "youtube": {
                 "profile": 7200,      # 2 hours
-                "post": 3600,         # 1 hour
+                "video": 3600,        # 1 hour
+                "analytics": 1800     # 30 minutes
+            },
+            "tiktok": {
+                "profile": 3600,      # 1 hour
+                "video": 1800,        # 30 minutes
                 "analytics": 1800     # 30 minutes
             }
         }

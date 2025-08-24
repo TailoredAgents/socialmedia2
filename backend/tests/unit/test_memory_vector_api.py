@@ -277,7 +277,7 @@ class TestMemoryVectorAPI:
         pattern_results = {
             "total_content": 100,
             "content_types": {"insight": 50, "research": 30},
-            "platforms": {"twitter": 60, "linkedin": 40},
+            "platforms": {"twitter": 60, : 40},
             "avg_engagement": 4.5,
             "engagement_distribution": {"low": 0.3, "medium": 0.5, "high": 0.2}
         }

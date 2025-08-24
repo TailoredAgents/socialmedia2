@@ -68,7 +68,7 @@ class DateRangeParams(BaseModel):
 
 def validate_platform(platform: str) -> str:
     """Validate social media platform"""
-    valid_platforms = ['twitter', 'linkedin', 'instagram', 'facebook', 'tiktok', 'youtube']
+    valid_platforms = ['twitter', 'instagram', 'facebook', 'tiktok', 'youtube']
     if platform.lower() not in valid_platforms:
         raise ValidationError(f"Invalid platform. Must be one of: {', '.join(valid_platforms)}")
     return platform.lower()

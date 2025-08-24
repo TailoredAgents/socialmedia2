@@ -89,11 +89,11 @@ timezone VARCHAR DEFAULT 'UTC'
     'user_id': 123,
     'email': 'user@example.com',
     'timezone': 'America/New_York',
-    'preferred_platforms': ['twitter', 'linkedin'],
+    'preferred_platforms': ['twitter', ''],
     'content_frequency': 3,  # posts per week
     'posting_times': {
         'twitter': '09:00',
-        'linkedin': '10:00'
+        '': '10:00'
     },
     'brand_voice': 'professional',
     'creativity_level': 0.7
@@ -202,10 +202,10 @@ graph TD
 # Update user settings
 user_setting.enable_autonomous_mode = True
 user_setting.timezone = 'America/New_York'
-user_setting.preferred_platforms = ['twitter', 'linkedin']
+user_setting.preferred_platforms = ['twitter', '']
 user_setting.posting_times = {
     'twitter': '09:00',
-    'linkedin': '17:00'
+    '': '17:00'
 }
 ```
 

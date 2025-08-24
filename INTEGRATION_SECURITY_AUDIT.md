@@ -201,8 +201,8 @@ class DataRetentionService:
 - **Rate Limit Compliance:** Respects Twitter's rate limits
 - **Error Handling:** Secure error responses without data leakage
 
-#### 4.2 LinkedIn Security
-- **Professional API:** Uses LinkedIn's professional API
+#### 4.2  Security
+- **Professional API:** Uses 's professional API
 - **Company Page Security:** Proper page access validation
 - **Content Approval:** Implements content approval workflows
 - **Permission Scoping:** Minimal required permissions
@@ -230,7 +230,7 @@ class PlatformDataIsolation:
     def __init__(self):
         self.platform_boundaries = {
             'twitter': ['twitter_data'],
-            'linkedin': ['linkedin_data', 'professional_data'],
+            '': ['_data', 'professional_data'],
             'instagram': ['instagram_data', 'visual_content'],
             'facebook': ['facebook_data', 'page_data'],
             'tiktok': ['tiktok_data', 'video_content']

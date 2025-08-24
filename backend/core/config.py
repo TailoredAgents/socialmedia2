@@ -34,11 +34,7 @@ class Settings(BaseSettings):
     twitter_access_token_secret: str = ""
     twitter_bearer_token: str = ""
     
-    # LinkedIn
-    linkedin_client_id: str = ""
-    linkedin_client_secret: str = ""
-    linkedin_access_token: str = ""
-    linkedin_user_id: str = ""
+    # LinkedIn - REMOVED (too restrictive API)
     
     # Instagram/Facebook
     instagram_app_id: str = ""

@@ -40,9 +40,9 @@ class AutonomousScheduler:
                     'user_id': user.id,
                     'email': user.email,
                     'timezone': getattr(settings, 'timezone', 'UTC'),
-                    'preferred_platforms': settings.preferred_platforms or ['twitter', 'linkedin'],
+                    'preferred_platforms': settings.preferred_platforms or ['twitter', 'instagram'],
                     'content_frequency': settings.content_frequency or 3,
-                    'posting_times': settings.posting_times or {'twitter': '09:00', 'linkedin': '10:00'},
+                    'posting_times': settings.posting_times or {'twitter': '09:00', 'instagram': '10:00'},
                     'brand_voice': settings.brand_voice or 'professional',
                     'creativity_level': settings.creativity_level or 0.7
                 })

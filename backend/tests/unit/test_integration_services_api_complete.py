@@ -407,7 +407,7 @@ class TestIntegrationServicesAPI:
                 json={
                     "workflow_type": "daily_content_cycle",
                     "parameters": {
-                        "platforms": ["twitter", "linkedin"],
+                        "platforms": ["twitter", ],
                         "content_count": 3,
                         "schedule_immediately": False
                     }

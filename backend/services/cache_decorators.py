@@ -249,7 +249,8 @@ class CacheManager:
             "twitter": ["profile", "recent_tweets"],
             "instagram": ["profile", "recent_posts"],
             "facebook": ["profile", "page_info"],
-            "linkedin": ["profile", "recent_posts"]
+            "youtube": ["profile", "recent_videos"],
+            "tiktok": ["profile", "recent_videos"]
         }
         
         for platform in platforms:
@@ -306,7 +307,8 @@ class CacheManager:
             ("twitter", "profile", {"user_id": user_id}),
             ("instagram", "profile", {"user_id": user_id}),
             ("facebook", "profile", {"user_id": user_id}),
-            ("linkedin", "profile", {"user_id": user_id})
+            ("youtube", "profile", {"user_id": user_id}),
+            ("tiktok", "profile", {"user_id": user_id})
         ]
         
         # Batch check what's already cached

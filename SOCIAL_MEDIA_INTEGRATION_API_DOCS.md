@@ -2,13 +2,13 @@
 
 ## Overview
 
-This comprehensive API documentation covers all social media platform integrations within the AI Social Media Content Agent. The system provides a unified interface for posting content, retrieving analytics, and managing social media presence across Twitter, LinkedIn, Instagram, and Facebook.
+This comprehensive API documentation covers all social media platform integrations within the AI Social Media Content Agent. The system provides a unified interface for posting content, retrieving analytics, and managing social media presence across Twitter, , Instagram, and Facebook.
 
 ## Table of Contents
 
 1. [Authentication](#authentication)
 2. [Twitter Integration](#twitter-integration)
-3. [LinkedIn Integration](#linkedin-integration)
+3. [ Integration](#-integration)
 4. [Instagram Integration](#instagram-integration)
 5. [Facebook Integration](#facebook-integration)
 6. [Performance Optimization](#performance-optimization)
@@ -27,9 +27,9 @@ All social media integrations use OAuth 2.0 authentication with platform-specifi
 TWITTER_ACCESS_TOKEN=your_twitter_access_token
 TWITTER_REFRESH_TOKEN=your_twitter_refresh_token
 
-# LinkedIn API
-LINKEDIN_ACCESS_TOKEN=your_linkedin_access_token
-LINKEDIN_USER_ID=your_linkedin_user_id
+#  API
+LINKEDIN_ACCESS_TOKEN=your__access_token
+LINKEDIN_USER_ID=your__user_id
 
 # Instagram Business API (requires Facebook)
 FACEBOOK_ACCESS_TOKEN=your_facebook_access_token
@@ -159,11 +159,11 @@ if not is_valid:
     print(f"Validation error: {error}")
 ```
 
-## LinkedIn Integration
+##  Integration
 
-### LinkedInAPIClient
+### APIClient
 
-**Base URL:** `https://api.linkedin.com/v2`
+**Base URL:** `https://api..com/v2`
 
 #### Key Features
 - Professional post creation
@@ -175,7 +175,7 @@ if not is_valid:
 #### Methods
 
 ##### get_user_profile(access_token)
-Get authenticated user's LinkedIn profile.
+Get authenticated user's  profile.
 
 **Parameters:**
 - `access_token` (str): OAuth access token
@@ -184,15 +184,15 @@ Get authenticated user's LinkedIn profile.
 
 **Example:**
 ```python
-from backend.integrations.linkedin_client import linkedin_client
+from backend.integrations._client import _client
 
-profile = await linkedin_client.get_user_profile(access_token)
+profile = await _client.get_user_profile(access_token)
 print(f"User: {profile['first_name']} {profile['last_name']}")
 print(f"Connections: {profile['connections']}")
 ```
 
 ##### create_post(access_token, text, visibility="PUBLIC", media_assets=None)
-Create a LinkedIn post.
+Create a  post.
 
 **Parameters:**
 - `access_token` (str): OAuth access token
@@ -200,11 +200,11 @@ Create a LinkedIn post.
 - `visibility` (str): Post visibility (PUBLIC, CONNECTIONS, LOGGED_IN)
 - `media_assets` (list, optional): List of uploaded media asset URNs
 
-**Returns:** LinkedInPost object
+**Returns:** Post object
 
 **Example:**
 ```python
-post = await linkedin_client.create_post(
+post = await _client.create_post(
     access_token=token,
     text="""🚀 Exciting developments in AI social media automation!
 
@@ -219,11 +219,11 @@ Key Features:
 #AI #SocialMediaManagement #Automation""",
     visibility="PUBLIC"
 )
-print(f"LinkedIn post created: {post.id}")
+print(f" post created: {post.id}")
 ```
 
 ##### upload_media(access_token, media_data, media_type, filename)
-Upload media to LinkedIn.
+Upload media to .
 
 **Parameters:**
 - `access_token` (str): OAuth access token
@@ -234,7 +234,7 @@ Upload media to LinkedIn.
 **Returns:** Media asset URN
 
 ##### create_article(access_token, title, content, visibility="PUBLIC")
-Create a LinkedIn article.
+Create a  article.
 
 **Parameters:**
 - `access_token` (str): OAuth access token
@@ -242,16 +242,16 @@ Create a LinkedIn article.
 - `content` (str): Article content (max 110,000 characters)
 - `visibility` (str): Article visibility
 
-**Returns:** LinkedInArticle object
+**Returns:** Article object
 
 ##### get_post_analytics(access_token, post_id)
-Get analytics for a LinkedIn post.
+Get analytics for a  post.
 
 **Parameters:**
 - `access_token` (str): OAuth access token
 - `post_id` (str): Post ID
 
-**Returns:** LinkedInAnalytics object
+**Returns:** Analytics object
 
 ## Instagram Integration
 
@@ -427,7 +427,7 @@ We're thrilled to announce our latest features:
 🤖 Intelligent Audience Targeting
 ⚡ Lightning-Fast Multi-Platform Posting
 
-Our platform now manages content across Twitter, LinkedIn, Instagram, and Facebook with unprecedented intelligence and efficiency.
+Our platform now manages content across Twitter, , Instagram, and Facebook with unprecedented intelligence and efficiency.
 
 What social media challenges would you like AI to solve next? Share your thoughts below! 👇
 
@@ -507,7 +507,7 @@ Use platform-specific caching decorators for optimal performance:
 ```python
 from backend.integrations.performance_optimizer import (
     cached_twitter_request,
-    cached_linkedin_request,
+    cached__request,
     cached_instagram_request,
     cached_facebook_request
 )
@@ -524,7 +524,7 @@ Execute multiple requests concurrently:
 ```python
 requests = [
     (twitter_client.get_user_profile, (twitter_token,), {}),
-    (linkedin_client.get_user_profile, (linkedin_token,), {}),
+    (_client.get_user_profile, (_token,), {}),
     (instagram_client.get_profile, (fb_token, ig_id), {})
 ]
 
@@ -584,7 +584,7 @@ Each platform has specific rate limits that are automatically managed:
 |----------|----------|-------|--------|
 | Twitter | Tweet Creation | 300 requests | 15 minutes |
 | Twitter | User Lookup | 300 requests | 15 minutes |
-| LinkedIn | Post Creation | 100 requests | 1 hour |
+|  | Post Creation | 100 requests | 1 hour |
 | Instagram | Content Publishing | 25 requests | 1 hour |
 | Facebook | Page Posts | 600 requests | 10 minutes |
 
@@ -625,8 +625,8 @@ Validate content before posting:
 # Twitter validation
 is_valid, error = twitter_client.is_valid_tweet_text(tweet_text)
 
-# LinkedIn validation  
-is_valid, error = linkedin_client.validate_post_content(post_text)
+#  validation  
+is_valid, error = _client.validate_post_content(post_text)
 
 # Instagram validation
 is_valid, error = instagram_client.validate_caption(caption_text)
@@ -700,6 +700,6 @@ For additional support:
 
 ## Conclusion
 
-This comprehensive API documentation provides everything needed to integrate with and manage content across Twitter, LinkedIn, Instagram, and Facebook. The system is designed for reliability, performance, and ease of use, with extensive testing and validation to ensure production-ready quality.
+This comprehensive API documentation provides everything needed to integrate with and manage content across Twitter, , Instagram, and Facebook. The system is designed for reliability, performance, and ease of use, with extensive testing and validation to ensure production-ready quality.
 
 The integration layer abstracts away platform-specific complexities while providing full access to advanced features, making it easy to build sophisticated social media management applications.

@@ -66,7 +66,7 @@ backend/services/
 backend/integrations/
 ├── facebook_client.py        # Facebook Graph API
 ├── instagram_client.py       # Instagram Basic Display
-├── linkedin_client.py        # LinkedIn API
+├── _client.py        #  API
 ├── twitter_client.py         # Twitter API v2
 ├── oauth_manager.py          # OAuth management
 └── ...

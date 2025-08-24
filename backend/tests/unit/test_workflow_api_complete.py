@@ -220,7 +220,7 @@ class TestWorkflowAPI:
                 "content_quality_score": 87.3,
                 "api_response_times": {
                     "twitter": 1.2,
-                    "linkedin": 0.8,
+                    : 0.8,
                     "openai": 3.4
                 },
                 "resource_usage": {

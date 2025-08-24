@@ -6,7 +6,7 @@
 
 1. **App Authentication (No OAuth)**: Replace demo AuthContext and optional Auth0 paths with a first-party email/password system
 2. **Replace Stubs/Mocks**: Notifications, metrics, workflow routers still loading stub modules
-3. **Social Posting Connectors**: Finalize publish flows for X, LinkedIn, Instagram with token storage, refresh, retries
+3. **Social Posting Connectors**: Finalize publish flows for X, , Instagram with token storage, refresh, retries
 4. **Autonomous Loop**: Ensure Celery worker + beat schedule daily/weekly workflows
 5. **Observability/SRE**: Prometheus endpoint + Sentry tracing, structured logs, dashboard
 
@@ -83,7 +83,7 @@
 - Handle INIT/APPEND/FINALIZE flow
 - Add backoff on 429 rate limits
 
-**LinkedIn:**
+**:**
 - Register asset → upload → create UGC post
 - Support Pages & Member posts
 
@@ -128,7 +128,7 @@
 ## PR-05: Research & Insights - Remove Mock Results
 
 ### Changes
-- Replace any "mock X/LinkedIn/Trends" branches
+- Replace any "mock X//Trends" branches
 - Keep Serper for web/news with cache & backoff
 - Persist research artifacts (ResearchData, Insight)
 - Link to WorkflowExecution
@@ -281,7 +281,7 @@ sentry_sdk.init(
 5. **Dockerfile** - run app:app instead of main_minimal
 6. **Monitoring** - add /metrics router
 7. **Integrations** - ensure integration_services.py is loaded
-8. **Research** - finish Trends/LinkedIn API calls
+8. **Research** - finish Trends/ API calls
 
 ## Data Model Additions
 
@@ -326,7 +326,7 @@ PlatformMetric(id, org_id, account_id, platform, ts_bucket, metric_name, value)
 ## End-to-End Acceptance Test
 
 1. Register new user, create org, verify email
-2. Connect X, LinkedIn, Instagram accounts
+2. Connect X, , Instagram accounts
 3. Set brand voice + platforms + cadence in Settings
 4. Turn on Autopilot
 5. Observe Celery beat runs daily_content at 09:00 org local time
@@ -339,7 +339,7 @@ PlatformMetric(id, org_id, account_id, platform, ts_bucket, metric_name, value)
 - [SuperTokens FastAPI](https://supertokens.com/docs/passwordless/pre-built-ui/setup/backend/python-fastapi)
 - [Ory Kratos](https://github.com/ory/kratos)
 - [X/Twitter API Docs](https://developer.x.com/en/docs/twitter-api)
-- [LinkedIn API Docs](https://learn.microsoft.com/en-us/linkedin/)
+- [ API Docs](https://learn.microsoft.com/en-us//)
 - [Instagram Graph API](https://developers.facebook.com/docs/instagram-api)
 - [Serper API](https://serper.dev)
 - [pgvector](https://github.com/pgvector/pgvector)

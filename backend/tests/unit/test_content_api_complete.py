@@ -108,7 +108,7 @@ class TestContentAPI:
             response = client.post(
                 "/api/content/",
                 json={
-                    "platform": "linkedin",
+                    "platform": ,
                     "content": "Scheduled post content",
                     "content_type": "text",
                     "scheduled_for": future_time.isoformat()

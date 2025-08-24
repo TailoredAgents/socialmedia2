@@ -36,7 +36,7 @@ class IntegrationValidator:
         
         clients = {
             "Twitter": "backend/integrations/twitter_client.py",
-            "LinkedIn": "backend/integrations/linkedin_client.py", 
+            "LinkedIn": "backend/integrations/py", 
             "Instagram": "backend/integrations/instagram_client.py",
             "Facebook": "backend/integrations/facebook_client.py"
         }
@@ -81,7 +81,7 @@ class IntegrationValidator:
         
         validation_tests = [
             ("twitter_limits", "backend/integrations/twitter_client.py", "280", "tweet"),
-            ("linkedin_limits", "backend/integrations/linkedin_client.py", "3000", "post"),
+            ("linkedin_limits", "backend/integrations/py", "3000", "post"),
             ("instagram_limits", "backend/integrations/instagram_client.py", "2200", "caption"),
             ("facebook_limits", "backend/integrations/facebook_client.py", "63206", "message")
         ]
@@ -120,7 +120,7 @@ class IntegrationValidator:
         
         clients = {
             "Twitter": "backend/integrations/twitter_client.py",
-            "LinkedIn": "backend/integrations/linkedin_client.py",
+            "LinkedIn": "backend/integrations/py",
             "Instagram": "backend/integrations/instagram_client.py", 
             "Facebook": "backend/integrations/facebook_client.py"
         }

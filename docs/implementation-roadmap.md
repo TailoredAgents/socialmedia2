@@ -80,7 +80,7 @@
 
 ### Week 7: Modular Tier System
 - [ ] **Base Tier Implementation**
-  - 5 platform support (Twitter, LinkedIn, Instagram, Facebook, TikTok)
+  - 5 platform support (Twitter, , Instagram, Facebook, TikTok)
   - Basic research and content generation
   - Simple scheduling and posting
   - Essential metrics tracking

@@ -29,7 +29,7 @@ class SocialMediaIntegrationTester:
         """Initialize the integration tester"""
         self.test_results = {
             "twitter": {"status": "pending", "tests": [], "errors": []},
-            "linkedin": {"status": "pending", "tests": [], "errors": []},
+            : {"status": "pending", "tests": [], "errors": []},
             "instagram": {"status": "pending", "tests": [], "errors": []},
             "facebook": {"status": "pending", "tests": [], "errors": []}
         }
@@ -40,7 +40,7 @@ class SocialMediaIntegrationTester:
                 "access_token": os.getenv("TWITTER_ACCESS_TOKEN"),
                 "refresh_token": os.getenv("TWITTER_REFRESH_TOKEN")
             },
-            "linkedin": {
+            : {
                 "access_token": os.getenv("LINKEDIN_ACCESS_TOKEN"),
                 "user_id": os.getenv("LINKEDIN_USER_ID")
             },
@@ -61,7 +61,7 @@ class SocialMediaIntegrationTester:
     
     async def run_all_tests(self):
         """Run comprehensive tests for all platforms"""
-        platforms = ["twitter", "linkedin", "instagram", "facebook"]
+        platforms = ["twitter", , "instagram", "facebook"]
         
         for platform in platforms:
             print(f"\n🔍 Testing {platform.upper()} Integration...")
@@ -70,7 +70,7 @@ class SocialMediaIntegrationTester:
             try:
                 if platform == "twitter":
                     await self.test_twitter_integration()
-                elif platform == "linkedin":
+                elif platform == :
                     await self.test_linkedin_integration()
                 elif platform == "instagram":
                     await self.test_instagram_integration()
@@ -189,7 +189,7 @@ class SocialMediaIntegrationTester:
     
     async def test_linkedin_integration(self):
         """Test LinkedIn API integration"""
-        platform = "linkedin"
+        platform = 
         creds = self.credentials[platform]
         
         if not creds["access_token"]:
@@ -198,7 +198,7 @@ class SocialMediaIntegrationTester:
         # Test 1: Get user profile
         print("📝 Test 1: Getting LinkedIn user profile...")
         try:
-            profile = await linkedin_client.get_user_profile(creds["access_token"])
+            profile = await get_user_profile(creds["access_token"])
             self.test_results[platform]["tests"].append({
                 "name": "get_user_profile",
                 "status": "passed",
@@ -234,7 +234,7 @@ Key Features:
 Test timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"""
         
         try:
-            posted_post = await linkedin_client.create_post(
+            posted_post = await create_post(
                 access_token=creds["access_token"],
                 text=test_post,
                 visibility="PUBLIC"
@@ -251,7 +251,7 @@ Test timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"""
             await asyncio.sleep(10)  # Wait for metrics to be available
             
             try:
-                analytics = await linkedin_client.get_post_analytics(
+                analytics = await get_post_analytics(
                     access_token=creds["access_token"],
                     post_id=posted_post.id
                 )

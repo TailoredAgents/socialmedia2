@@ -743,7 +743,7 @@ export default function MemoryExplorer() {
                     })}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="linkedin">LinkedIn</option>
+                    <option value=>LinkedIn</option>
                     <option value="twitter">Twitter</option>
                     <option value="instagram">Instagram</option>
                     <option value="web">Web</option>

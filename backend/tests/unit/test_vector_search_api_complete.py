@@ -60,7 +60,7 @@ class TestVectorSearchAPI:
                 "memory_type": "insight",
                 "similarity_score": 0.87,
                 "metadata": {
-                    "platform": "linkedin",
+                    "platform": ,
                     "engagement_rate": 6.5,
                     "tags": ["ML", "data", "analysis"]
                 },
@@ -198,7 +198,7 @@ class TestVectorSearchAPI:
                     "content": "AI revolutionizes healthcare with predictive analytics",
                     "similarity_score": 0.89,
                     "engagement_rate": 7.2,
-                    "platform": "linkedin"
+                    "platform": 
                 }
             ],
             "research_insights": [
@@ -234,7 +234,7 @@ class TestVectorSearchAPI:
                 "/api/vector/content-creation-search",
                 json={
                     "topic": "AI in healthcare",
-                    "platform": "linkedin"
+                    "platform": 
                 }
             )
             
@@ -242,7 +242,7 @@ class TestVectorSearchAPI:
             data = response.json()
             assert data["status"] == "success"
             assert data["topic"] == "AI in healthcare"
-            assert data["platform"] == "linkedin"
+            assert data["platform"] == 
             assert len(data["similar_content"]) == 1
             assert len(data["research_insights"]) == 1
             assert len(data["templates"]) == 1

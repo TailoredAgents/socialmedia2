@@ -68,7 +68,7 @@ class ContentLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    platform = Column(String, nullable=False)  # twitter, linkedin, instagram
+    platform = Column(String, nullable=False)  # twitter, instagram, facebook, youtube, tiktok
     content = Column(Text, nullable=False)
     content_type = Column(String, nullable=False)  # text, image, video
     status = Column(String, default="draft")  # draft, scheduled, published, failed
@@ -113,8 +113,8 @@ class UserSetting(Base):
     
     # Content preferences
     content_frequency = Column(Integer, default=3)  # posts per week
-    preferred_platforms = Column(JSON, default=["twitter", "linkedin"])
-    posting_times = Column(JSON, default={"twitter": "09:00", "linkedin": "10:00"})
+    preferred_platforms = Column(JSON, default=["twitter", "instagram"])
+    posting_times = Column(JSON, default={"twitter": "09:00", "instagram": "10:00"})
     
     # AI settings
     creativity_level = Column(Float, default=0.7)  # 0-1 scale

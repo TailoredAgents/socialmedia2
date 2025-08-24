@@ -18,7 +18,7 @@ from backend.services.metrics_collection import metrics_collector
 from backend.integrations.instagram_client import instagram_client
 from backend.integrations.facebook_client import facebook_client
 from backend.integrations.twitter_client import twitter_client
-from backend.integrations.linkedin_client import linkedin_client
+from backend.integrations.client import client
 
 logger = get_task_logger(__name__)
 
@@ -140,7 +140,7 @@ def generate_and_schedule_content(user_id: int, content_config: Dict[str, Any]) 
         generated_content = {}
         scheduled_posts = []
         
-        for platform in content_config.get("platforms", ["twitter", "linkedin"]):
+        for platform in content_config.get("platforms", ["twitter", ]):
             content_result = loop.run_until_complete(
                 content_automation_service.generate_content(
                     topic=content_config["topic"],
@@ -235,9 +235,9 @@ async def _schedule_platform_post(platform: str, content_result: Dict[str, Any],
             )
             return {"status": "published", "platform_id": result.get("id")}
             
-        elif platform == "linkedin":
-            result = await linkedin_client.create_post(
-                access_token=await linkedin_client.get_user_token(user_id),
+        elif platform == :
+            result = await create_post(
+                access_token=await get_user_token(user_id),
                 text=content_result["content"]
             )
             return {"status": "published", "platform_id": result.get("id")}
@@ -266,7 +266,7 @@ def execute_daily_workflow(user_id: int, workflow_config: Dict[str, Any] = None)
             workflow_config = {
                 "research_topics": ["industry trends", "competitor analysis"],
                 "content_count": 3,
-                "platforms": ["twitter", "linkedin"],
+                "platforms": ["twitter", ],
                 "tone": "professional",
                 "auto_schedule": True
             }

@@ -36,7 +36,7 @@ async def test_memory_operations():
             "content": "Just launched our new AI-powered content generation tool! It learns from your best-performing posts and creates similar high-engagement content. #AIMarketing #ContentCreation",
             "metadata": {
                 "type": "generated_content",
-                "platform": "linkedin",
+                "platform": ,
                 "user_id": "test_user",
                 "engagement_rate": 6.2,
                 "tags": ["product launch", "AI tools", "marketing"]

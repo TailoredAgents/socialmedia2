@@ -26,7 +26,7 @@ class TestLivePlatformIntegration:
         """Mock authentication tokens for testing"""
         return {
             "twitter": "mock_twitter_token_123",
-            "linkedin": "mock_linkedin_token_456", 
+            : "mock_linkedin_token_456", 
             "instagram": "mock_instagram_token_789",
             "facebook": "mock_facebook_token_abc"
         }
@@ -137,8 +137,8 @@ class TestLivePlatformIntegration:
             # Test profile retrieval
             mock_request.return_value = mock_profile_response
             
-            profile = await linkedin_client.get_user_profile(
-                access_token=mock_tokens["linkedin"]
+            profile = await get_user_profile(
+                access_token=mock_tokens[]
             )
             
             assert profile["id"] == "linkedin_user_123"
@@ -148,8 +148,8 @@ class TestLivePlatformIntegration:
             # Test post creation
             mock_request.return_value = mock_post_response
             
-            post = await linkedin_client.create_post(
-                access_token=mock_tokens["linkedin"],
+            post = await create_post(
+                access_token=mock_tokens[],
                 text=sample_content["text"],
                 visibility="PUBLIC"
             )
@@ -160,8 +160,8 @@ class TestLivePlatformIntegration:
             # Test analytics
             mock_request.return_value = mock_analytics_response
             
-            analytics = await linkedin_client.get_post_analytics(
-                access_token=mock_tokens["linkedin"],
+            analytics = await get_post_analytics(
+                access_token=mock_tokens[],
                 post_id="linkedin_post_456"
             )
             
@@ -380,7 +380,7 @@ class TestLivePlatformIntegration:
         # Mock platform API responses
         mock_responses = {
             "twitter": {"followers": 1000, "posts": 50, "engagement": 5.2},
-            "linkedin": {"connections": 500, "posts": 25, "engagement": 3.8},
+            : {"connections": 500, "posts": 25, "engagement": 3.8},
             "instagram": {"followers": 2000, "posts": 100, "engagement": 7.1},
             "facebook": {"followers": 1500, "posts": 75, "engagement": 4.5}
         }
@@ -435,8 +435,8 @@ class TestLivePlatformIntegration:
             mock_request.side_effect = Exception("Network error: Connection timeout")
             
             with pytest.raises(Exception) as exc_info:
-                await linkedin_client.get_user_profile(
-                    access_token=mock_tokens["linkedin"]
+                await get_user_profile(
+                    access_token=mock_tokens[]
                 )
             
             assert "Network error" in str(exc_info.value)
@@ -477,7 +477,7 @@ class TestLivePlatformIntegration:
         
         # Verify rate limiting stats structure
         rate_stats = stats["rate_limiting"]
-        for platform in ["twitter", "linkedin", "instagram", "facebook"]:
+        for platform in ["twitter", , "instagram", "facebook"]:
             assert platform in rate_stats
             assert "utilization" in rate_stats[platform]
     
@@ -490,7 +490,7 @@ class TestLivePlatformIntegration:
         assert error == ""
         
         # Test LinkedIn validation
-        is_valid, error = linkedin_client.validate_post_content(sample_content["text"])
+        is_valid, error = validate_post_content(sample_content["text"])
         assert is_valid is True
         assert error == ""
         
@@ -525,8 +525,8 @@ class TestLivePlatformIntegration:
         assert "@mention" in mentions
         
         # Test LinkedIn extraction
-        hashtags = linkedin_client.extract_hashtags(test_text)
-        mentions = linkedin_client.extract_mentions(test_text)
+        hashtags = extract_hashtags(test_text)
+        mentions = extract_mentions(test_text)
         
         assert "#hashtag" in hashtags
         assert "@mention" in mentions
@@ -559,7 +559,7 @@ class TestIntegrationEdgeCases:
         assert "empty" in error.lower()
         
         # Test whitespace-only content
-        is_valid, error = linkedin_client.validate_post_content("   ")
+        is_valid, error = validate_post_content("   ")
         assert is_valid is False
         assert "empty" in error.lower()
     
@@ -587,7 +587,7 @@ class TestIntegrationEdgeCases:
             mock_request.side_effect = Exception("LinkedIn API error: Invalid access token")
             
             with pytest.raises(Exception) as exc_info:
-                await linkedin_client.get_user_profile(
+                await get_user_profile(
                     access_token="invalid_token_123"
                 )
             
@@ -599,7 +599,7 @@ class TestIntegrationEdgeCases:
         
         # Verify API versions are current
         assert twitter_client.api_base == "https://api.twitter.com/2"
-        assert linkedin_client.api_base == "https://api.linkedin.com/v2"
+        assert api_base == "https://api.linkedin.com/v2"
         assert instagram_client.api_base == "https://graph.facebook.com/v18.0"
         assert facebook_client.api_base == "https://graph.facebook.com/v18.0"
     
@@ -611,7 +611,7 @@ class TestIntegrationEdgeCases:
         assert twitter_limits["tweet_create"]["requests"] <= 300
         assert twitter_limits["tweet_create"]["window"] >= 900
         
-        linkedin_limits = linkedin_client.rate_limits
+        linkedin_limits = rate_limits
         assert linkedin_limits["post_create"]["requests"] <= 100
         assert linkedin_limits["post_create"]["window"] >= 3600
         
@@ -667,7 +667,7 @@ class TestLiveAPIConnections:
         
         try:
             # Test basic API connectivity
-            profile = await linkedin_client.get_user_profile(
+            profile = await get_user_profile(
                 access_token=token
             )
             

@@ -24,13 +24,13 @@ export TWITTER_ACCESS_TOKEN="your_twitter_access_token"
 export TWITTER_REFRESH_TOKEN="your_twitter_refresh_token"
 ```
 
-#### LinkedIn API
+####  API
 ```bash
 # Required scopes: r_liteprofile, r_emailaddress, w_member_social
-export LINKEDIN_CLIENT_ID="your_linkedin_client_id"
-export LINKEDIN_CLIENT_SECRET="your_linkedin_client_secret"
-export LINKEDIN_ACCESS_TOKEN="your_linkedin_access_token"
-export LINKEDIN_USER_ID="your_linkedin_user_id"
+export LINKEDIN_CLIENT_ID="your__client_id"
+export LINKEDIN_CLIENT_SECRET="your__client_secret"
+export LINKEDIN_ACCESS_TOKEN="your__access_token"
+export LINKEDIN_USER_ID="your__user_id"
 ```
 
 #### Facebook/Instagram Graph API
@@ -143,7 +143,7 @@ performance_optimizer.cache.default_ttl = 600  # 10 minutes
 # Platform-specific TTL optimization
 performance_optimizer.cache.ttl_overrides.update({
     "twitter_profile": 7200,    # 2 hours
-    "linkedin_profile": 14400,  # 4 hours
+    "_profile": 14400,  # 4 hours
     "instagram_insights": 3600, # 1 hour
     "facebook_insights": 3600   # 1 hour
 })
@@ -168,7 +168,7 @@ await performance_optimizer.connection_pool.__init__(
 # Production rate limiting
 rate_limits = {
     "twitter": {"requests": 280, "window": 900, "burst": 40},
-    "linkedin": {"requests": 90, "window": 3600, "burst": 15},
+    "": {"requests": 90, "window": 3600, "burst": 15},
     "instagram": {"requests": 180, "window": 3600, "burst": 20},
     "facebook": {"requests": 500, "window": 600, "burst": 80}
 }
@@ -469,7 +469,7 @@ async def get_metrics():
 import asyncio
 import pytest
 from backend.integrations.twitter_client import twitter_client
-from backend.integrations.linkedin_client import linkedin_client
+from backend.integrations._client import _client
 
 async def smoke_test_twitter():
     """Smoke test for Twitter integration"""
@@ -481,10 +481,10 @@ async def smoke_test_twitter():
     except Exception:
         return False
 
-async def smoke_test_linkedin():
-    """Smoke test for LinkedIn integration"""
+async def smoke_test_():
+    """Smoke test for  integration"""
     try:
-        is_valid, _ = linkedin_client.validate_post_content("Test post")
+        is_valid, _ = _client.validate_post_content("Test post")
         assert is_valid
         return True
     except Exception:
@@ -494,7 +494,7 @@ async def run_smoke_tests():
     """Run all smoke tests"""
     results = {
         "twitter": await smoke_test_twitter(),
-        "linkedin": await smoke_test_linkedin(),
+        "": await smoke_test_(),
         # Add other platforms
     }
     
@@ -540,7 +540,7 @@ class SocialMediaPostRequest(BaseModel):
     
     @validator('platform')
     def validate_platform(cls, v):
-        allowed_platforms = ['twitter', 'linkedin', 'instagram', 'facebook']
+        allowed_platforms = ['twitter', '', 'instagram', 'facebook']
         if v not in allowed_platforms:
             raise ValueError(f'Platform must be one of {allowed_platforms}')
         return v

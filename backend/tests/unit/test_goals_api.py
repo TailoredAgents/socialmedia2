@@ -162,7 +162,7 @@ class TestGoalsAPI:
             "priority": "high",
             "metadata": {
                 "kpis": ["follower_growth_rate", "engagement_increase"],
-                "platforms": ["linkedin", "twitter"]
+                "platforms": [, "twitter"]
             }
         }
         
@@ -204,7 +204,7 @@ class TestGoalsAPI:
                 "source": "manual_update",
                 "platform_breakdown": {
                     "twitter": 300,
-                    "linkedin": 200,
+                    : 200,
                     "instagram": 100
                 }
             }

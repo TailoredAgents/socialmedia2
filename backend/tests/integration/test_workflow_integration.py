@@ -95,7 +95,7 @@ class TestWorkflowIntegration:
                     {
                         "title": "5 LinkedIn Engagement Strategies That Actually Work",
                         "content": "Discover proven strategies to boost your LinkedIn engagement rate and build meaningful professional connections...",
-                        "platform": "linkedin",
+                        "platform": ,
                         "content_type": "text",
                         "metadata": {
                             "hashtags": ["#LinkedInTips", "#ProfessionalNetworking", "#EngagementStrategy"],
@@ -107,7 +107,7 @@ class TestWorkflowIntegration:
                     {
                         "title": "Behind the Scenes: How We Increased Engagement by 95%",
                         "content": "A transparent look at the strategies and tactics that led to our 95% engagement increase on LinkedIn...",
-                        "platform": "linkedin", 
+                        "platform": , 
                         "content_type": "text",
                         "metadata": {
                             "hashtags": ["#CaseStudy", "#LinkedInGrowth", "#MarketingResults"],
@@ -141,14 +141,14 @@ class TestWorkflowIntegration:
             # Verify content was created in database
             content_items = db_session.query(ContentItem).filter(ContentItem.user_id == test_user.user_id).all()
             assert len(content_items) == 2
-            assert all(item.platform == "linkedin" for item in content_items)
+            assert all(item.platform ==  for item in content_items)
             assert any("Engagement Strategies" in item.title for item in content_items)
     
     @pytest.mark.asyncio
     async def test_multi_platform_posting_workflow(self, client, test_user, auth_headers, db_session, mock_social_apis):
         """Test multi-platform content posting workflow"""
         # Create scheduled content for multiple platforms
-        platforms = ["twitter", "linkedin", "facebook", "instagram"]
+        platforms = ["twitter", , "facebook", "instagram"]
         content_items = []
         
         for platform in platforms:
@@ -434,7 +434,7 @@ class TestWorkflowIntegration:
             "schedule": "0 9 * * *",  # Daily at 9 AM
             "workflow_type": "daily_content_generation",
             "parameters": {
-                "platforms": ["twitter", "linkedin"],
+                "platforms": ["twitter", ],
                 "content_count": 3,
                 "include_research": True,
                 "auto_post": False  # Generate but don't auto-post
@@ -462,7 +462,7 @@ class TestWorkflowIntegration:
             mock_workflow.return_value.execute_scheduled_workflow.return_value = {
                 "status": "completed",
                 "content_generated": 3,
-                "platforms": ["twitter", "linkedin"],
+                "platforms": ["twitter", ],
                 "execution_time": 45.2
             }
             
@@ -532,7 +532,7 @@ class TestWorkflowValidation:
         large_workflow = {
             "workflow_type": "content_generation",
             "parameters": {
-                "platforms": ["twitter", "linkedin", "facebook", "instagram"],
+                "platforms": ["twitter", , "facebook", "instagram"],
                 "content_count": 100,  # Exceeds daily limit
                 "batch_size": 50
             }

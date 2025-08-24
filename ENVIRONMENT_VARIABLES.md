@@ -155,13 +155,13 @@ REDIS_URL=redis://username:password@host:port/0
 | `TWITTER_ACCESS_TOKEN_SECRET` | No | - | Twitter access token secret |
 | `TWITTER_BEARER_TOKEN` | No | - | Twitter Bearer token (for API v2) |
 
-#### **LinkedIn API**
+#### ** API**
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `LINKEDIN_CLIENT_ID` | No | - | LinkedIn application client ID |
-| `LINKEDIN_CLIENT_SECRET` | No | - | LinkedIn application client secret |
-| `LINKEDIN_ACCESS_TOKEN` | No | - | LinkedIn user access token |
-| `LINKEDIN_USER_ID` | No | - | LinkedIn user ID |
+| `LINKEDIN_CLIENT_ID` | No | - |  application client ID |
+| `LINKEDIN_CLIENT_SECRET` | No | - |  application client secret |
+| `LINKEDIN_ACCESS_TOKEN` | No | - |  user access token |
+| `LINKEDIN_USER_ID` | No | - |  user ID |
 
 #### **Instagram Business API**
 | Variable | Required | Default | Description |
@@ -189,10 +189,10 @@ TWITTER_ACCESS_TOKEN=your_twitter_access_token
 TWITTER_ACCESS_TOKEN_SECRET=your_twitter_access_token_secret
 TWITTER_BEARER_TOKEN=your_twitter_bearer_token
 
-# LinkedIn
-LINKEDIN_CLIENT_ID=your_linkedin_client_id
-LINKEDIN_CLIENT_SECRET=your_linkedin_client_secret
-LINKEDIN_ACCESS_TOKEN=your_linkedin_access_token
+# 
+LINKEDIN_CLIENT_ID=your__client_id
+LINKEDIN_CLIENT_SECRET=your__client_secret
+LINKEDIN_ACCESS_TOKEN=your__access_token
 
 # Instagram
 INSTAGRAM_APP_ID=your_instagram_app_id
@@ -377,7 +377,7 @@ python -c "from backend.core.config import get_settings; print(get_settings().di
 ### **Platform Documentation**
 - [OpenAI API Docs](https://platform.openai.com/docs)
 - [Twitter API v2 Docs](https://developer.twitter.com/en/docs/twitter-api)
-- [LinkedIn API Docs](https://docs.microsoft.com/en-us/linkedin/)
+- [ API Docs](https://docs.microsoft.com/en-us//)
 - [Facebook Graph API](https://developers.facebook.com/docs/graph-api)
 - [Auth0 Documentation](https://auth0.com/docs)
 

@@ -195,7 +195,7 @@ class TestDatabasePerformance:
                 user_id=test_user.user_id,
                 title=f"Query Test Content {i}",
                 content=f"Content for query performance testing {i}",
-                platform=["twitter", "linkedin", "facebook"][i % 3],
+                platform=["twitter", , "facebook"][i % 3],
                 status=["draft", "scheduled", "published"][i % 3],
                 performance_data={
                     "likes": i * 10,
@@ -268,7 +268,7 @@ class TestDatabasePerformance:
                 user_id=test_user.user_id,
                 title=f"Aggregation Test {i}",
                 content=f"Content {i}",
-                platform=["twitter", "linkedin"][i % 2],
+                platform=["twitter", ][i % 2],
                 status="published",
                 performance_data={
                     "likes": i * 5,

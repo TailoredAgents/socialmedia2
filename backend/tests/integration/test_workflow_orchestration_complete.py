@@ -79,7 +79,7 @@ class TestWorkflowOrchestrationIntegration:
                 "optimal_posting_time": datetime.utcnow() + timedelta(hours=2)
             },
             {
-                "platform": "linkedin",
+                "platform": ,
                 "content": "The landscape of artificial intelligence is evolving at an unprecedented pace. Recent developments in machine learning and automation are not just changing technology—they're reshaping entire industries.\n\nKey insights from recent research:\n🔹 AI diagnostic accuracy improved by 25%\n🔹 Automation reducing operational costs by 30%\n🔹 ML models achieving human-level performance in specific domains\n\nWhat challenges and opportunities do you see in AI adoption within your industry?\n\n#ArtificialIntelligence #MachineLearning #Innovation #Technology",
                 "content_type": "text",
                 "estimated_engagement": 6.5,
@@ -95,7 +95,7 @@ class TestWorkflowOrchestrationIntegration:
         with patch('backend.services.workflow_orchestration.research_service') as mock_research, \
              patch('backend.services.workflow_orchestration.content_automation_service') as mock_content, \
              patch('backend.services.workflow_orchestration.TwitterClient') as mock_twitter, \
-             patch('backend.services.workflow_orchestration.LinkedInClient') as mock_linkedin, \
+             patch('backend.services.workflow_orchestration.LinkedInClient') as mock_ \
              patch('backend.services.workflow_orchestration.get_db') as mock_get_db:
             
             # Setup mocks
@@ -114,7 +114,7 @@ class TestWorkflowOrchestrationIntegration:
             mock_twitter.return_value = mock_twitter_client
             
             mock_linkedin_client = MagicMock()
-            mock_linkedin_client.create_post.return_value = {"id": "post_456", "url": "https://linkedin.com/posts/456"}
+            mock_create_post.return_value = {"id": "post_456", "url": "https://linkedin.com/posts/456"}
             mock_linkedin.return_value = mock_linkedin_client
             
             # Mock database operations
@@ -127,7 +127,7 @@ class TestWorkflowOrchestrationIntegration:
                 "user_id": mock_user.id,
                 "workflow_type": "daily_content_cycle",
                 "research_topics": ["artificial intelligence", "automation"],
-                "target_platforms": ["twitter", "linkedin"],
+                "target_platforms": ["twitter", ],
                 "content_count": 2,
                 "schedule_immediately": False
             }
@@ -143,7 +143,7 @@ class TestWorkflowOrchestrationIntegration:
             assert result["workflow_type"] == "daily_content_cycle"
             assert len(result["steps_completed"]) >= 4  # research, generate, schedule, analyze
             assert result["content_generated"] == 2
-            assert result["platforms_targeted"] == ["twitter", "linkedin"]
+            assert result["platforms_targeted"] == ["twitter", ]
             
             # Verify research was executed
             mock_research.execute_research_automation.assert_called_once()
@@ -153,7 +153,7 @@ class TestWorkflowOrchestrationIntegration:
             
             # Verify social media posting
             mock_twitter_client.create_tweet.assert_called_once()
-            mock_linkedin_client.create_post.assert_called_once()
+            mock_create_post.assert_called_once()
             
             # Verify database operations
             assert mock_db_session.add.call_count >= 2  # Content items saved
@@ -169,7 +169,7 @@ class TestWorkflowOrchestrationIntegration:
                 "trend_score": 0.95,
                 "engagement_velocity": 450,  # mentions per hour
                 "sentiment": "excitement",
-                "platforms": ["twitter", "linkedin", "reddit"],
+                "platforms": ["twitter", , "reddit"],
                 "related_keywords": ["OpenAI", "GPT-5", "AI breakthrough"]
             }
         ]
@@ -262,7 +262,7 @@ class TestWorkflowOrchestrationIntegration:
                     "user_id": mock_user.id,
                     "goal_focus": "follower_growth",
                     "optimization_level": "high",
-                    "platforms": ["twitter", "linkedin"]
+                    "platforms": ["twitter", ]
                 },
                 user_id=mock_user.id
             )
@@ -283,18 +283,18 @@ class TestWorkflowOrchestrationIntegration:
     async def test_multi_platform_workflow_coordination(self, mock_user, mock_db_session, sample_generated_content):
         """Test coordinated multi-platform content workflow"""
         
-        platforms = ["twitter", "linkedin", "instagram", "facebook"]
+        platforms = ["twitter", , "instagram", "facebook"]
         
         with patch('backend.services.workflow_orchestration.content_automation_service') as mock_content, \
              patch('backend.services.workflow_orchestration.TwitterClient') as mock_twitter, \
-             patch('backend.services.workflow_orchestration.LinkedInClient') as mock_linkedin, \
+             patch('backend.services.workflow_orchestration.LinkedInClient') as mock_ \
              patch('backend.services.workflow_orchestration.instagram_client') as mock_instagram, \
              patch('backend.services.workflow_orchestration.facebook_client') as mock_facebook:
             
             # Setup content for all platforms
             multi_platform_content = [
                 {"platform": "twitter", "content": "Twitter optimized content", "id": "twitter_123"},
-                {"platform": "linkedin", "content": "LinkedIn professional content", "id": "linkedin_456"},
+                {"platform": , "content": "LinkedIn professional content", "id": "linkedin_456"},
                 {"platform": "instagram", "content": "Instagram visual content", "id": "instagram_789", "media_urls": ["img.jpg"]},
                 {"platform": "facebook", "content": "Facebook engaging content", "id": "facebook_101"}
             ]
@@ -433,7 +433,7 @@ class TestWorkflowOrchestrationIntegration:
             # Setup timing optimization
             optimal_times = {
                 "twitter": datetime.utcnow() + timedelta(hours=2),
-                "linkedin": datetime.utcnow() + timedelta(hours=1),
+                : datetime.utcnow() + timedelta(hours=1),
                 "instagram": datetime.utcnow() + timedelta(hours=3)
             }
             
@@ -451,7 +451,7 @@ class TestWorkflowOrchestrationIntegration:
                     "user_id": mock_user.id,
                     "optimize_timing": True,
                     "schedule_content": True,
-                    "platforms": ["twitter", "linkedin", "instagram"]
+                    "platforms": ["twitter", , "instagram"]
                 },
                 user_id=mock_user.id
             )

@@ -29,7 +29,7 @@ Lily AI Social Media is a sophisticated, enterprise-grade platform that leverage
 ### 🚀 Key Features
 
 - **🤖 AI-Powered Content Generation**: GPT-5 with built-in web search and enhanced reasoning
-- **📱 Multi-Platform Support**: Twitter/X, LinkedIn, Instagram, Facebook
+- **📱 Multi-Platform Support**: Twitter/X, , Instagram, Facebook
 - **📊 Advanced Analytics**: Real-time performance tracking and insights
 - **🔍 Enhanced Semantic Memory**: text-embedding-3-large with 3072-dimensional vectors for superior search accuracy
 - **⚡ Automated Workflows**: Intelligent content scheduling and optimization
@@ -125,14 +125,14 @@ Before setting up the project, you'll need accounts and API access for the follo
   - Basic tier: Suitable for small to medium applications
   - Pro tier: Full archive search and filtered stream access
 
-##### LinkedIn API
+#####  API
 - **Cost**: 
   - Basic API: Free (limited features, personal profile access)
-  - Marketing Developer Platform: Contact LinkedIn for pricing
+  - Marketing Developer Platform: Contact  for pricing
   - Company page posting: Requires partner approval
-  - Source: https://developers.linkedin.com/
+  - Source: https://developers..com/
 - **Requirements**:
-  - LinkedIn Developer Account
+  -  Developer Account
   - App review and approval process
   - Marketing Developer Platform access for advanced features
   - Business verification for company page access
@@ -337,9 +337,9 @@ TWITTER_ACCESS_SECRET=your_twitter_access_secret
 # ================================
 # LINKEDIN API CONFIGURATION
 # ================================
-LINKEDIN_CLIENT_ID=your_linkedin_client_id
-LINKEDIN_CLIENT_SECRET=your_linkedin_client_secret
-LINKEDIN_REDIRECT_URI=http://localhost:3000/callback/linkedin
+LINKEDIN_CLIENT_ID=your__client_id
+LINKEDIN_CLIENT_SECRET=your__client_secret
+LINKEDIN_REDIRECT_URI=http://localhost:3000/callback/
 
 # ================================
 # FACEBOOK/INSTAGRAM API CONFIGURATION
@@ -449,18 +449,18 @@ REACT_APP_AUTH0_AUDIENCE=https://your-api-identifier
    # - Essential for posting functionality
    ```
 
-#### LinkedIn API Setup
+####  API Setup
 
-1. **Create LinkedIn App**
+1. **Create  App**
    ```bash
-   # Visit https://www.linkedin.com/developers/
+   # Visit https://www..com/developers/
    # Create new app with company page
    # Request permissions: r_liteprofile, r_emailaddress, w_member_social
    ```
 
 2. **Verification Process**
    ```bash
-   # LinkedIn requires app review for posting capabilities
+   #  requires app review for posting capabilities
    # Provide detailed use case and demo video
    # Approval typically takes 5-10 business days
    ```
@@ -723,7 +723,7 @@ npm run dev
 Each platform has specific rate limits:
 
 - **Twitter**: 300 requests per 15 minutes (Basic tier)
-- **LinkedIn**: 100 requests per hour per user
+- ****: 100 requests per hour per user
 - **Instagram**: 200 requests per hour per user
 - **Facebook**: 600 requests per 10 minutes per user
 - **TikTok**: Very strict limits (varies by plan)
@@ -901,7 +901,7 @@ systemctl restart ai-social-media
 | **X/Twitter API** | $0 (100 reads, 500 writes/mo) | $200/month (15K reads, 50K writes/mo) | $5,000/month (1M reads, 300K writes/mo) | [X API Pricing](https://docs.x.com/x-api) |
 | **OpenAI API** | Pay-as-you-go | ~$20-100/month* | ~$100-1000/month* | [OpenAI Pricing](https://platform.openai.com/pricing) |
 | **Auth0** | Free (25K external users) | $0.10/user/month (B2C Essentials) | $0.24+/user/month (Professional) | [Auth0 Pricing](https://auth0.com/pricing) |
-| **LinkedIn API** | Free (basic personal) | Contact LinkedIn | Contact LinkedIn | [LinkedIn Developers](https://developers.linkedin.com/) |
+| ** API** | Free (basic personal) | Contact  | Contact  | [ Developers](https://developers..com/) |
 | **Facebook/Instagram API** | Free | Free | Free (with business verification) | [Meta for Developers](https://developers.facebook.com/docs/graph-api) |
 | **TikTok API** | Not available publicly | Enterprise partnerships only | Custom pricing | [TikTok Developers](https://developers.tiktok.com/) |
 | **Hosting (ex: DigitalOcean)** | $0 (local development) | $24/month (Basic Droplet) | $200+/month (Production) | [DigitalOcean Pricing](https://www.digitalocean.com/pricing) |

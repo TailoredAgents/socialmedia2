@@ -97,7 +97,7 @@ class TestContentAPI:
             user_id=test_user.user_id,
             title="Specific Content",
             content="This is specific content",
-            platform="linkedin",
+            platform=,
             status="published"
         )
         db_session.add(content)
@@ -114,7 +114,7 @@ class TestContentAPI:
         data = response.json()
         assert data["id"] == content.id
         assert data["title"] == "Specific Content"
-        assert data["platform"] == "linkedin"
+        assert data["platform"] == 
     
     def test_get_content_not_found(self, client, test_user, auth_headers):
         """Test retrieving non-existent content"""
@@ -260,7 +260,7 @@ class TestContentAPI:
             user_id=test_user.user_id,
             title="Published Content",
             content="Content with analytics",
-            platform="linkedin",
+            platform=,
             status="published",
             performance_data={
                 "likes": 150,
@@ -301,7 +301,7 @@ class TestContentAPI:
                 user_id=test_user.user_id,
                 title="Social Media Marketing",
                 content="Tips for social media marketing",
-                platform="linkedin",
+                platform=,
                 status="published"
             ),
             ContentItem(
@@ -336,7 +336,7 @@ class TestContentAPI:
                 user_id=test_user.user_id,
                 title=f"Published Content {i}",
                 content=f"Content body {i}",
-                platform="twitter" if i % 2 else "linkedin",
+                platform="twitter" if i % 2 else ,
                 status="published",
                 performance_data={
                     "likes": 100 + i * 20,

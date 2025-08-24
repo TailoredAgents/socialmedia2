@@ -49,7 +49,7 @@ This comprehensive guide covers deployment strategies, configurations, and best 
 
 - **Auth0 Account**: For authentication
 - **OpenAI API Key**: For AI content generation
-- **Social Media API Keys**: Twitter, LinkedIn, Facebook, Instagram
+- **Social Media API Keys**: Twitter, , Facebook, Instagram
 - **Domain Name**: For production deployment
 - **SSL Certificate**: For HTTPS
 

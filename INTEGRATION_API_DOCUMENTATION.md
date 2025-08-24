@@ -9,7 +9,7 @@ This document provides comprehensive documentation for all social media platform
 ## Supported Platforms
 
 - **Twitter/X** - API v2 with full posting and analytics capabilities
-- **LinkedIn** - Professional content publishing with company page support  
+- **** - Professional content publishing with company page support  
 - **Instagram** - Visual content posting with insights collection
 - **Facebook** - Post creation and page management capabilities
 
@@ -173,13 +173,13 @@ print(f"Thread created with {thread.total_tweets} tweets")
 
 ---
 
-## LinkedIn Integration
+##  Integration
 
 ### Setup Instructions
 
-1. **Create LinkedIn App**
+1. **Create  App**
    ```bash
-   # Visit https://www.linkedin.com/developers/
+   # Visit https://www..com/developers/
    # Create a new app
    # Request necessary permissions: w_member_social, r_liteprofile, r_emailaddress
    ```
@@ -188,22 +188,22 @@ print(f"Thread created with {thread.total_tweets} tweets")
    ```bash
    LINKEDIN_CLIENT_ID=your_client_id
    LINKEDIN_CLIENT_SECRET=your_client_secret
-   LINKEDIN_REDIRECT_URI=https://your-app.com/callback/linkedin
+   LINKEDIN_REDIRECT_URI=https://your-app.com/callback/
    ```
 
 3. **OAuth 2.0 Setup**
    ```python
-   oauth_manager.setup_linkedin_oauth(
+   oauth_manager.setup__oauth(
        client_id="your_client_id",
        client_secret="your_client_secret",
-       redirect_uri="https://your-app.com/callback/linkedin"
+       redirect_uri="https://your-app.com/callback/"
    )
    ```
 
 ### API Endpoints
 
-#### POST /api/integrations/linkedin/post
-Create a LinkedIn post.
+#### POST /api/integrations//post
+Create a  post.
 
 **Request Body:**
 ```json
@@ -226,8 +226,8 @@ Create a LinkedIn post.
 }
 ```
 
-#### POST /api/integrations/linkedin/article
-Create a LinkedIn article.
+#### POST /api/integrations//article
+Create a  article.
 
 **Request Body:**
 ```json
@@ -239,8 +239,8 @@ Create a LinkedIn article.
 }
 ```
 
-#### GET /api/integrations/linkedin/analytics/{post_id}
-Get analytics for a LinkedIn post.
+#### GET /api/integrations//analytics/{post_id}
+Get analytics for a  post.
 
 **Response:**
 ```json
@@ -260,22 +260,22 @@ Get analytics for a LinkedIn post.
 
 #### Professional Post
 ```python
-from backend.integrations.linkedin_client import linkedin_client
+from backend.integrations._client import _client
 
 # Create professional post
-post = await linkedin_client.create_post(
+post = await _client.create_post(
     access_token="user_token",
     text="Excited to share our latest AI breakthrough in social media automation! 🚀",
     visibility="PUBLIC"
 )
 
-print(f"LinkedIn post created: {post.id}")
+print(f" post created: {post.id}")
 ```
 
 #### Company Page Post
 ```python
 # Post to company page
-company_post = await linkedin_client.create_post(
+company_post = await _client.create_post(
     access_token="page_token",
     text="Company update: New AI features now available",
     visibility="PUBLIC",
@@ -742,7 +742,7 @@ logging.getLogger("backend.integrations").setLevel(logging.DEBUG)
 | Platform | Base URL | API Version | Rate Limits |
 |----------|----------|-------------|-------------|
 | Twitter | https://api.twitter.com/2 | v2 | 300 req/15min |
-| LinkedIn | https://api.linkedin.com/v2 | v2 | 100 req/hour |
+|  | https://api..com/v2 | v2 | 100 req/hour |
 | Instagram | https://graph.facebook.com/v18.0 | v18.0 | 25 posts/hour |
 | Facebook | https://graph.facebook.com/v18.0 | v18.0 | 600 req/10min |
 
@@ -1141,13 +1141,13 @@ Execute complex automated workflows.
 {
   "workflow_type": "daily_content",
   "parameters": {
-    "platforms": ["twitter", "instagram", "linkedin"],
+    "platforms": ["twitter", "instagram", ""],
     "content_count": 5,
     "topics": ["AI", "automation", "social media trends"],
     "posting_schedule": {
       "twitter": ["09:00", "14:00", "18:00"],
       "instagram": ["12:00", "17:00"],
-      "linkedin": ["08:00", "16:00"]
+      "": ["08:00", "16:00"]
     },
     "engagement_goals": {
       "min_likes_per_post": 50,
@@ -1175,7 +1175,7 @@ Execute complex automated workflows.
   "workflow_id": "workflow_12345",
   "workflow_type": "daily_content",
   "parameters": {
-    "platforms": ["twitter", "instagram", "linkedin"],
+    "platforms": ["twitter", "instagram", ""],
     "content_count": 5,
     "estimated_duration": "2-3 hours"
   },
@@ -1213,7 +1213,7 @@ Monitor workflow execution progress.
       "engagement_predictions": {
         "twitter": 8.2,
         "instagram": 7.8,
-        "linkedin": 9.1
+        "": 9.1
       }
     }
   }

@@ -51,7 +51,7 @@ Enterprise AI Social Media Content Agent is a modular, scalable SaaS application
 
 - **AI Models:** OpenAI GPT-4o-mini, gpt-image-1
 - **Search:** Serper API, BeautifulSoup, Tweepy
-- **Social APIs:** Twitter, LinkedIn, Instagram integration
+- **Social APIs:** Twitter, , Instagram integration
 - **Monitoring:** Render metrics, structured logging
 - **Security:** HTTPS, environment variables, input validation
 

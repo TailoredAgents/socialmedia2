@@ -132,8 +132,8 @@ async def register_user(request: RegisterRequest, response: Response, db: Sessio
         brand_name=request.full_name or request.username,
         brand_voice="professional",
         content_frequency=3,
-        preferred_platforms=["twitter", "linkedin"],
-        posting_times={"twitter": "09:00", "linkedin": "10:00"},
+        preferred_platforms=["twitter", "instagram"],
+        posting_times={"twitter": "09:00", "instagram": "10:00"},
         creativity_level=0.7,
         enable_images=True,
         enable_repurposing=True

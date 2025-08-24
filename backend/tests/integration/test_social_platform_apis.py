@@ -47,13 +47,13 @@ class TestSocialPlatformConnectionAPI:
         client.app.dependency_overrides[get_db] = override_get_db
         client.app.dependency_overrides[get_current_user] = lambda: test_user_with_org
         
-        with patch('backend.integrations.linkedin_client.LinkedInAPIClient') as mock_linkedin:
+        with patch('backend.integrations.LinkedInAPIClient') as mock_linkedin:
             # Mock OAuth URL generation
             mock_linkedin_instance = Mock()
             mock_linkedin_instance.get_authorization_url.return_value = "https://linkedin.com/oauth/v2/authorization?client_id=test"
             mock_linkedin.return_value = mock_linkedin_instance
             
-            response = client.post("/api/social/connect", json={"platform": "linkedin"})
+            response = client.post("/api/social/connect", json={"platform": })
             
             assert response.status_code == 200
             data = response.json()
@@ -159,12 +159,12 @@ class TestSocialPlatformPostingAPI:
         client.app.dependency_overrides[get_current_user] = lambda: test_user_with_org
         
         post_data = {
-            "platform": "linkedin",
+            "platform": ,
             "content": "Professional update for LinkedIn audience",
             "scheduled_for": None
         }
         
-        with patch('backend.integrations.linkedin_client.LinkedInAPIClient') as mock_linkedin:
+        with patch('backend.integrations.LinkedInAPIClient') as mock_linkedin:
             # Mock successful post
             mock_linkedin_instance = Mock()
             mock_linkedin_instance.create_post.return_value = {
@@ -178,7 +178,7 @@ class TestSocialPlatformPostingAPI:
             
             assert response.status_code == 200
             data = response.json()
-            assert data["platform"] == "linkedin"
+            assert data["platform"] == 
             assert data["status"] == "posted"
     
     def test_scheduled_post(self, client, test_user_with_org, override_get_db):

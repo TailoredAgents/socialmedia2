@@ -288,7 +288,7 @@ class TestGoalsAPI:
             },
             "goals_by_platform": {
                 "twitter": 3,
-                "linkedin": 2
+                : 2
             }
         }
         
@@ -315,7 +315,7 @@ class TestGoalsAPI:
             },
             {
                 "type": "engagement",
-                "platform": "linkedin",
+                "platform": ,
                 "suggested_target": 2.5,
                 "reason": "To improve content performance"
             }

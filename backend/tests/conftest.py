@@ -143,7 +143,7 @@ def mock_social_media_apis():
         mocks['twitter'] = mock_twitter_instance
         
         # LinkedIn API mock
-        with patch('backend.integrations.linkedin_client.LinkedInAPIClient') as mock_linkedin:
+        with patch('backend.integrations.LinkedInAPIClient') as mock_linkedin:
             mock_linkedin_instance = Mock()
             mock_linkedin_instance.create_post.return_value = {'id': 'post_456', 'created_at': '2025-07-25T10:00:00Z'}
             mock_linkedin_instance.get_post_metrics.return_value = {'likes': 15, 'comments': 3, 'shares': 8}

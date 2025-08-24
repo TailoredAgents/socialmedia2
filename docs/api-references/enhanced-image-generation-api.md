@@ -10,7 +10,7 @@ This document describes the enhanced image generation capabilities integrated in
 ## 🚀 **New Features Added**
 
 ### **1. Enhanced Image Generation** `/api/content/generate-image`
-- **Platform-optimized prompts** for Twitter, LinkedIn, Instagram, Facebook, TikTok
+- **Platform-optimized prompts** for Twitter, , Instagram, Facebook, TikTok
 - **Quality presets**: draft, standard, premium, story, banner
 - **Tone control**: professional, casual, humorous, inspiring, educational
 - **Context awareness**: content and industry context integration
@@ -40,7 +40,7 @@ This document describes the enhanced image generation capabilities integrated in
 ```json
 {
   "prompt": "A modern office workspace with diverse team collaboration",
-  "platform": "linkedin",
+  "platform": "",
   "quality_preset": "premium",
   "content_context": "Announcing our new flexible work policy",
   "industry_context": "Technology startup",
@@ -56,14 +56,14 @@ This document describes the enhanced image generation capabilities integrated in
   "response_id": "resp_xyz789",
   "image_base64": "iVBORw0KGgoAAAANSUhEUgAA...",
   "image_data_url": "data:image/png;base64,iVBORw0KGgo...",
-  "filename": "linkedin_20250104_143022_abc12345.png",
+  "filename": "_20250104_143022_abc12345.png",
   "prompt": {
     "original": "A modern office workspace...",
     "enhanced": "Create a high-quality image: A modern office workspace...",
     "revised": "A modern, well-lit office workspace featuring..."
   },
   "metadata": {
-    "platform": "linkedin",
+    "platform": "",
     "quality_preset": "premium",
     "model": "gpt-image-1",
     "generated_at": "2025-01-04T14:30:22Z"
@@ -79,7 +79,7 @@ This document describes the enhanced image generation capabilities integrated in
 {
   "edit_prompt": "Make the lighting warmer and add plants",
   "previous_response_id": "resp_xyz789",
-  "platform": "linkedin",
+  "platform": "",
   "quality_preset": "premium"
 }
 ```
@@ -91,7 +91,7 @@ This document describes the enhanced image generation capabilities integrated in
 ```json
 {
   "content_text": "Exciting news! We're launching our new product line",
-  "platforms": ["twitter", "instagram", "linkedin"],
+  "platforms": ["twitter", "instagram", ""],
   "image_count": 2,
   "industry_context": "E-commerce fashion"
 }
@@ -102,7 +102,7 @@ This document describes the enhanced image generation capabilities integrated in
 {
   "status": "success",
   "content_text": "Exciting news! We're launching...",
-  "platforms": ["twitter", "instagram", "linkedin"],
+  "platforms": ["twitter", "instagram", ""],
   "images": {
     "twitter": [
       {
@@ -117,7 +117,7 @@ This document describes the enhanced image generation capabilities integrated in
       }
     ],
     "instagram": [...],
-    "linkedin": [...]
+    "": [...]
   }
 }
 ```
@@ -163,7 +163,7 @@ data: {"status": "completed", "final_image_base64": "...", "completed_at": "2025
 - 16:9 or square aspect ratio
 - High contrast for mobile viewing
 
-### **LinkedIn**
+### ****
 - Professional, corporate aesthetics
 - Business-appropriate styling
 - High-quality, polished appearance
@@ -212,7 +212,7 @@ const eventSource = new EventSource('/api/images/stream', {
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     prompt: "Modern workspace design",
-    platform: "linkedin",
+    platform: "",
     quality_preset: "premium"
   })
 });
@@ -238,7 +238,7 @@ import base64
 response = requests.post('http://localhost:8000/api/content/generate-image', 
   json={
     "prompt": "Professional team meeting",
-    "platform": "linkedin", 
+    "platform": "", 
     "quality_preset": "premium",
     "tone": "professional"
   },

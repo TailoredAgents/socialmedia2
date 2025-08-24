@@ -27,7 +27,7 @@ The production deployment consists of:
 2. **Auth0 Configuration**: For user authentication
 3. **Social Media APIs**:
    - Twitter API v2 credentials
-   - LinkedIn API credentials
+   -  API credentials
    - Instagram Basic Display API
    - Facebook Graph API
 

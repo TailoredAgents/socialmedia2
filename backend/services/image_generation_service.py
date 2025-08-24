@@ -31,10 +31,10 @@ class ImageGenerationService:
         # Platform-specific optimization prompts
         self.platform_styles = {
             "twitter": "modern, clean, minimalist design suitable for Twitter posts, 16:9 or square aspect ratio",
-            "linkedin": "professional, corporate, business-appropriate design with high-quality aesthetics",
             "instagram": "vibrant, visually stunning, Instagram-optimized design with excellent composition",
             "facebook": "engaging, social media friendly, Facebook-style design that captures attention",
-            "tiktok": "trendy, youthful, dynamic design perfect for TikTok content with bold visuals"
+            "tiktok": "trendy, youthful, dynamic design perfect for TikTok content with bold visuals",
+            "youtube": "professional thumbnail design with bold text and engaging visuals"
         }
         
         # Quality presets

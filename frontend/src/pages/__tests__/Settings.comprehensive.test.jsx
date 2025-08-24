@@ -60,7 +60,7 @@ describe('Settings Page', () => {
     },
     integrations: {
       twitter: { connected: true, username: '@johndoe' },
-      linkedin: { connected: true, username: 'John Doe' },
+       { connected: true, username: 'John Doe' },
       instagram: { connected: false, username: null },
       facebook: { connected: true, username: 'John Doe' },
     }

@@ -902,7 +902,7 @@ class SocialMediaUser(HttpUser):
         content_data = {
             "title": f"Test Content {random.randint(1, 1000)}",
             "content": "This is test content for load testing",
-            "platform": random.choice(["twitter", "linkedin", "facebook"])
+            "platform": random.choice(["twitter", "", "facebook"])
         }
         
         self.client.post(

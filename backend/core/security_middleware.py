@@ -335,7 +335,7 @@ def get_cors_middleware_config(environment: str = "production"):
         }
 
 def get_trusted_host_middleware(environment: str = "production"):
-    """Get trusted host middleware for production"""
+    """Get trusted host middleware configuration for production"""
     
     if environment.lower() == "development":
         # Development: Allow all hosts
@@ -350,7 +350,8 @@ def get_trusted_host_middleware(environment: str = "production"):
         allowed_hosts = ["localhost", "127.0.0.1", "*.herokuapp.com", "*.render.com"]
         logger.warning("No ALLOWED_HOSTS specified, using default patterns")
     
-    return TrustedHostMiddleware(allowed_hosts=allowed_hosts)
+    # Return configuration dict for middleware, not the class itself
+    return {"allowed_hosts": allowed_hosts}
 
 def setup_security_middleware(app, environment: str = "production"):
     """Setup all security middleware for the application"""
@@ -377,9 +378,9 @@ def setup_security_middleware(app, environment: str = "production"):
         app.add_middleware(CORSMiddleware, **cors_config)
     
     # 5. Trusted hosts (production only)
-    trusted_host_middleware = get_trusted_host_middleware(environment)
-    if trusted_host_middleware:
-        app.add_middleware(TrustedHostMiddleware, **trusted_host_middleware.__dict__)
+    trusted_host_config = get_trusted_host_middleware(environment)
+    if trusted_host_config:
+        app.add_middleware(TrustedHostMiddleware, **trusted_host_config)
     
     logger.info("Security middleware setup completed")
     

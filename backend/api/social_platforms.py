@@ -18,7 +18,6 @@ from backend.auth.dependencies import get_current_user
 from backend.core.token_encryption import get_token_manager
 from backend.core.audit_logger import log_content_event, AuditEventType
 from backend.integrations.twitter_client import twitter_client, TwitterAPIError
-from backend.integrations.linkedin_client import linkedin_client, LinkedInAPIError
 from backend.integrations.instagram_client import instagram_client, InstagramAPIError
 from backend.services.notification_service import (
     trigger_post_published_notification,
@@ -87,7 +86,7 @@ async def initiate_oauth_connection(
     Returns:
         OAuth authorization URL for user to complete connection
     """
-    if platform not in ["twitter", "linkedin", "instagram"]:
+    if platform not in ["twitter", "instagram"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Unsupported platform: {platform}"
@@ -100,8 +99,6 @@ async def initiate_oauth_connection(
         
         if platform == "twitter":
             auth_url, oauth_state = twitter_client.get_oauth_authorization_url(redirect_uri, state)
-        elif platform == "linkedin":
-            auth_url, oauth_state = linkedin_client.get_oauth_authorization_url(redirect_uri, state)
         elif platform == "instagram":
             auth_url, oauth_state = instagram_client.get_oauth_authorization_url(redirect_uri, state)
         
@@ -176,10 +173,6 @@ async def oauth_callback(
             
             # Get user info to store connection details
             user_info = twitter_client.get_user_info(token_data["access_token"])
-            
-        elif platform == "linkedin":
-            token_data = linkedin_client.exchange_code_for_tokens(code, redirect_uri)
-            user_info = linkedin_client.get_user_info(token_data["access_token"])
             
         elif platform == "instagram":
             token_data = instagram_client.exchange_code_for_tokens(code, redirect_uri)
@@ -393,8 +386,6 @@ async def validate_platform_connection(
         # Validate connection based on platform
         if platform == "twitter":
             validation_result = twitter_client.validate_connection(access_token)
-        elif platform == "linkedin":
-            validation_result = linkedin_client.validate_connection(access_token)
         elif platform == "instagram":
             validation_result = instagram_client.validate_connection(access_token)
         else:
@@ -492,12 +483,6 @@ async def post_to_platforms(
                     post_request.content, 
                     current_user.id,
                     post_request.media_urls
-                )
-            elif platform == "linkedin":
-                post_result = linkedin_client.post_update(
-                    access_token,
-                    post_request.content,
-                    current_user.id
                 )
             elif platform == "instagram":
                 if not post_request.media_urls or len(post_request.media_urls) == 0:

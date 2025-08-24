@@ -435,3 +435,6 @@ class VectorStore:
             self._save_all()
         except:
             pass  # Ignore errors during cleanup
+
+# Global instance
+vector_store = VectorStore()

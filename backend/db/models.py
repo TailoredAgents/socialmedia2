@@ -10,6 +10,8 @@ from backend.db.multi_tenant_models import (
     Organization, Team, Role, Permission, OrganizationInvitation, 
     UserOrganizationRole, user_teams, role_permissions
 )
+from backend.db.admin_models import RegistrationKey
+from backend.db.user_credentials import UserCredentials
 
 class User(Base):
     __tablename__ = "users"
@@ -50,7 +52,7 @@ class User(Base):
     # Multi-tenancy relationships
     default_organization = relationship("Organization", foreign_keys=[default_organization_id])
     teams = relationship("Team", secondary="user_teams", back_populates="members")
-    organization_roles = relationship("UserOrganizationRole", back_populates="user")
+    organization_roles = relationship("UserOrganizationRole", foreign_keys="UserOrganizationRole.user_id", back_populates="user")
     
     # Organization ownership and invitations
     owned_organizations = relationship("Organization", foreign_keys="Organization.owner_id")

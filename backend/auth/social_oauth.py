@@ -46,15 +46,6 @@ class SocialOAuthManager:
                 "requires_pkce": True,
                 "api_base": "https://api.twitter.com/2"
             },
-            "linkedin": {
-                "client_id": settings.linkedin_client_id,
-                "client_secret": settings.linkedin_client_secret,
-                "auth_url": "https://www.linkedin.com/oauth/v2/authorization",
-                "token_url": "https://www.linkedin.com/oauth/v2/accessToken",
-                "scope": "r_liteprofile r_emailaddress w_member_social",
-                "requires_pkce": False,
-                "api_base": "https://api.linkedin.com/v2"
-            },
             "instagram": {
                 "client_id": settings.facebook_app_id,  # Instagram uses Facebook OAuth
                 "client_secret": settings.facebook_app_secret,

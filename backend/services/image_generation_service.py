@@ -25,8 +25,15 @@ class ImageGenerationService:
     """
     
     def __init__(self):
-        self.client = OpenAI(api_key=settings.openai_api_key)
-        self.async_client = AsyncOpenAI(api_key=settings.openai_api_key)
+        # Use xAI Grok for image generation
+        self.client = OpenAI(
+            api_key=settings.xai_api_key,
+            base_url="https://api.x.ai/v1"
+        )
+        self.async_client = AsyncOpenAI(
+            api_key=settings.xai_api_key,
+            base_url="https://api.x.ai/v1"
+        )
         
         # Platform-specific optimization prompts
         self.platform_styles = {
@@ -128,41 +135,22 @@ class ImageGenerationService:
             if custom_options:
                 tool_options.update(custom_options)
             
-            # Use GPT Image 1 via chat completions with image generation tool
+            # Use Grok 2 Image Generation via xAI API
             response = await asyncio.to_thread(
-                self.client.chat.completions.create,
-                model="gpt-image-1",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": f"Generate an image: {enhanced_prompt}"
-                    }
-                ],
-                tools=[tool_options],
-                max_tokens=1000
+                self.client.images.generate,
+                model="grok-2-image",
+                prompt=enhanced_prompt,
+                n=1,
+                response_format="b64_json"  # Get base64 directly from Grok 2
             )
             
-            # Extract image from tool calls
-            if not response.choices or not response.choices[0].message.tool_calls:
-                raise Exception("No image generation tool call found")
+            # Extract base64 image data from response  
+            if not response.data or len(response.data) == 0:
+                raise Exception("No image data returned from Grok 2")
             
-            tool_call = response.choices[0].message.tool_calls[0]
-            if tool_call.type != "image_generation":
-                raise Exception("Expected image generation tool call")
-            
-            # Get base64 image data from tool call result
-            image_base64 = tool_call.function.arguments.get("image_data")
+            image_base64 = response.data[0].b64_json
             if not image_base64:
-                # Alternative extraction method for GPT Image 1
-                import json
-                try:
-                    tool_result = json.loads(tool_call.function.arguments)
-                    image_base64 = tool_result.get("image", tool_result.get("image_data", tool_result.get("result")))
-                except:
-                    raise Exception("Could not extract image data from GPT Image 1 response")
-            
-            if not image_base64:
-                raise Exception("No image data returned from GPT Image 1")
+                raise Exception("No base64 image data in Grok 2 response")
             
             # Generate unique filename and ID
             image_id = str(uuid.uuid4())
@@ -179,13 +167,13 @@ class ImageGenerationService:
                 "prompt": {
                     "original": prompt,
                     "enhanced": enhanced_prompt,
-                    "revised": enhanced_prompt  # GPT Image 1 doesn't revise prompts
+                    "revised": enhanced_prompt  # Grok 2 doesn't revise prompts
                 },
                 "metadata": {
                     "platform": platform,
                     "quality_preset": quality_preset,
                     "tool_options": tool_options,
-                    "model": "gpt-image-1",
+                    "model": "grok-2-image",
                     "generated_at": datetime.utcnow().isoformat(),
                     "content_context": content_context,
                     "industry_context": industry_context,
@@ -289,7 +277,7 @@ class ImageGenerationService:
                     "platform": platform,
                     "quality_preset": quality_preset,
                     "tool_options": tool_options,
-                    "model": "gpt-image-1",
+                    "model": "grok-2-image",
                     "edited_at": datetime.utcnow().isoformat(),
                     "previous_response_id": previous_response_id,
                     "previous_image_id": previous_image_id

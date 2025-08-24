@@ -1,6 +1,9 @@
 """
-Facebook Graph API Integration Client
+Facebook Graph API Integration Client (Updated for Meta Graph API v22.0)
 Integration Specialist Component - Complete Facebook API integration for comprehensive social content
+
+UPDATED 2025: Now uses unified Meta Graph API configuration.
+Uses meta_app_id, meta_app_secret, and meta_access_token from settings.
 """
 import asyncio
 import logging
@@ -116,8 +119,13 @@ class FacebookAPIClient:
     """
     
     def __init__(self):
-        """Initialize Facebook API client"""
-        self.api_base = "https://graph.facebook.com/v18.0"
+        """Initialize Facebook API client with unified Meta Graph API v22.0"""
+        # Use unified Meta configuration (2025 approach)
+        self.app_id = settings.meta_app_id or settings.facebook_app_id  # Fallback to legacy
+        self.app_secret = settings.meta_app_secret or settings.facebook_app_secret
+        self.access_token = settings.meta_access_token or settings.facebook_access_token
+        self.api_version = settings.meta_api_version or "v22.0"
+        self.api_base = f"https://graph.facebook.com/{self.api_version}"
         
         # API endpoints
         self.endpoints = {

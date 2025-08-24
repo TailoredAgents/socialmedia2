@@ -556,3 +556,24 @@ if __name__ == "__main__":
     ):
         # AI content generation code
         pass
+
+# Convenience functions for common audit events
+_default_audit_logger = None
+
+def get_audit_logger():
+    """Get or create default audit logger instance"""
+    global _default_audit_logger
+    if _default_audit_logger is None:
+        _default_audit_logger = AuditLogger()
+    return _default_audit_logger
+
+def log_content_event(event_type: AuditEventType, user_id: str = None, 
+                     resource: str = None, details: Dict[str, Any] = None):
+    """Convenience function for logging content-related events"""
+    logger = get_audit_logger()
+    return logger.log_event(
+        event_type=event_type,
+        user_id=user_id,
+        resource=resource,
+        details=details
+    )

@@ -14,11 +14,10 @@ from sqlalchemy.orm import Session
 
 from backend.core.config import get_settings
 from backend.db.database import get_db
-from backend.db.models import ContentItem, ResearchData, TrendingTopic
+from backend.db.models import ContentItem, ResearchData
 from backend.integrations.twitter_client import twitter_client
 from backend.integrations.instagram_client import instagram_client
 from backend.integrations.facebook_client import facebook_client
-from backend.integrations.linkedin_client import linkedin_client
 from backend.core.vector_store import vector_store
 
 settings = get_settings()

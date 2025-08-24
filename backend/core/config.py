@@ -1,6 +1,10 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 class Settings(BaseSettings):
     # Environment
@@ -9,6 +13,7 @@ class Settings(BaseSettings):
     
     # API Keys
     openai_api_key: str = ""
+    xai_api_key: str = ""
     serper_api_key: str = ""
     
     # Database
@@ -17,6 +22,7 @@ class Settings(BaseSettings):
     
     # JWT (Updated with proper naming)
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
+    encryption_key: str = os.getenv("ENCRYPTION_KEY", "your-32-byte-encryption-key-change-this")
     jwt_secret: str = "your-secret-key-change-this"
     jwt_algorithm: str = "HS256"
     jwt_access_ttl_seconds: int = 900  # 15 minutes
@@ -27,7 +33,11 @@ class Settings(BaseSettings):
     celery_broker_url: str = ""  # Will default to redis_url if empty
     celery_result_backend: str = ""  # Will default to redis_url if empty
     
-    # Social Media APIs - Twitter/X
+    # Social Media APIs - Twitter/X OAuth 2.0 (Primary)
+    twitter_client_id: str = ""
+    twitter_client_secret: str = ""
+    
+    # Twitter API (Legacy - for backwards compatibility)
     twitter_api_key: str = ""
     twitter_api_secret: str = ""
     twitter_access_token: str = ""
@@ -36,17 +46,24 @@ class Settings(BaseSettings):
     
     # LinkedIn - REMOVED (too restrictive API)
     
-    # Instagram/Facebook
-    instagram_app_id: str = ""
-    instagram_app_secret: str = ""
-    instagram_access_token: str = ""
-    instagram_business_id: str = ""
+    # Meta Graph API (2025) - Unified Facebook/Instagram
+    meta_app_id: str = ""
+    meta_app_secret: str = ""
+    meta_access_token: str = ""
+    meta_api_version: str = "v22.0"
     
-    facebook_app_id: str = ""
-    facebook_app_secret: str = ""
-    facebook_access_token: str = ""
+    # Facebook Page
     facebook_page_id: str = ""
     facebook_page_access_token: str = ""
+    
+    # Instagram Business Account
+    instagram_business_account_id: str = ""
+    
+    # Legacy (backwards compatibility)
+    facebook_app_id: str = ""  # Maps to meta_app_id
+    facebook_app_secret: str = ""  # Maps to meta_app_secret
+    instagram_app_id: str = ""  # Maps to meta_app_id
+    instagram_app_secret: str = ""  # Maps to meta_app_secret
     
     # Server
     port: int = 8000

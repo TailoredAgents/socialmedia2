@@ -28,10 +28,10 @@ Lily AI Social Media is a sophisticated, enterprise-grade platform that leverage
 
 ### 🚀 Key Features
 
-- **🤖 AI-Powered Content Generation**: CrewAI multi-agent system with GPT-4 integration
+- **🤖 AI-Powered Content Generation**: GPT-5 with built-in web search and enhanced reasoning
 - **📱 Multi-Platform Support**: Twitter/X, LinkedIn, Instagram, Facebook
 - **📊 Advanced Analytics**: Real-time performance tracking and insights
-- **🔍 Semantic Memory**: FAISS vector search with 40K+ embedding capacity
+- **🔍 Enhanced Semantic Memory**: text-embedding-3-large with 3072-dimensional vectors for superior search accuracy
 - **⚡ Automated Workflows**: Intelligent content scheduling and optimization
 - **🎯 Goal Tracking**: Comprehensive goal management with progress monitoring
 - **🛡️ Enterprise Security**: Auth0 + JWT authentication with role-based access
@@ -316,7 +316,12 @@ JWT_SECRET_KEY=your-jwt-secret-key
 # AI SERVICES
 # ================================
 OPENAI_API_KEY=sk-your-openai-api-key
-OPENAI_MODEL=gpt-4
+OPENAI_MODEL=gpt-5
+OPENAI_RESEARCH_MODEL=gpt-5-mini
+OPENAI_DEEP_RESEARCH_MODEL=gpt-5
+OPENAI_CATEGORIZATION_MODEL=gpt-4.1-mini
+OPENAI_IMAGE_MODEL=gpt-image-1
+OPENAI_EMBEDDING_MODEL=text-embedding-3-large
 OPENAI_MAX_TOKENS=4000
 CREW_AI_API_KEY=your-crew-ai-key
 

@@ -51,9 +51,9 @@ class EmbeddingService:
         """Initialize the embedding service"""
         self.openai_client = OpenAI(api_key=settings.openai_api_key)
         self.async_client = AsyncOpenAI(api_key=settings.openai_api_key)
-        self.model_name = "text-embedding-ada-002"
-        self.dimension = 1536
-        self.max_tokens = 8192  # Maximum tokens for ada-002
+        self.model_name = "text-embedding-3-large"
+        self.dimension = 3072  # text-embedding-3-large uses 3072 dimensions
+        self.max_tokens = 8192  # Maximum tokens for text-embedding-3-large
         self.batch_size = 100   # Maximum batch size for OpenAI API
         self.max_retries = 3
         self.base_delay = 1.0   # Base delay for exponential backoff

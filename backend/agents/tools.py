@@ -140,7 +140,7 @@ class OpenAITool:
     def __init__(self):
         self.client = OpenAI(api_key=settings.openai_api_key)
     
-    def generate_text(self, prompt: str, model: str = "gpt-4o-mini", max_tokens: int = 500) -> str:
+    def generate_text(self, prompt: str, model: str = "gpt-5-mini", max_tokens: int = 500) -> str:
         """Generate text using OpenAI"""
         try:
             response = self.client.chat.completions.create(
@@ -180,7 +180,7 @@ Please provide:
 Format your response as JSON with keys: content, title, hashtags"""
 
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-5-mini",
                 messages=[{"role": "user", "content": context_prompt}],
                 max_tokens=800,
                 temperature=0.7
@@ -291,7 +291,7 @@ class FAISSMemoryTool:
         """Create embedding for text"""
         try:
             response = self.openai_client.embeddings.create(
-                model="text-embedding-ada-002",
+                model="text-embedding-3-large",
                 input=text
             )
             return response.data[0].embedding

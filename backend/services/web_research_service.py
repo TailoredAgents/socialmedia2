@@ -212,13 +212,14 @@ class WebResearchService:
             """
             
             response = client.chat.completions.create(
-                model="gpt-4o-mini",  # Use a faster, cheaper model for web search
+                model="gpt-5-mini",  # Use GPT-5 mini with built-in web search
                 messages=[
-                    {"role": "system", "content": "You are a web research assistant that provides accurate, factual information. Only include information you're confident about."},
+                    {"role": "system", "content": "You are a web research assistant with real-time web search capabilities. Provide current, accurate information with proper citations."},
                     {"role": "user", "content": search_prompt}
                 ],
+                tools=[{"type": "web_search"}],  # Enable built-in web search
                 temperature=0.1,  # Low temperature for factual responses
-                max_tokens=1000
+                max_tokens=1500
             )
             
             # Parse the JSON response

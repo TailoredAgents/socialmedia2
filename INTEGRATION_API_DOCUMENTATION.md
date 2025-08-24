@@ -1109,7 +1109,7 @@ Generate AI-optimized content for specific platforms.
   "engagement_prediction": 8.5,
   "content_id": 12348,
   "generation_details": {
-    "model": "openai-gpt-4",
+    "model": "openai-gpt-5",
     "confidence_score": 0.92,
     "optimization_factors": [
       "platform_best_practices",

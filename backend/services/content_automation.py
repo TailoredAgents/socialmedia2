@@ -415,11 +415,12 @@ class ContentGenerationAutomation:
             """
             
             response = await openai.ChatCompletion.acreate(
-                model="gpt-3.5-turbo",
+                model="gpt-5",
                 messages=[
-                    {"role": "system", "content": "You are an expert social media content creator."},
+                    {"role": "system", "content": "You are an expert social media content creator with web search capabilities. Use current information when relevant."},
                     {"role": "user", "content": prompt}
                 ],
+                tools=[{"type": "web_search"}] if research_context else None,  # Enable web search when research context is available
                 max_tokens=min(max_chars // 3, 500),
                 temperature=0.7
             )

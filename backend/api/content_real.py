@@ -262,17 +262,18 @@ async def generate_content(request: ContentGenerationRequest):
         """
         
         response = await client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-5",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
-            max_tokens=400
+            max_tokens=400,
+            tools=[{"type": "web_search"}] if request.platform in ['linkedin', 'twitter'] else None  # Enable web search for research-heavy platforms
         )
         
         generated_content = response.choices[0].message.content.strip()
         
         # Check character limit compliance
         if len(generated_content) > max_chars:
-            logger.warning(f"⚠️ GPT-4 exceeded character limit: {len(generated_content)} > {max_chars} for {request.platform}")
+            logger.warning(f"⚠️ GPT-5 exceeded character limit: {len(generated_content)} > {max_chars} for {request.platform}")
             logger.warning(f"Generated content that exceeded limit: {generated_content[:100]}...")
             
             # Instead of truncating, try one more time with an even stricter prompt
@@ -290,7 +291,7 @@ async def generate_content(request: ContentGenerationRequest):
             """
             
             retry_response = await client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-5",
                 messages=[{"role": "user", "content": stricter_prompt}],
                 temperature=0.5,
                 max_tokens=200  # Reduced tokens for shorter content

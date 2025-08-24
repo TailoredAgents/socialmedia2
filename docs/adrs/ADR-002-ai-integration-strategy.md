@@ -11,7 +11,7 @@ The AI Social Media Content Agent required sophisticated AI capabilities for con
 
 ## Decision
 
-We implemented a **multi-layered AI integration strategy** combining CrewAI for multi-agent workflows, OpenAI GPT-4 for content generation, and FAISS for vector-based semantic search.
+We implemented a **multi-layered AI integration strategy** leveraging GPT-5 with built-in web search, GPT-5 mini for research operations, and text-embedding-3-large for enhanced semantic understanding.
 
 ### AI Architecture Components:
 
@@ -24,23 +24,23 @@ OptimizerAgent        # Performance optimization
 AnalystAgent          # Data analysis and insights
 ```
 
-**2. OpenAI GPT-4 Integration:**
-- **Content Generation:** Platform-optimized social media posts
-- **Brand Voice Consistency:** Maintaining consistent tone and style
-- **Trend Analysis:** Understanding and incorporating current trends
-- **Performance Optimization:** AI-driven content improvement suggestions
+**2. OpenAI GPT-5 Integration:**
+- **Content Generation:** GPT-5 with built-in web search for current, high-quality posts
+- **Research Operations:** GPT-5 mini for efficient trend analysis and data gathering
+- **Deep Analysis:** GPT-5 with enhanced reasoning for comprehensive insights
+- **Brand Voice Consistency:** Advanced context understanding for consistent messaging
 
-**3. FAISS Vector Search System:**
-- **Semantic Search:** Find similar content across 40K+ items
-- **Content Discovery:** Identify related posts and themes
-- **Performance Analysis:** Vector-based similarity matching
-- **Memory System:** Long-term content and interaction memory
+**3. Enhanced Vector Search System:**
+- **Semantic Search:** text-embedding-3-large with 3072-dimensional vectors for superior accuracy
+- **Content Discovery:** Advanced similarity matching across 40K+ items
+- **Performance Analysis:** Enhanced vector-based content relationships
+- **Memory System:** High-precision long-term content and interaction memory
 
-**4. Custom AI Tools and Utilities:**
-- **Platform-Specific Optimization:** Tailored content for each social platform
-- **Hashtag Generation:** AI-powered hashtag recommendations
-- **Engagement Prediction:** ML models for engagement forecasting
-- **Content Scoring:** AI-based quality and performance scoring
+**4. Advanced AI Tools and Capabilities:**
+- **Real-time Research:** Built-in web search eliminates external dependencies
+- **Image Generation:** Direct GPT Image 1 integration for visual content
+- **Content Categorization:** GPT-4.1 mini for efficient classification
+- **Autonomous Operations:** GPT-5 mini for intelligent scheduling and posting
 
 ## Rationale
 
@@ -98,17 +98,17 @@ class ContentCreationCrew:
 
 ### Vector Search Implementation
 ```python
-# FAISS Vector Search System
+# Enhanced Vector Search System
 class MemoryVectorSearch:
-    def __init__(self, dimension=1536):  # OpenAI embedding dimension
+    def __init__(self, dimension=3072):  # text-embedding-3-large dimension
         self.index = faiss.IndexFlatIP(dimension)
         self.embeddings_cache = {}
         
     def add_content(self, content_id: str, text: str):
-        # Generate embedding using OpenAI
+        # Generate embedding using text-embedding-3-large
         embedding = openai.Embedding.create(
             input=text,
-            model="text-embedding-ada-002"
+            model="text-embedding-3-large"
         )
         
         # Store in FAISS index
@@ -116,13 +116,13 @@ class MemoryVectorSearch:
         self.embeddings_cache[content_id] = embedding
         
     def search_similar(self, query: str, k: int = 10):
-        # Generate query embedding
+        # Generate query embedding with superior model
         query_embedding = openai.Embedding.create(
             input=query,
-            model="text-embedding-ada-002"
+            model="text-embedding-3-large"
         )
         
-        # Search for similar content
+        # Search for similar content with enhanced accuracy
         scores, indices = self.index.search(query_embedding, k)
         return self.format_results(scores, indices)
 ```
@@ -311,7 +311,7 @@ Content Quality Score < 0.8      → Quality Alert
 - [OpenAI API Reference](https://platform.openai.com/docs/)
 - [FAISS Documentation](https://faiss.ai/)
 - [Vector Search Best Practices](https://github.com/facebookresearch/faiss/wiki)
-- [AI Performance Optimization](https://openai.com/research/gpt-4)
+- [AI Performance Optimization](https://openai.com/research/gpt-5)
 
 ---
 

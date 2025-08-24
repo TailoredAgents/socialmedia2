@@ -131,10 +131,10 @@ class ImageGenerationService:
             if custom_options:
                 tool_options.update(custom_options)
             
-            # Use the correct OpenAI Responses API with image_generation tool
+            # Use GPT Image 1 for direct image generation
             response = await asyncio.to_thread(
                 self.client.responses.create,
-                model="gpt-4o-mini",
+                model="gpt-image-1",
                 input=enhanced_prompt,
                 tools=[{
                     "type": "image_generation",
@@ -219,7 +219,7 @@ class ImageGenerationService:
                 # Continue from previous response
                 response = await asyncio.to_thread(
                     self.client.responses.create,
-                    model="gpt-4.1-mini",
+                    model="gpt-image-1",
                     previous_response_id=previous_response_id,
                     input=f"Edit the image: {edit_prompt}",
                     tools=[{
@@ -231,7 +231,7 @@ class ImageGenerationService:
                 # Edit specific image by ID
                 response = await asyncio.to_thread(
                     self.client.responses.create,
-                    model="gpt-4.1-mini",
+                    model="gpt-image-1",
                     input=[
                         {
                             "role": "user",
@@ -318,7 +318,7 @@ class ImageGenerationService:
             # Use Responses API with streaming as per OpenAI documentation
             stream = await asyncio.to_thread(
                 self.client.responses.create,
-                model="gpt-4.1-mini",
+                model="gpt-image-1",
                 input=enhanced_prompt,
                 tools=[{
                     "type": "image_generation",

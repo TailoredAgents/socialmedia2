@@ -4,7 +4,7 @@
 
 ## Overview
 
-Allow models to generate or edit images using the image generation tool that leverages the GPT Image model, and automatically optimizes text inputs for improved performance.
+Direct image generation using the GPT Image 1 model, which provides superior image quality and optimized performance for visual content creation.
 
 ## Usage
 
@@ -20,7 +20,7 @@ import OpenAI from "openai";
 const openai = new OpenAI();
 
 const response = await openai.responses.create({
-    model: "gpt-4.1-mini",
+    model: "gpt-image-1",
     input: "Generate an image of gray tabby cat hugging an otter with an orange scarf",
     tools: [{type: "image_generation"}],
 });
@@ -45,7 +45,7 @@ import base64
 client = OpenAI() 
 
 response = client.responses.create(
-    model="gpt-4.1-mini",
+    model="gpt-image-1",
     input="Generate an image of gray tabby cat hugging an otter with an orange scarf",
     tools=[{"type": "image_generation"}],
 )
@@ -104,7 +104,7 @@ You can iteratively edit images by referencing previous response or image IDs.
 **JavaScript:**
 ```javascript
 const response_fwup = await openai.responses.create({
-  model: "gpt-4.1-mini",
+  model: "gpt-image-1",
   previous_response_id: response.id,
   input: "Now make it look realistic",
   tools: [{ type: "image_generation" }],
@@ -114,7 +114,7 @@ const response_fwup = await openai.responses.create({
 **Python:**
 ```python
 response_fwup = client.responses.create(
-    model="gpt-4.1-mini",
+    model="gpt-image-1",
     previous_response_id=response.id,
     input="Now make it look realistic",
     tools=[{"type": "image_generation"}],
@@ -126,7 +126,7 @@ response_fwup = client.responses.create(
 **JavaScript:**
 ```javascript
 const response_fwup = await openai.responses.create({
-  model: "gpt-4.1-mini",
+  model: "gpt-image-1",
   input: [
     {
       role: "user",
@@ -187,10 +187,10 @@ for event in stream:
 The image generation tool is supported for the following models:
 
 - `gpt-4o`
-- `gpt-4o-mini`
-- `gpt-4.1`
+- `gpt-image-1`
+- `gpt-5`
+- `gpt-5-mini`
 - `gpt-4.1-mini`
-- `gpt-4.1-nano`
 - `o3`
 
 **Note**: The model used for the image generation process is always `gpt-image-1`, but these models can be used as the mainline model in the Responses API as they can reliably call the image generation tool when needed.

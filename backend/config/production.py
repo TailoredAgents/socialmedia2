@@ -46,17 +46,22 @@ class ProductionSettings(Settings):
     auth0_client_id: str = Field(..., env="AUTH0_CLIENT_ID")
     auth0_client_secret: str = Field(..., env="AUTH0_CLIENT_SECRET")
     
-    # OpenAI Configuration
+    # OpenAI Configuration - Updated for GPT-5 Models
     openai_api_key: str = Field(..., env="OPENAI_API_KEY")
-    openai_model: str = Field("gpt-4", env="OPENAI_MODEL")
+    openai_model: str = Field("gpt-5", env="OPENAI_MODEL")  # Default to GPT-5 for content generation
+    openai_research_model: str = Field("gpt-5-mini", env="OPENAI_RESEARCH_MODEL")  # GPT-5 mini for research
+    openai_deep_research_model: str = Field("gpt-5", env="OPENAI_DEEP_RESEARCH_MODEL")  # GPT-5 for deep analysis
+    openai_categorization_model: str = Field("gpt-4.1-mini", env="OPENAI_CATEGORIZATION_MODEL")  # GPT-4.1 mini for categorization
+    openai_image_model: str = Field("gpt-image-1", env="OPENAI_IMAGE_MODEL")  # GPT Image 1 for image generation
+    openai_embedding_model: str = Field("text-embedding-3-large", env="OPENAI_EMBEDDING_MODEL")  # text-embedding-3-large
     openai_max_tokens: int = Field(2000, env="OPENAI_MAX_TOKENS")
     openai_temperature: float = Field(0.7, env="OPENAI_TEMPERATURE")
     openai_request_timeout: int = Field(60, env="OPENAI_REQUEST_TIMEOUT")
     openai_max_retries: int = Field(3, env="OPENAI_MAX_RETRIES")
     
-    # FAISS Configuration
+    # FAISS Configuration - Updated for text-embedding-3-large (3072 dimensions)
     faiss_index_path: str = Field("/app/data/faiss_index", env="FAISS_INDEX_PATH")
-    faiss_dimension: int = Field(1536, env="FAISS_DIMENSION")
+    faiss_dimension: int = Field(3072, env="FAISS_DIMENSION")  # Updated for text-embedding-3-large
     faiss_index_type: str = Field("IndexFlatIP", env="FAISS_INDEX_TYPE")
     faiss_backup_interval: int = Field(3600, env="FAISS_BACKUP_INTERVAL")  # seconds
     faiss_max_vectors: int = Field(100000, env="FAISS_MAX_VECTORS")

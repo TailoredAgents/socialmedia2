@@ -1,5 +1,5 @@
 """
-Autonomous Deep Research Agent - GPT-4o-Mini Powered
+Autonomous Deep Research Agent - GPT-5 Powered
 Industry Intelligence & Knowledge Base Management System
 
 This agent autonomously researches industries, maintains knowledge bases,
@@ -85,7 +85,7 @@ class IndustryIntelligence:
 
 class DeepResearchAgent:
     """
-    Autonomous Deep Research Agent powered by GPT-4o-Mini
+    Autonomous Deep Research Agent powered by GPT-5 and GPT-5 mini
     
     Features:
     - Continuous industry monitoring
@@ -101,8 +101,10 @@ class DeepResearchAgent:
         self.client = OpenAI(api_key=settings.openai_api_key)
         self.embedding_service = EmbeddingService()
         self.vector_store = VectorStore()
-        self.research_model = "gpt-4o-mini"
-        self.analysis_model = "gpt-4o-mini"
+        # Model selection based on task type
+        self.routine_research_model = "gpt-5-mini"  # For hourly/daily research
+        self.deep_research_model = "gpt-5"  # For weekly deep dives
+        self.analysis_model = "gpt-5"  # For comprehensive analysis
         
         # Research configuration
         self.max_sources_per_topic = 50
@@ -123,7 +125,7 @@ class DeepResearchAgent:
         for path in [self.knowledge_base_path, self.research_cache_path, self.intelligence_reports_path]:
             path.mkdir(parents=True, exist_ok=True)
             
-        logger.info("Deep Research Agent initialized with GPT-4o-Mini")
+        logger.info("Deep Research Agent initialized with GPT-5 and GPT-5 mini")
     
     async def initialize_research_topics(self, industry: str, business_context: Dict[str, Any]) -> List[ResearchTopic]:
         """
@@ -241,35 +243,20 @@ class DeepResearchAgent:
         return intelligence_report
     
     async def _research_topic(self, topic: ResearchTopic) -> List[ResearchFinding]:
-        """Research a specific topic comprehensively"""
-        findings = []
-        
-        # Get research configuration
-        config = self.research_depth_configs.get(topic.research_depth, self.research_depth_configs["comprehensive"])
-        
-        # Multi-source research
-        search_queries = await self._generate_search_queries(topic)
-        
-        for query in search_queries[:config["sources"]]:
-            try:
-                # Web search and scraping
-                search_results = await self._search_web(query)
-                
-                for result in search_results[:5]:  # Top 5 results per query
-                    finding = await self._process_search_result(result, topic)
-                    if finding and finding.relevance_score >= self.min_relevance_threshold:
-                        findings.append(finding)
-                        
-                await asyncio.sleep(0.5)  # Rate limiting
-                
-            except Exception as e:
-                logger.warning(f"Search query failed: {query} - {e}")
-                continue
-        
-        # Analyze and rank findings
-        findings = await self._analyze_and_rank_findings(findings, topic)
-        
-        return findings[:self.max_sources_per_topic]
+        """Research a specific topic comprehensively using GPT-5's built-in web search"""
+        try:
+            # Use GPT-5's built-in web search for streamlined research
+            if topic.research_depth == "deep":
+                findings = await self._research_topic_deep(topic)
+            else:
+                findings = await self._research_topic_standard(topic)
+            
+            return findings[:self.max_sources_per_topic]
+            
+        except Exception as e:
+            logger.error(f"GPT-5 research failed for topic {topic.name}: {e}")
+            # Fallback to traditional research method
+            return await self._research_topic_fallback(topic)
     
     async def _generate_search_queries(self, topic: ResearchTopic) -> List[str]:
         """Generate diverse search queries for comprehensive topic coverage"""
@@ -297,7 +284,8 @@ class DeepResearchAgent:
         """
         
         try:
-            response = await self._call_gpt4o_mini(prompt)
+            # Use GPT-5 mini to generate search queries - it can also do initial research
+            response = await self._call_gpt5_mini_with_search(prompt, use_web_search=False)
             queries = json.loads(response)
             return queries
         except Exception as e:
@@ -580,7 +568,8 @@ class DeepResearchAgent:
         """
         
         try:
-            response = await self._call_gpt4o_mini(prompt)
+            # Use GPT-5 with enhanced reasoning for comprehensive weekly intelligence synthesis
+            response = await self._call_gpt5_deep_research(prompt)
             intelligence_data = json.loads(response)
             
             intelligence = IndustryIntelligence(
@@ -688,11 +677,63 @@ class DeepResearchAgent:
         except Exception as e:
             logger.error(f"Failed to generate content opportunities: {e}")
     
-    async def _call_gpt4o_mini(self, prompt: str, temperature: float = 0.7) -> str:
-        """Call GPT-4o-Mini for analysis"""
+    async def _call_gpt5_mini_with_search(self, prompt: str, temperature: float = 0.7, use_web_search: bool = True) -> str:
+        """Call GPT-5 mini with built-in web search for research"""
+        try:
+            messages = [
+                {"role": "system", "content": "You are an expert research analyst and industry intelligence specialist. Use web search when needed to provide current, thorough, accurate, and actionable insights with proper citations."},
+                {"role": "user", "content": prompt}
+            ]
+            
+            # Configure tools - include web search for current information
+            tools = None
+            if use_web_search:
+                tools = [{"type": "web_search"}]
+            
+            response = self.client.chat.completions.create(
+                model=self.routine_research_model,
+                messages=messages,
+                tools=tools,
+                temperature=temperature,
+                max_tokens=4000
+            )
+            
+            return response.choices[0].message.content
+            
+        except Exception as e:
+            logger.error(f"GPT-5 mini call failed: {e}")
+            # Fallback to routine research without web search
+            return await self._call_research_model_fallback(prompt, temperature)
+    
+    async def _call_gpt5_deep_research(self, prompt: str, temperature: float = 0.7) -> str:
+        """Call GPT-5 full model with enhanced reasoning for deep research"""
         try:
             response = self.client.chat.completions.create(
-                model=self.research_model,
+                model=self.deep_research_model,
+                messages=[
+                    {"role": "system", "content": "You are an expert research analyst conducting deep industry analysis. Use web search and reasoning to provide comprehensive, well-cited insights with strategic implications."},
+                    {"role": "user", "content": prompt}
+                ],
+                tools=[{"type": "web_search"}],
+                temperature=temperature,
+                max_tokens=6000,
+                reasoning_effort="high",  # Use enhanced reasoning for deep dives
+                verbosity="high"  # Comprehensive responses for deep research
+            )
+            
+            return response.choices[0].message.content
+            
+        except Exception as e:
+            logger.error(f"GPT-5 deep research call failed: {e}")
+            # Fallback to GPT-5 mini with search
+            return await self._call_gpt5_mini_with_search(prompt, temperature, True)
+    
+    async def _call_research_model_fallback(self, prompt: str, temperature: float = 0.7) -> str:
+        """Fallback method for research calls without built-in web search"""
+        try:
+            # Use the old method as fallback
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",  # Fallback to older model if GPT-5 mini fails
                 messages=[
                     {"role": "system", "content": "You are an expert research analyst and industry intelligence specialist. Provide thorough, accurate, and actionable insights."},
                     {"role": "user", "content": prompt}
@@ -704,8 +745,183 @@ class DeepResearchAgent:
             return response.choices[0].message.content
             
         except Exception as e:
-            logger.error(f"GPT-4o-Mini call failed: {e}")
+            logger.error(f"Fallback research model call failed: {e}")
             raise
+    
+    async def _research_topic_standard(self, topic: ResearchTopic) -> List[ResearchFinding]:
+        """Standard research using GPT-5 mini with built-in web search"""
+        prompt = f"""
+        Conduct comprehensive research on the following topic using web search:
+        
+        Topic: {topic.name}
+        Keywords: {', '.join(topic.keywords)}
+        Priority: {topic.priority}/10
+        Research Depth: {topic.research_depth}
+        
+        Please research and provide:
+        1. Recent developments and trends (last 6 months)
+        2. Key market statistics and data
+        3. Expert insights and analysis
+        4. Notable case studies or examples
+        5. Future outlook and predictions
+        
+        For each finding, provide:
+        - Title and summary
+        - Source URL and credibility assessment
+        - Relevance score (0.0-1.0)
+        - Key insights and implications
+        - Publication date if available
+        
+        Return results as a JSON array of research findings with proper citations.
+        """
+        
+        response = await self._call_gpt5_mini_with_search(prompt, temperature=0.3, use_web_search=True)
+        return await self._parse_research_response(response, topic)
+    
+    async def _research_topic_deep(self, topic: ResearchTopic) -> List[ResearchFinding]:
+        """Deep research using GPT-5 full model with enhanced reasoning"""
+        prompt = f"""
+        Conduct deep, comprehensive industry research on the following topic:
+        
+        Topic: {topic.name}
+        Keywords: {', '.join(topic.keywords)}
+        Priority: {topic.priority}/10
+        Research Depth: DEEP ANALYSIS REQUIRED
+        
+        Please perform exhaustive research covering:
+        1. Historical context and evolution
+        2. Current market dynamics and trends
+        3. Competitive landscape analysis
+        4. Regulatory environment and changes
+        5. Technology disruptions and innovations
+        6. Consumer behavior shifts
+        7. Future predictions and scenario analysis
+        8. Strategic implications for businesses
+        
+        Use multiple sources and cross-reference information. Provide:
+        - Comprehensive analysis with strategic insights
+        - Source credibility assessment
+        - Confidence levels for predictions
+        - Risk factors and opportunities
+        - Actionable recommendations
+        
+        Return as detailed JSON with extensive research findings and analysis.
+        """
+        
+        response = await self._call_gpt5_deep_research(prompt, temperature=0.2)
+        return await self._parse_research_response(response, topic)
+    
+    async def _research_topic_fallback(self, topic: ResearchTopic) -> List[ResearchFinding]:
+        """Fallback research method using traditional approach"""
+        findings = []
+        
+        # Get research configuration
+        config = self.research_depth_configs.get(topic.research_depth, self.research_depth_configs["comprehensive"])
+        
+        # Multi-source research
+        search_queries = await self._generate_search_queries(topic)
+        
+        for query in search_queries[:config["sources"]]:
+            try:
+                # Web search and scraping
+                search_results = await self._search_web(query)
+                
+                for result in search_results[:5]:  # Top 5 results per query
+                    finding = await self._process_search_result(result, topic)
+                    if finding and finding.relevance_score >= self.min_relevance_threshold:
+                        findings.append(finding)
+                        
+                await asyncio.sleep(0.5)  # Rate limiting
+                
+            except Exception as e:
+                logger.warning(f"Search query failed: {query} - {e}")
+                continue
+        
+        # Analyze and rank findings
+        findings = await self._analyze_and_rank_findings(findings, topic)
+        
+        return findings[:self.max_sources_per_topic]
+    
+    async def _parse_research_response(self, response: str, topic: ResearchTopic) -> List[ResearchFinding]:
+        """Parse GPT-5 research response into ResearchFinding objects"""
+        try:
+            # Try to parse as JSON first
+            if response.strip().startswith('[') or response.strip().startswith('{'):
+                data = json.loads(response)
+                if isinstance(data, dict) and 'findings' in data:
+                    data = data['findings']
+                elif not isinstance(data, list):
+                    data = [data]
+            else:
+                # If not JSON, extract structured information
+                data = await self._extract_structured_findings(response, topic)
+            
+            findings = []
+            for item in data:
+                if isinstance(item, dict):
+                    finding = self._create_research_finding(item, topic)
+                    if finding:
+                        findings.append(finding)
+            
+            return findings
+            
+        except Exception as e:
+            logger.error(f"Failed to parse research response: {e}")
+            # Return a single finding with the raw response
+            return [ResearchFinding(
+                id=hashlib.md5(f"{topic.name}_{datetime.now()}".encode()).hexdigest(),
+                topic=topic.name,
+                title=f"Research Summary: {topic.name}",
+                content=response,
+                source_url="gpt-5-research",
+                source_type="ai_research",
+                relevance_score=0.8,
+                credibility_score=0.9,
+                publish_date=datetime.now(),
+                discovered_at=datetime.now(),
+                keywords=topic.keywords,
+                summary=response[:500] + "..." if len(response) > 500 else response,
+                insights=["AI-generated research insights"],
+                implications=["Strategic implications from AI analysis"],
+                trending_indicators={"ai_confidence": 0.8}
+            )]
+    
+    async def _extract_structured_findings(self, response: str, topic: ResearchTopic) -> List[Dict[str, Any]]:
+        """Extract structured findings from unstructured response"""
+        # This method can be enhanced to parse markdown, bullet points, etc.
+        return [{
+            "title": f"Research Findings: {topic.name}",
+            "content": response,
+            "source_url": "gpt-5-research",
+            "relevance_score": 0.8,
+            "credibility_score": 0.9,
+            "insights": ["AI-generated insights"],
+            "implications": ["Strategic implications"]
+        }]
+    
+    def _create_research_finding(self, data: Dict[str, Any], topic: ResearchTopic) -> Optional[ResearchFinding]:
+        """Create ResearchFinding from parsed data"""
+        try:
+            return ResearchFinding(
+                id=hashlib.md5(f"{data.get('title', topic.name)}_{datetime.now()}".encode()).hexdigest(),
+                topic=topic.name,
+                title=data.get('title', f"Research: {topic.name}"),
+                content=data.get('content', ''),
+                source_url=data.get('source_url', 'gpt-5-research'),
+                source_type=data.get('source_type', 'ai_research'),
+                relevance_score=float(data.get('relevance_score', 0.8)),
+                credibility_score=float(data.get('credibility_score', 0.9)),
+                publish_date=datetime.now(),
+                discovered_at=datetime.now(),
+                keywords=topic.keywords,
+                summary=data.get('summary', data.get('content', '')[:500]),
+                insights=data.get('insights', []),
+                implications=data.get('implications', []),
+                trending_indicators=data.get('trending_indicators', {})
+            )
+        except Exception as e:
+            logger.error(f"Failed to create research finding: {e}")
+            return None
     
     def _get_default_research_topics(self, industry: str) -> List[ResearchTopic]:
         """Get default research topics if AI generation fails"""

@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/workflow", tags=["workflow"])
 
 # Pydantic models
 class ExecuteWorkflowRequest(BaseModel):
-    workflow_type: str = Field(..., regex="^(daily|optimization|manual|research|content_generation)$")
+    workflow_type: str = Field(..., pattern="^(daily|optimization|manual|research|content_generation)$")
     execution_params: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
 class WorkflowExecutionResponse(BaseModel):

@@ -24,7 +24,7 @@ router = APIRouter(prefix="/api/integrations", tags=["integrations"])
 class InstagramPostRequest(BaseModel):
     caption: str = Field(..., max_length=2200)
     media_urls: List[str] = Field(..., min_items=1, max_items=10)
-    media_type: str = Field(..., regex="^(IMAGE|VIDEO|CAROUSEL_ALBUM|REELS)$")
+    media_type: str = Field(..., pattern="^(IMAGE|VIDEO|CAROUSEL_ALBUM|REELS)$")
     location_id: Optional[str] = None
     hashtags: Optional[List[str]] = Field(default_factory=list)
     schedule_for: Optional[datetime] = None
@@ -39,7 +39,7 @@ class FacebookPostRequest(BaseModel):
 class ResearchQueryRequest(BaseModel):
     keywords: List[str] = Field(..., min_items=1, max_items=10)
     platforms: List[str] = Field(..., min_items=1)
-    time_range: str = Field("24h", regex="^(1h|24h|7d|30d)$")
+    time_range: str = Field("24h", pattern="^(1h|24h|7d|30d)$")
     location: Optional[str] = None
     max_results: int = Field(50, ge=10, le=500)
     include_sentiment: bool = True
@@ -47,15 +47,15 @@ class ResearchQueryRequest(BaseModel):
 
 class ContentGenerationRequest(BaseModel):
     topic: str = Field(..., min_length=5, max_length=200)
-    platform: str = Field(..., regex="^(twitter|instagram|facebook|linkedin)$")
-    content_type: str = Field(..., regex="^(post|story|reel|thread|article)$")
-    tone: str = Field("professional", regex="^(professional|casual|humorous|inspirational|educational)$")
+    platform: str = Field(..., pattern="^(twitter|instagram|facebook|linkedin)$")
+    content_type: str = Field(..., pattern="^(post|story|reel|thread|article)$")
+    tone: str = Field("professional", pattern="^(professional|casual|humorous|inspirational|educational)$")
     target_audience: Optional[str] = None
     include_hashtags: bool = True
     include_cta: bool = True
 
 class WorkflowTriggerRequest(BaseModel):
-    workflow_type: str = Field(..., regex="^(daily_content|research_analysis|engagement_optimization|trend_monitoring)$")
+    workflow_type: str = Field(..., pattern="^(daily_content|research_analysis|engagement_optimization|trend_monitoring)$")
     parameters: Dict[str, Any] = Field(default_factory=dict)
     schedule_for: Optional[datetime] = None
 

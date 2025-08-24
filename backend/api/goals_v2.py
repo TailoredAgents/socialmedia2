@@ -23,10 +23,10 @@ logger = logging.getLogger(__name__)
 class CreateGoalRequest(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = Field(None, max_length=1000)
-    goal_type: str = Field(..., regex="^(follower_growth|engagement_rate|reach_increase|content_volume|custom)$")
+    goal_type: str = Field(..., pattern="^(follower_growth|engagement_rate|reach_increase|content_volume|custom)$")
     target_value: float = Field(..., gt=0)
     target_date: date
-    platform: Optional[str] = Field(None, regex="^(twitter|linkedin|instagram|facebook|tiktok|all)$")
+    platform: Optional[str] = Field(None, pattern="^(twitter|linkedin|instagram|facebook|tiktok|all)$")
     
     @validator('target_date')
     def target_date_must_be_future(cls, v):
@@ -39,7 +39,7 @@ class UpdateGoalRequest(BaseModel):
     description: Optional[str] = Field(None, max_length=1000)
     target_value: Optional[float] = Field(None, gt=0)
     target_date: Optional[date] = None
-    platform: Optional[str] = Field(None, regex="^(twitter|linkedin|instagram|facebook|tiktok|all)$")
+    platform: Optional[str] = Field(None, pattern="^(twitter|linkedin|instagram|facebook|tiktok|all)$")
     
     @validator('target_date')
     def target_date_must_be_future(cls, v):
@@ -136,7 +136,7 @@ async def create_goal(
 async def get_user_goals(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
-    status: Optional[str] = Query(None, regex="^(active|paused|completed|failed)$"),
+    status: Optional[str] = Query(None, pattern="^(active|paused|completed|failed)$"),
     goal_type: Optional[str] = Query(None),
     platform: Optional[str] = Query(None),
     limit: int = Query(50, ge=1, le=100)

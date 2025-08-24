@@ -24,11 +24,11 @@ embedding_service = EmbeddingService()
 # Pydantic models
 class StoreContentRequest(BaseModel):
     content: str = Field(..., min_length=1, max_length=10000)
-    content_type: str = Field(..., regex="^(research|post|insight|trend|note|template)$")
+    content_type: str = Field(..., pattern="^(research|post|insight|trend|note|template)$")
     source: Optional[str] = Field(None, max_length=200)
-    platform: Optional[str] = Field(None, regex="^(twitter|linkedin|instagram|facebook|tiktok|web|manual)$")
+    platform: Optional[str] = Field(None, pattern="^(twitter|linkedin|instagram|facebook|tiktok|web|manual)$")
     tags: Optional[List[str]] = Field(default_factory=list)
-    sentiment: Optional[str] = Field(None, regex="^(positive|negative|neutral)$")
+    sentiment: Optional[str] = Field(None, pattern="^(positive|negative|neutral)$")
     topic_category: Optional[str] = Field(None, max_length=100)
     metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
@@ -43,10 +43,10 @@ class SearchRequest(BaseModel):
 class UpdateContentRequest(BaseModel):
     content: Optional[str] = Field(None, min_length=1, max_length=10000)
     tags: Optional[List[str]] = None
-    sentiment: Optional[str] = Field(None, regex="^(positive|negative|neutral)$")
+    sentiment: Optional[str] = Field(None, pattern="^(positive|negative|neutral)$")
     topic_category: Optional[str] = Field(None, max_length=100)
     engagement_score: Optional[float] = Field(None, ge=0.0, le=100.0)
-    performance_tier: Optional[str] = Field(None, regex="^(high|medium|low|unknown)$")
+    performance_tier: Optional[str] = Field(None, pattern="^(high|medium|low|unknown)$")
     metadata: Optional[Dict[str, Any]] = None
 
 class MemoryContentResponse(BaseModel):
@@ -280,7 +280,7 @@ async def get_memory_content(
     db: Session = Depends(get_db),
     content_type: Optional[str] = Query(None),
     platform: Optional[str] = Query(None),
-    performance_tier: Optional[str] = Query(None, regex="^(high|medium|low|unknown)$"),
+    performance_tier: Optional[str] = Query(None, pattern="^(high|medium|low|unknown)$"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0)
 ):

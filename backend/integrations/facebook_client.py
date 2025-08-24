@@ -123,7 +123,7 @@ class FacebookAPIClient:
         # Use unified Meta configuration (2025 approach)
         self.app_id = settings.meta_app_id or settings.facebook_app_id  # Fallback to legacy
         self.app_secret = settings.meta_app_secret or settings.facebook_app_secret
-        self.access_token = settings.meta_access_token or settings.facebook_access_token
+        self.access_token = settings.meta_access_token or settings.facebook_page_access_token
         self.api_version = settings.meta_api_version or "v22.0"
         self.api_base = f"https://graph.facebook.com/{self.api_version}"
         

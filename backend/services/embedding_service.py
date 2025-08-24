@@ -12,7 +12,13 @@ from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
 
 from openai import OpenAI, AsyncOpenAI
-from openai.error import RateLimitError, APIError
+# OpenAI v1.x has different error structure - using base exceptions
+try:
+    from openai import RateLimitError, APIError
+except ImportError:
+    # Fallback for compatibility
+    RateLimitError = Exception
+    APIError = Exception
 
 from backend.core.config import get_settings
 from backend.core.vector_store import vector_store

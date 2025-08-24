@@ -34,9 +34,9 @@ numpy==1.26.4
 # Vector Search (pgvector replaces FAISS for production)
 # faiss-cpu==1.8.0  # Removed - using pgvector for production
 
-# CrewAI for multi-agent system (temporarily disabled for deployment)
-# crewai==0.126.0  
-# crewai-tools==0.47.0
+# CrewAI for multi-agent system (Python 3.12 compatible)
+crewai==0.126.0
+crewai-tools==0.47.0
 
 # DATABASE & ORM - CRITICAL FOR ALL ENDPOINTS (FORCE INSTALL)
 sqlalchemy==2.0.36

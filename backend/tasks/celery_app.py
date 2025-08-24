@@ -8,11 +8,12 @@ celery_app = Celery(
     broker=settings.get_celery_broker_url(),
     backend=settings.get_celery_result_backend(),
     include=[
-        "backend.tasks.content_tasks",
-        "backend.tasks.research_tasks", 
-        "backend.tasks.posting_tasks",
-        "backend.tasks.optimization_tasks",
-        "backend.tasks.autonomous_scheduler",
+        # Temporarily disabled for deployment - will re-enable once crewai is fixed
+        # "backend.tasks.content_tasks",
+        # "backend.tasks.research_tasks", 
+        # "backend.tasks.posting_tasks",
+        # "backend.tasks.optimization_tasks",
+        # "backend.tasks.autonomous_scheduler",
     ]
 )
 

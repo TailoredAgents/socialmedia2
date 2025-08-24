@@ -25,8 +25,8 @@ async def _extract_user_id_from_token(access_token: str, platform: str) -> Optio
     """
     try:
         # Import here to avoid circular imports
-        from backend.auth.oauth_manager import oauth_manager
-        from backend.core.database import get_db
+        from backend.auth.social_oauth import social_oauth_manager as oauth_manager
+        from backend.db.database import get_db
         
         async for db in get_db():
             # Look up the user_id associated with this access_token

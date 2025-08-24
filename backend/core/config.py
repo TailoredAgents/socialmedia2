@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     serper_api_key: str = ""
     
     # Database
-    database_url: str = "sqlite:///./socialmedia.db"  # Default to SQLite for development
-    postgres_url: str = ""  # PostgreSQL for production
+    database_url: str = os.getenv("DATABASE_URL", "sqlite:///./socialmedia.db")  # Read from env or default to SQLite
+    postgres_url: str = os.getenv("DATABASE_URL", "")  # PostgreSQL for production (same as database_url)
     
     # JWT (Updated with proper naming)
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
@@ -98,6 +98,16 @@ class Settings(BaseSettings):
 
 @lru_cache()
 def get_settings():
+    """Get settings instance based on environment"""
+    env = os.getenv("ENVIRONMENT", "development")
+    
+    # Force production settings when DATABASE_URL is set (Render/Heroku pattern)
+    if os.getenv("DATABASE_URL") and not os.getenv("DATABASE_URL").startswith("sqlite"):
+        settings = Settings()
+        settings.environment = "production"
+        settings.debug = False
+        return settings
+    
     return Settings()
 
 # Global settings instance

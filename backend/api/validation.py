@@ -418,7 +418,7 @@ def validate_api_key(api_key: str) -> str:
     return api_key
 
 def validate_file_upload(file_content: bytes, max_size_mb: int = 10, allowed_types: List[str] = None) -> bool:
-    """Validate file upload"""
+    """Validate file upload with comprehensive file type checking"""
     if not file_content:
         raise ValidationError("File content is required")
     
@@ -427,12 +427,199 @@ def validate_file_upload(file_content: bytes, max_size_mb: int = 10, allowed_typ
     if size_mb > max_size_mb:
         raise ValidationError(f"File too large. Maximum size: {max_size_mb}MB")
     
-    # Basic file type validation (you might want to add more sophisticated detection)
+    # File type validation using magic bytes detection
     if allowed_types:
-        # This is a basic implementation - in production, use proper file type detection
-        pass
+        detected_type = _detect_file_type(file_content)
+        if detected_type not in allowed_types:
+            raise ValidationError(f"File type '{detected_type}' not allowed. Allowed types: {', '.join(allowed_types)}")
+        
+        # Additional security checks for dangerous file types
+        _validate_file_security(file_content, detected_type)
     
     return True
+
+def _detect_file_type(file_content: bytes) -> str:
+    """Detect file type using magic bytes (file signatures)"""
+    if len(file_content) < 16:
+        return "unknown"
+    
+    # Define magic bytes for common file types
+    magic_bytes_map = {
+        # Images
+        b'\xFF\xD8\xFF': 'jpeg',
+        b'\x89\x50\x4E\x47\x0D\x0A\x1A\x0A': 'png',
+        b'GIF87a': 'gif',
+        b'GIF89a': 'gif',
+        b'RIFF': 'webp',  # WebP files start with RIFF
+        b'BM': 'bmp',
+        b'\x00\x00\x01\x00': 'ico',
+        b'II*\x00': 'tiff',
+        b'MM\x00*': 'tiff',
+        
+        # Documents
+        b'%PDF': 'pdf',
+        b'\x50\x4B\x03\x04': 'zip',  # Also covers docx, xlsx, pptx
+        b'\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1': 'doc',  # MS Office legacy
+        b'{\\rtf': 'rtf',
+        
+        # Video/Audio
+        b'\x00\x00\x00\x20\x66\x74\x79\x70': 'mp4',
+        b'\x00\x00\x00\x18\x66\x74\x79\x70': 'mp4',
+        b'ID3': 'mp3',
+        b'\xFF\xFB': 'mp3',
+        b'OggS': 'ogg',
+        b'RIFF': 'avi',  # AVI also uses RIFF
+        
+        # Executables and dangerous files
+        b'MZ': 'exe',
+        b'\x7FELF': 'elf',
+        b'\xFE\xED\xFA\xCE': 'macho',
+        b'\xFE\xED\xFA\xCF': 'macho',
+        b'\xCF\xFA\xED\xFE': 'macho',
+        b'\xCA\xFE\xBA\xBE': 'java_class',
+        b'\xCA\xFE\xD0\x0D': 'java_class',
+    }
+    
+    # Check magic bytes
+    for magic, file_type in magic_bytes_map.items():
+        if file_content.startswith(magic):
+            # Special handling for WebP vs AVI (both use RIFF)
+            if magic == b'RIFF':
+                if len(file_content) > 12 and file_content[8:12] == b'WEBP':
+                    return 'webp'
+                elif len(file_content) > 12 and file_content[8:12] == b'AVI ':
+                    return 'avi'
+            return file_type
+    
+    # Check for text-based files
+    try:
+        text_content = file_content[:1024].decode('utf-8', errors='strict')
+        if text_content.strip().startswith('<?xml'):
+            return 'xml'
+        elif text_content.strip().startswith('<html'):
+            return 'html'
+        elif text_content.strip().startswith('{') or text_content.strip().startswith('['):
+            return 'json'
+        elif text_content.strip().startswith('<!DOCTYPE html'):
+            return 'html'
+        return 'text'
+    except UnicodeDecodeError:
+        pass
+    
+    return "unknown"
+
+def _validate_file_security(file_content: bytes, file_type: str) -> None:
+    """Additional security validation for file content"""
+    
+    # Block dangerous file types completely
+    dangerous_types = [
+        'exe', 'bat', 'cmd', 'com', 'scr', 'pif', 'vbs', 'js', 'jar',
+        'elf', 'macho', 'java_class', 'msi', 'dll', 'so', 'dylib'
+    ]
+    
+    if file_type in dangerous_types:
+        raise ValidationError(f"File type '{file_type}' is not allowed for security reasons")
+    
+    # Check for embedded executables in archives
+    if file_type == 'zip':
+        _validate_zip_security(file_content)
+    
+    # Check for malicious patterns in document files
+    if file_type in ['pdf', 'doc', 'docx']:
+        _validate_document_security(file_content, file_type)
+    
+    # Check for script injections in image files
+    if file_type in ['jpeg', 'png', 'gif', 'webp']:
+        _validate_image_security(file_content)
+
+def _validate_zip_security(file_content: bytes) -> None:
+    """Validate ZIP files for security threats"""
+    try:
+        import zipfile
+        import io
+        
+        # Check for zip bombs and path traversal
+        zip_buffer = io.BytesIO(file_content)
+        with zipfile.ZipFile(zip_buffer, 'r') as zip_file:
+            total_size = 0
+            for file_info in zip_file.filelist:
+                # Check for path traversal attempts
+                if '..' in file_info.filename or file_info.filename.startswith('/'):
+                    raise ValidationError("Archive contains unsafe file paths")
+                
+                # Check for zip bombs (excessive compression ratio)
+                total_size += file_info.file_size
+                if total_size > 100 * 1024 * 1024:  # 100MB uncompressed limit
+                    raise ValidationError("Archive too large when uncompressed")
+                
+                # Check for dangerous file extensions in archive
+                dangerous_extensions = ['.exe', '.bat', '.cmd', '.scr', '.js', '.vbs', '.jar']
+                if any(file_info.filename.lower().endswith(ext) for ext in dangerous_extensions):
+                    raise ValidationError("Archive contains executable files")
+                    
+    except zipfile.BadZipFile:
+        raise ValidationError("Invalid or corrupted ZIP file")
+    except Exception as e:
+        logger.warning(f"ZIP validation error: {e}")
+        raise ValidationError("Unable to validate ZIP file security")
+
+def _validate_document_security(file_content: bytes, file_type: str) -> None:
+    """Validate documents for embedded scripts and macros"""
+    
+    # Check for common malicious patterns
+    malicious_patterns = [
+        b'javascript:',
+        b'vbscript:',
+        b'<script',
+        b'eval(',
+        b'exec(',
+        b'system(',
+        b'shell(',
+        b'ActiveXObject',
+        b'WScript.Shell',
+        b'CreateObject'
+    ]
+    
+    content_lower = file_content.lower()
+    for pattern in malicious_patterns:
+        if pattern in content_lower:
+            raise ValidationError("Document contains potentially malicious content")
+    
+    # PDF-specific checks
+    if file_type == 'pdf':
+        if b'/JavaScript' in file_content or b'/JS' in file_content:
+            raise ValidationError("PDF contains JavaScript which is not allowed")
+        if b'/Launch' in file_content or b'/EmbeddedFile' in file_content:
+            raise ValidationError("PDF contains embedded files or launch actions")
+
+def _validate_image_security(file_content: bytes) -> None:
+    """Validate images for embedded scripts and metadata exploits"""
+    
+    # Check for script injections in image metadata
+    script_patterns = [
+        b'<script',
+        b'javascript:',
+        b'vbscript:',
+        b'onload=',
+        b'onerror=',
+        b'eval(',
+        b'document.',
+        b'window.'
+    ]
+    
+    content_lower = file_content.lower()
+    for pattern in script_patterns:
+        if pattern in content_lower:
+            raise ValidationError("Image contains embedded scripts or malicious content")
+    
+    # Check for excessive metadata size (potential exploit)
+    if len(file_content) > 50 * 1024 * 1024:  # 50MB limit for images
+        raise ValidationError("Image file suspiciously large, may contain hidden content")
+
+# Predefined safe file type lists
+SAFE_IMAGE_TYPES = ['jpeg', 'jpg', 'png', 'gif', 'webp', 'bmp']
+SAFE_DOCUMENT_TYPES = ['pdf', 'txt', 'rtf']
+SAFE_MEDIA_TYPES = ['mp3', 'mp4', 'ogg', 'wav']
 
 def create_validation_middleware():
     """Create validation middleware for FastAPI"""

@@ -11,6 +11,8 @@ import logging
 import traceback
 import sys
 import os
+import uuid
+from threading import Lock
 from backend.core.timezone_utils import now_in_est, format_lily_timestamp
 
 router = APIRouter(
@@ -25,13 +27,15 @@ class ErrorLogStore:
         self.warnings = deque(maxlen=max_size)
         self.info = deque(maxlen=max_size)
         self.websocket_clients: List[WebSocket] = []
+        self._lock = Lock()  # Thread-safe ID generation
         
     def add_error(self, error_data: Dict[str, Any]):
         """Add error to store and notify websocket clients"""
-        error_data['timestamp'] = format_lily_timestamp()  # Use EST timezone
-        error_data['timestamp_utc'] = datetime.utcnow().isoformat()  # Keep UTC for compatibility
-        error_data['id'] = len(self.errors)
-        self.errors.appendleft(error_data)
+        with self._lock:
+            error_data['timestamp'] = format_lily_timestamp()  # Use EST timezone
+            error_data['timestamp_utc'] = datetime.utcnow().isoformat()  # Keep UTC for compatibility
+            error_data['id'] = str(uuid.uuid4())  # Unique ID
+            self.errors.appendleft(error_data)
         
         # Notify all connected WebSocket clients (only if event loop is running)
         try:
@@ -42,9 +46,10 @@ class ErrorLogStore:
         
     def add_warning(self, warning_data: Dict[str, Any]):
         """Add warning to store"""
-        warning_data['timestamp'] = datetime.utcnow().isoformat()
-        warning_data['id'] = len(self.warnings)
-        self.warnings.appendleft(warning_data)
+        with self._lock:
+            warning_data['timestamp'] = datetime.utcnow().isoformat()
+            warning_data['id'] = str(uuid.uuid4())  # Unique ID
+            self.warnings.appendleft(warning_data)
         
         # Notify all connected WebSocket clients (only if event loop is running)
         try:
@@ -55,9 +60,10 @@ class ErrorLogStore:
         
     def add_info(self, info_data: Dict[str, Any]):
         """Add info log to store"""
-        info_data['timestamp'] = datetime.utcnow().isoformat()
-        info_data['id'] = len(self.info)
-        self.info.appendleft(info_data)
+        with self._lock:
+            info_data['timestamp'] = datetime.utcnow().isoformat()
+            info_data['id'] = str(uuid.uuid4())  # Unique ID
+            self.info.appendleft(info_data)
         
     async def _notify_clients(self, log_type: str, data: Dict[str, Any]):
         """Notify all connected WebSocket clients"""

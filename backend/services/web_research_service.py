@@ -16,14 +16,21 @@ from urllib.parse import quote_plus
 from dataclasses import dataclass
 
 from backend.core.config import get_settings
-# Temporarily comment out to avoid timezone import issue
-# from backend.api.system_logs import log_api_error
-
-def log_api_error(endpoint, method, error, request_data, user_id):
-    """Temporary placeholder for logging"""
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.error(f"API Error in {endpoint}: {error} - Data: {request_data}")
+def log_api_error(endpoint: str, method: str, error: Exception, request_data: Optional[Dict] = None, user_id: Optional[int] = None):
+    """Production-ready error logging with structured format"""
+    logger.error(
+        f"Web research API error",
+        extra={
+            "endpoint": endpoint,
+            "method": method,
+            "error_type": type(error).__name__,
+            "error_message": str(error),
+            "user_id": user_id,
+            "request_data": request_data,
+            "service": "web_research"
+        },
+        exc_info=True
+    )
 
 settings = get_settings()
 logger = logging.getLogger(__name__)

@@ -27,6 +27,55 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/organizations", tags=["organizations"])
 
 
+async def send_invitation_email(
+    invitation: OrganizationInvitation, 
+    organization: Organization, 
+    invited_by: User,
+    custom_message: Optional[str] = None
+):
+    """
+    Send organization invitation email
+    """
+    try:
+        from backend.services.email_service import email_service, EmailTemplates
+        
+        # Generate join URL (this should match your frontend route)
+        join_url = f"https://yourdomain.com/accept-invitation?token={invitation.token}"  # Update with your domain
+        
+        # Create email from template
+        email_message = EmailTemplates.organization_invitation(
+            organization.name,
+            invited_by.full_name or invited_by.username,
+            join_url
+        )
+        email_message.to = invitation.email
+        
+        # Add custom message if provided
+        if custom_message:
+            # Inject custom message into the email body
+            custom_section = f"""
+            <p><strong>Personal message from {invited_by.full_name or invited_by.username}:</strong></p>
+            <p style="font-style: italic; padding: 10px; background-color: #f9f9f9; border-left: 3px solid #007cba;">
+                {custom_message}
+            </p>
+            """
+            email_message.html_body = email_message.html_body.replace(
+                "<p>If you don't want to join this organization", 
+                custom_section + "<p>If you don't want to join this organization"
+            )
+        
+        # Send email
+        result = await email_service.send_email(email_message)
+        
+        if result["status"] == "success":
+            logger.info(f"Organization invitation email sent successfully to {invitation.email}")
+        else:
+            logger.error(f"Failed to send organization invitation email to {invitation.email}: {result.get('message')}")
+            
+    except Exception as e:
+        logger.error(f"Error sending organization invitation email to {invitation.email}: {str(e)}")
+
+
 # Pydantic models for API requests/responses
 class OrganizationCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
@@ -586,8 +635,14 @@ async def invite_user_to_organization(
         db.commit()
         db.refresh(invitation)
         
-        # TODO: Send invitation email in background task
-        # background_tasks.add_task(send_invitation_email, invitation)
+        # Send invitation email in background task
+        background_tasks.add_task(
+            send_invitation_email, 
+            invitation, 
+            tenant_context.organization, 
+            current_user, 
+            invite_data.message
+        )
         
         return InvitationResponse(
             id=invitation.id,

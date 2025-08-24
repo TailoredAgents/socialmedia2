@@ -12,6 +12,31 @@ from backend.services.redis_cache import redis_cache, CacheStrategy
 
 logger = logging.getLogger(__name__)
 
+async def _extract_user_id_from_token(access_token: str, platform: str) -> Optional[int]:
+    """
+    Extract user_id from access_token for proper cache scoping
+    
+    Args:
+        access_token: OAuth access token
+        platform: Social media platform
+        
+    Returns:
+        User ID if successfully extracted, None otherwise
+    """
+    try:
+        # Import here to avoid circular imports
+        from backend.auth.oauth_manager import oauth_manager
+        from backend.core.database import get_db
+        
+        async for db in get_db():
+            # Look up the user_id associated with this access_token
+            user_id = await oauth_manager.get_user_id_by_token(access_token, platform, db)
+            return user_id
+            
+    except Exception as e:
+        logger.error(f"Failed to extract user_id from token for {platform}: {e}")
+        return None
+
 def cached(
     platform: str,
     operation: str,
@@ -48,9 +73,17 @@ def cached(
                     user_id = kwargs['user_id']
                 elif len(args) > 1 and hasattr(args[0], '__class__'):
                     # Check if it's a method call with self and access_token
-                    if 'access_token' in kwargs or len(args) > 1:
-                        # This would need to be enhanced to extract user_id from access_token
-                        pass
+                    if 'access_token' in kwargs:
+                        user_id = await _extract_user_id_from_token(kwargs['access_token'], platform)
+                    elif len(args) > 1 and isinstance(args[1], str):
+                        # access_token might be the second argument
+                        user_id = await _extract_user_id_from_token(args[1], platform)
+                
+                # Security: If user_specific is True but no user_id found, skip caching
+                if user_id is None:
+                    logger.warning(f"Cache decorator: user_specific=True but no user_id found for {platform}:{operation}")
+                    # Execute function without caching to prevent cross-user data leakage
+                    return await func(*args, **kwargs)
             
             # Create cache key parameters
             cache_kwargs = {k: v for k, v in kwargs.items() if k not in ['access_token']}

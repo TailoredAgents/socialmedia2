@@ -117,35 +117,52 @@ class ImageGenerationService:
             # Get quality preset settings
             preset_config = self.quality_presets.get(quality_preset, self.quality_presets["standard"])
             
-            # Map our presets to DALL-E 3 parameters
-            dalle_params = {
-                "model": "dall-e-3",
-                "prompt": enhanced_prompt,
-                "n": 1,
+            # Prepare GPT Image 1 parameters
+            tool_options = {
+                "type": "image_generation",
                 "size": preset_config.get("size", "1024x1024"),
-                "quality": preset_config.get("quality", "standard"),
-                "response_format": "b64_json"  # Get base64 encoded image
+                "quality": preset_config.get("quality", "standard")
             }
             
             # Override with custom options if provided
             if custom_options:
-                if "size" in custom_options:
-                    dalle_params["size"] = custom_options["size"]
-                if "quality" in custom_options:
-                    dalle_params["quality"] = custom_options["quality"]
+                tool_options.update(custom_options)
             
-            # Generate image using DALL-E 3
+            # Use GPT Image 1 via chat completions with image generation tool
             response = await asyncio.to_thread(
-                self.client.images.generate,
-                **dalle_params
+                self.client.chat.completions.create,
+                model="gpt-image-1",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Generate an image: {enhanced_prompt}"
+                    }
+                ],
+                tools=[tool_options],
+                max_tokens=1000
             )
             
-            # Extract image data
-            if not response.data or len(response.data) == 0:
-                raise Exception("No image was generated")
+            # Extract image from tool calls
+            if not response.choices or not response.choices[0].message.tool_calls:
+                raise Exception("No image generation tool call found")
             
-            image_data = response.data[0]
-            image_base64 = image_data.b64_json
+            tool_call = response.choices[0].message.tool_calls[0]
+            if tool_call.type != "image_generation":
+                raise Exception("Expected image generation tool call")
+            
+            # Get base64 image data from tool call result
+            image_base64 = tool_call.function.arguments.get("image_data")
+            if not image_base64:
+                # Alternative extraction method for GPT Image 1
+                import json
+                try:
+                    tool_result = json.loads(tool_call.function.arguments)
+                    image_base64 = tool_result.get("image", tool_result.get("image_data", tool_result.get("result")))
+                except:
+                    raise Exception("Could not extract image data from GPT Image 1 response")
+            
+            if not image_base64:
+                raise Exception("No image data returned from GPT Image 1")
             
             # Generate unique filename and ID
             image_id = str(uuid.uuid4())
@@ -162,13 +179,13 @@ class ImageGenerationService:
                 "prompt": {
                     "original": prompt,
                     "enhanced": enhanced_prompt,
-                    "revised": getattr(image_data, 'revised_prompt', enhanced_prompt)
+                    "revised": enhanced_prompt  # GPT Image 1 doesn't revise prompts
                 },
                 "metadata": {
                     "platform": platform,
                     "quality_preset": quality_preset,
-                    "dalle_params": dalle_params,
-                    "model": "dall-e-3",
+                    "tool_options": tool_options,
+                    "model": "gpt-image-1",
                     "generated_at": datetime.utcnow().isoformat(),
                     "content_context": content_context,
                     "industry_context": industry_context,

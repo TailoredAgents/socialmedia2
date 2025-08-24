@@ -28,7 +28,7 @@ websockets==12.0
 structlog==25.4.0
 
 # AI/ML Libraries
-openai==1.58.1
+openai==1.75.0
 numpy==1.26.4
 
 # Vector Search (pgvector replaces FAISS for production)

@@ -52,7 +52,6 @@ export default function Settings() {
     },
     platforms: {
       twitter: { connected: false, username: '' },
-       { connected: false, username: '' },
       instagram: { connected: false, username: '' },
       facebook: { connected: false, username: '' }
     }

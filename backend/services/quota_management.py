@@ -15,7 +15,8 @@ from backend.integrations.performance_optimizer import RateLimiter, PerformanceO
 from backend.integrations.twitter_client import twitter_client
 from backend.integrations.instagram_client import instagram_client
 from backend.integrations.facebook_client import facebook_client
-from backend.integrations.linkedin_client import linkedin_client
+# LinkedIn integration removed - using stub
+linkedin_client = None
 from backend.integrations.tiktok_client import tiktok_client
 
 settings = get_settings()

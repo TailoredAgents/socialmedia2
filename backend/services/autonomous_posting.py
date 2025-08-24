@@ -10,7 +10,8 @@ from sqlalchemy.orm import Session
 
 from backend.db.models import ContentLog, User
 from backend.integrations.twitter_client import TwitterAPIClient as TwitterClient
-from backend.integrations.linkedin_client import LinkedInAPIClient as LinkedInClient
+# LinkedIn integration removed - using stub
+LinkedInClient = None
 from backend.integrations.instagram_client import InstagramAPIClient as InstagramClient
 from backend.integrations.facebook_client import FacebookAPIClient as FacebookClient
 from backend.services.research_automation_service import ResearchAutomationService

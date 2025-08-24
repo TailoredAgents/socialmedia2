@@ -18,7 +18,8 @@ from backend.db.models import Goal, GoalProgress, User, ContentItem, ContentPerf
 from backend.db.database import get_db
 from backend.services.notification_service import NotificationService
 from backend.integrations.twitter_client import TwitterAPIClient as TwitterClient
-from backend.integrations.linkedin_client import LinkedInAPIClient as LinkedInClient
+# LinkedIn integration removed - using stub
+LinkedInClient = None
 from backend.integrations.instagram_client import InstagramAPIClient as InstagramClient
 from backend.integrations.facebook_client import FacebookAPIClient as FacebookClient
 

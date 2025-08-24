@@ -131,7 +131,7 @@ class ContentGenerationAutomation:
     
     def __init__(self):
         """Initialize content automation pipeline"""
-        self.openai_api_key = settings.OPENAI_API_KEY if hasattr(settings, 'OPENAI_API_KEY') else None
+        self.openai_api_key = settings.openai_api_key if hasattr(settings, 'openai_api_key') else None
         
         # Platform-specific content limits
         self.platform_limits = {
@@ -385,10 +385,14 @@ class ContentGenerationAutomation:
     ) -> str:
         """Generate content using OpenAI API"""
         try:
-            import openai
+            if not self.openai_api_key:
+                logger.warning("OpenAI API key not configured, falling back to template")
+                return await self._generate_with_template(request, platform, research_context, max_chars)
             
-            # Configure OpenAI
-            openai.api_key = self.openai_api_key
+            from openai import AsyncOpenAI
+            
+            # Initialize async OpenAI client
+            client = AsyncOpenAI(api_key=self.openai_api_key)
             
             # Build prompt
             prompt = f"""
@@ -414,16 +418,25 @@ class ContentGenerationAutomation:
             Content:
             """
             
-            response = await openai.ChatCompletion.acreate(
-                model="gpt-5",
-                messages=[
-                    {"role": "system", "content": "You are an expert social media content creator with web search capabilities. Use current information when relevant."},
-                    {"role": "user", "content": prompt}
-                ],
-                tools=[{"type": "web_search"}] if research_context else None,  # Enable web search when research context is available
-                max_tokens=min(max_chars // 3, 500),
-                temperature=0.7
-            )
+            # Build messages
+            messages = [
+                {"role": "system", "content": "You are an expert social media content creator with web search capabilities. Use current information when relevant."},
+                {"role": "user", "content": prompt}
+            ]
+            
+            # Create chat completion with modern API
+            params = {
+                "model": "gpt-5",
+                "messages": messages,
+                "max_tokens": min(max_chars // 3, 500),
+                "temperature": 0.7
+            }
+            
+            # Add tools if research context is available
+            if research_context:
+                params["tools"] = [{"type": "web_search"}]
+            
+            response = await client.chat.completions.create(**params)
             
             content = response.choices[0].message.content.strip()
             

@@ -109,73 +109,66 @@ class ImageGenerationService:
             Dict containing image data, metadata, and generation info
         """
         try:
-            # Check if the required OpenAI Responses API is available
-            if not hasattr(self.client, 'responses'):
-                return {
-                    "status": "error",
-                    "error": "OpenAI Responses API with image_generation tool not available",
-                    "message": "Image generation requires client.responses.create API as documented in openai-image-generation.md",
-                    "required_api": "client.responses.create",
-                    "current_openai_version": "1.58.1",
-                    "prompt": prompt,
-                    "platform": platform,
-                    "note": "Prohibited image generation model usage prevented - waiting for correct API availability"
-                }
-            
-            # This code will execute when the correct API becomes available
+            # Enhance prompt for the platform
             enhanced_prompt = self._enhance_prompt_for_platform(
                 prompt, platform, content_context, industry_context, tone
             )
             
-            tool_options = self.quality_presets.get(quality_preset, self.quality_presets["standard"])
-            if custom_options:
-                tool_options.update(custom_options)
+            # Get quality preset settings
+            preset_config = self.quality_presets.get(quality_preset, self.quality_presets["standard"])
             
-            # Use GPT Image 1 for direct image generation
+            # Map our presets to DALL-E 3 parameters
+            dalle_params = {
+                "model": "dall-e-3",
+                "prompt": enhanced_prompt,
+                "n": 1,
+                "size": preset_config.get("size", "1024x1024"),
+                "quality": preset_config.get("quality", "standard"),
+                "response_format": "b64_json"  # Get base64 encoded image
+            }
+            
+            # Override with custom options if provided
+            if custom_options:
+                if "size" in custom_options:
+                    dalle_params["size"] = custom_options["size"]
+                if "quality" in custom_options:
+                    dalle_params["quality"] = custom_options["quality"]
+            
+            # Generate image using DALL-E 3
             response = await asyncio.to_thread(
-                self.client.responses.create,
-                model="gpt-image-1",
-                input=enhanced_prompt,
-                tools=[{
-                    "type": "image_generation",
-                    **tool_options
-                }]
+                self.client.images.generate,
+                **dalle_params
             )
             
-            # Extract image data from image_generation_call
-            image_calls = [
-                output for output in response.output
-                if output.type == "image_generation_call"
-            ]
-            
-            if not image_calls:
+            # Extract image data
+            if not response.data or len(response.data) == 0:
                 raise Exception("No image was generated")
             
-            image_call = image_calls[0]
-            image_base64 = image_call.result
+            image_data = response.data[0]
+            image_base64 = image_data.b64_json
             
-            # Generate unique filename
+            # Generate unique filename and ID
             image_id = str(uuid.uuid4())
             timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
             filename = f"{platform}_{timestamp}_{image_id[:8]}.png"
             
             return {
                 "status": "success",
-                "image_id": image_call.id,
-                "response_id": response.id,
+                "image_id": image_id,
+                "response_id": image_id,  # Use our generated ID since DALL-E doesn't provide one
                 "image_base64": image_base64,
                 "image_data_url": f"data:image/png;base64,{image_base64}",
                 "filename": filename,
                 "prompt": {
                     "original": prompt,
                     "enhanced": enhanced_prompt,
-                    "revised": getattr(image_call, 'revised_prompt', enhanced_prompt)
+                    "revised": getattr(image_data, 'revised_prompt', enhanced_prompt)
                 },
                 "metadata": {
                     "platform": platform,
                     "quality_preset": quality_preset,
-                    "tool_options": tool_options,
-                    "model": "gpt-image-1",
+                    "dalle_params": dalle_params,
+                    "model": "dall-e-3",
                     "generated_at": datetime.utcnow().isoformat(),
                     "content_context": content_context,
                     "industry_context": industry_context,

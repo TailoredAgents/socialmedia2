@@ -452,44 +452,135 @@ async def generate_content_ideas(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Generate content ideas (placeholder for AI integration)"""
+    """Generate AI-powered content ideas using GPT-5 mini with web search"""
     
-    # This would integrate with OpenAI or other AI services
-    # For now, return mock suggestions
-    
-    platform_suggestions = {
-        "twitter": [
-            "Share a quick tip about your industry",
-            "Ask an engaging question to your audience",
-            "Share behind-the-scenes content",
-            "Comment on industry news or trends",
-            "Celebrate a team or personal achievement"
-        ],
-        "linkedin": [
-            "Write about lessons learned from recent projects",
-            "Share industry insights or market analysis",
-            "Highlight team member achievements",
-            "Discuss professional development topics",
-            "Share case studies or success stories"
-        ],
-        "instagram": [
-            "Post behind-the-scenes photos/videos",
-            "Share customer testimonials with visuals",
-            "Create educational carousel posts",
-            "Show your workspace or team",
-            "Share user-generated content"
-        ]
-    }
-    
-    suggestions = platform_suggestions.get(platform, platform_suggestions["twitter"])
-    
-    return {
-        "platform": platform,
-        "topic": topic,
-        "tone": tone,
-        "suggestions": suggestions[:3],  # Return top 3
-        "generated_at": datetime.utcnow()
-    }
+    try:
+        from openai import AsyncOpenAI
+        from backend.core.config import get_settings
+        
+        settings = get_settings()
+        
+        if not hasattr(settings, 'openai_api_key') or not settings.openai_api_key:
+            raise HTTPException(
+                status_code=503,
+                detail="OpenAI API key not configured. Content idea generation unavailable."
+            )
+        
+        # Initialize OpenAI client
+        client = AsyncOpenAI(api_key=settings.openai_api_key)
+        
+        # Build context-aware prompt
+        topic_context = f" about {topic}" if topic else ""
+        
+        prompt = f"""
+        Generate 5 creative and engaging content ideas for {platform}{topic_context}.
+        
+        Requirements:
+        - Tone: {tone}
+        - Platform: {platform} (consider platform-specific best practices)
+        - Make ideas specific and actionable
+        - Include current trends and timely topics where relevant
+        - Ensure ideas will drive engagement
+        
+        For each idea, provide:
+        1. A clear, specific content idea
+        2. Brief explanation of why it would work well
+        3. Suggested content format (text, image, video, etc.)
+        
+        Return as a JSON array of objects with keys: "idea", "reason", "format"
+        """
+        
+        # Use GPT-5 mini with web search for current trends
+        response = await client.chat.completions.create(
+            model="gpt-5-mini",
+            messages=[
+                {
+                    "role": "system", 
+                    "content": "You are an expert social media strategist with access to current trends and best practices. Use web search to incorporate timely and relevant information."
+                },
+                {"role": "user", "content": prompt}
+            ],
+            tools=[{"type": "web_search"}],  # Enable web search for current trends
+            temperature=0.8,  # Higher creativity for idea generation
+            max_tokens=1000
+        )
+        
+        content = response.choices[0].message.content
+        
+        # Try to parse JSON response
+        try:
+            import json
+            suggestions = json.loads(content)
+            if not isinstance(suggestions, list):
+                suggestions = suggestions.get("ideas", [])
+        except (json.JSONDecodeError, TypeError):
+            # Fallback: extract ideas from text
+            lines = content.split('\n')
+            suggestions = []
+            for line in lines:
+                if line.strip() and any(keyword in line.lower() for keyword in ['idea', 'suggestion', 'content']):
+                    suggestions.append({
+                        "idea": line.strip(),
+                        "reason": "AI-generated suggestion",
+                        "format": "text"
+                    })
+            if len(suggestions) > 5:
+                suggestions = suggestions[:5]
+        
+        # Ensure we have at least some suggestions
+        if not suggestions:
+            suggestions = [
+                {
+                    "idea": f"Create {tone} content about {topic or 'your expertise'} for {platform}",
+                    "reason": "Leverages your knowledge and matches requested tone",
+                    "format": "text"
+                }
+            ]
+        
+        return {
+            "platform": platform,
+            "topic": topic,
+            "tone": tone,
+            "suggestions": suggestions[:5],  # Return top 5
+            "generated_at": datetime.utcnow(),
+            "ai_generated": True,
+            "model_used": "gpt-5-mini"
+        }
+        
+    except Exception as e:
+        logger.error(f"AI content idea generation failed: {e}")
+        
+        # Fallback to basic suggestions
+        platform_fallbacks = {
+            "twitter": [
+                {"idea": "Share a quick industry tip", "reason": "Tips perform well on Twitter", "format": "text"},
+                {"idea": "Ask an engaging question", "reason": "Questions drive replies and engagement", "format": "text"},
+                {"idea": "Comment on current industry news", "reason": "Timely content gets more visibility", "format": "text"}
+            ],
+            "linkedin": [
+                {"idea": "Write about lessons learned", "reason": "Professional insights resonate on LinkedIn", "format": "article"},
+                {"idea": "Share industry analysis", "reason": "Thought leadership content performs well", "format": "text"},
+                {"idea": "Highlight team achievements", "reason": "Human stories build connections", "format": "text"}
+            ],
+            "instagram": [
+                {"idea": "Post behind-the-scenes content", "reason": "Authenticity drives Instagram engagement", "format": "image"},
+                {"idea": "Create an educational carousel", "reason": "Educational content gets high saves", "format": "carousel"},
+                {"idea": "Share customer success stories", "reason": "Social proof builds trust", "format": "image"}
+            ]
+        }
+        
+        suggestions = platform_fallbacks.get(platform, platform_fallbacks["twitter"])
+        
+        return {
+            "platform": platform,
+            "topic": topic,
+            "tone": tone,
+            "suggestions": suggestions,
+            "generated_at": datetime.utcnow(),
+            "ai_generated": False,
+            "fallback_used": True,
+            "error": "AI generation unavailable"
+        }
 
 @router.post("/generate-image")
 async def generate_image(

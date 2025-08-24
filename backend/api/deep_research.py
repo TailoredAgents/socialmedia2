@@ -21,15 +21,26 @@ try:
         setup_industry_deep_research_task,
         trigger_immediate_deep_research_task
     )
-except ImportError:
-    logger.warning("Research tasks not available - using mock functions")
-    # Mock functions for development
+    TASKS_AVAILABLE = True
+except ImportError as e:
+    logger.error(f"CRITICAL: Research tasks failed to import: {e}")
+    TASKS_AVAILABLE = False
+    # Raise error immediately instead of creating stub functions
     def execute_weekly_deep_research_task():
-        pass
+        raise HTTPException(
+            status_code=503,
+            detail="Deep research tasks are not available. Celery workers may not be configured."
+        )
     def setup_industry_deep_research_task():
-        pass
+        raise HTTPException(
+            status_code=503,
+            detail="Deep research tasks are not available. Celery workers may not be configured."
+        )
     def trigger_immediate_deep_research_task():
-        pass
+        raise HTTPException(
+            status_code=503,
+            detail="Deep research tasks are not available. Celery workers may not be configured."
+        )
 router = APIRouter(prefix="/api/v1/deep-research", tags=["Deep Research"])
 
 # ============================================================================

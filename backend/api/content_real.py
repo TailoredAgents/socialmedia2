@@ -542,25 +542,114 @@ async def delete_content(
         raise HTTPException(status_code=500, detail=f"Content deletion failed: {str(e)}")
 
 @router.get("/analytics/summary")
-async def get_content_analytics():
-    """Get content analytics summary"""
+async def get_content_analytics(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+    days: int = Query(30, ge=1, le=365)
+):
+    """Get content analytics summary with real database data"""
     try:
-        # For now, return mock analytics data since we don't have database storage yet
+        from datetime import timedelta
+        from sqlalchemy import func, and_
+        
+        start_date = datetime.utcnow() - timedelta(days=days)
+        
+        # Get all content for the user within date range
+        content_query = db.query(ContentLog).filter(
+            ContentLog.user_id == current_user.id,
+            ContentLog.created_at >= start_date
+        )
+        
+        total_content = content_query.count()
+        
+        # Count by status
+        published_count = content_query.filter(ContentLog.status == "published").count()
+        scheduled_count = content_query.filter(ContentLog.status == "scheduled").count()
+        draft_count = content_query.filter(ContentLog.status == "draft").count()
+        
+        # Platform breakdown
+        platform_stats = db.query(
+            ContentLog.platform,
+            func.count(ContentLog.id).label('count')
+        ).filter(
+            ContentLog.user_id == current_user.id,
+            ContentLog.created_at >= start_date
+        ).group_by(ContentLog.platform).all()
+        
+        top_platforms = [
+            {"platform": platform, "count": count}
+            for platform, count in platform_stats
+        ]
+        
+        # Engagement metrics from all published content
+        published_content = content_query.filter(ContentLog.status == "published").all()
+        
+        total_views = 0
+        total_likes = 0
+        total_shares = 0
+        total_comments = 0
+        
+        performance_data = []
+        
+        for content in published_content:
+            engagement_data = content.engagement_data or {}
+            
+            views = engagement_data.get('views', 0)
+            likes = engagement_data.get('likes', 0)
+            shares = engagement_data.get('shares', 0)
+            comments = engagement_data.get('comments', 0)
+            
+            total_views += views
+            total_likes += likes
+            total_shares += shares
+            total_comments += comments
+            
+            # Add to performance trends
+            performance_data.append({
+                "date": content.created_at.strftime('%Y-%m-%d'),
+                "engagement_score": likes + comments * 2 + shares * 3,
+                "platform": content.platform
+            })
+        
+        # Generate performance trends (group by date)
+        from collections import defaultdict
+        daily_performance = defaultdict(int)
+        daily_counts = defaultdict(int)
+        
+        for item in performance_data:
+            daily_performance[item["date"]] += item["engagement_score"]
+            daily_counts[item["date"]] += 1
+        
+        performance_trends = [
+            {
+                "date": date,
+                "average_engagement": daily_performance[date] / daily_counts[date] if daily_counts[date] > 0 else 0,
+                "post_count": daily_counts[date]
+            }
+            for date in sorted(daily_performance.keys())
+        ]
+        
         return {
-            "total_content": 0,
-            "published_content": 0,
-            "scheduled_content": 0,
-            "draft_content": 0,
-            "top_platforms": [],
+            "total_content": total_content,
+            "published_content": published_count,
+            "scheduled_content": scheduled_count,
+            "draft_content": draft_count,
+            "top_platforms": sorted(top_platforms, key=lambda x: x["count"], reverse=True),
             "engagement_metrics": {
-                "total_views": 0,
-                "total_likes": 0,
-                "total_shares": 0,
-                "total_comments": 0
+                "total_views": total_views,
+                "total_likes": total_likes,
+                "total_shares": total_shares,
+                "total_comments": total_comments
             },
-            "performance_trends": [],
-            "message": "Analytics feature coming soon - integrate with database storage"
+            "performance_trends": performance_trends[-30:],  # Last 30 days
+            "date_range": {
+                "start_date": start_date.strftime('%Y-%m-%d'),
+                "end_date": datetime.utcnow().strftime('%Y-%m-%d'),
+                "days": days
+            },
+            "message": f"Analytics for last {days} days"
         }
+        
     except Exception as e:
         logger.error(f"Content analytics error: {e}")
         raise HTTPException(status_code=500, detail=f"Analytics failed: {str(e)}")

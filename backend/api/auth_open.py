@@ -144,9 +144,17 @@ async def open_register(
         auth_provider="local"
     )
     
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    try:
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Database error during user creation: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}"
+        )
     
     # Send verification email in background only if required
     if settings.require_email_verification:
@@ -158,9 +166,16 @@ async def open_register(
         )
     
     # Generate JWT token (but user needs to verify email to fully access features)
-    access_token = jwt_handler.create_access_token(
-        data={"sub": str(new_user.id), "email": new_user.email}
-    )
+    try:
+        access_token = jwt_handler.create_access_token(
+            data={"sub": str(new_user.id), "email": new_user.email}
+        )
+    except Exception as e:
+        logger.error(f"Failed to create JWT token: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create access token: {str(e)}"
+        )
     
     logger.info(f"New user registered: {new_user.email} (First user: {is_first_user})")
     

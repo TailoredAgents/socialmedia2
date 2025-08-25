@@ -9,9 +9,8 @@ from datetime import datetime
 import json
 
 from sqlalchemy import create_engine, text, Column, Integer, String, Text, DateTime, Float
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, sessionmaker, declarative_base
 from sqlalchemy.sql import func
-from sqlalchemy.ext.declarative import declarative_base
 from pgvector.sqlalchemy import Vector
 import openai
 import numpy as np

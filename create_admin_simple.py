@@ -10,8 +10,7 @@ from enum import Enum
 # Check for required packages
 try:
     from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Enum as SQLEnum
-    from sqlalchemy.ext.declarative import declarative_base
-    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.orm import sessionmaker, declarative_base
     from passlib.context import CryptContext
 except ImportError as e:
     print(f"Missing required package: {e}")

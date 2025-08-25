@@ -9,8 +9,7 @@ from typing import AsyncGenerator, Generator, Optional, Dict, Any
 from datetime import datetime, timedelta
 
 from sqlalchemy import create_engine, event, pool, text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session, scoped_session
+from sqlalchemy.orm import sessionmaker, Session, scoped_session, declarative_base
 from sqlalchemy.pool import QueuePool, StaticPool
 from sqlalchemy.engine import Engine
 import asyncio

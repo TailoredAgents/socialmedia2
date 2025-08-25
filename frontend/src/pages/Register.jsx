@@ -103,7 +103,8 @@ const Register = () => {
         email: formData.email,
         username: formData.username,
         password: formData.password,
-        full_name: formData.full_name || formData.username
+        full_name: formData.full_name || formData.username,
+        accept_terms: formData.accept_terms
       })
       
       // Navigation is handled by the useEffect above

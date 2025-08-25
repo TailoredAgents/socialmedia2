@@ -69,8 +69,6 @@ class User(Base):
     sent_invitations = relationship("OrganizationInvitation", foreign_keys="OrganizationInvitation.invited_by_id")
     received_invitations = relationship("OrganizationInvitation", foreign_keys="OrganizationInvitation.invited_user_id")
     
-    # Registration key relationship
-    registered_with_key = relationship("RegistrationKey", foreign_keys=[registration_key_id])
     
     # User credentials for social media platforms
     credentials = relationship("UserCredentials", back_populates="user", cascade="all, delete-orphan")

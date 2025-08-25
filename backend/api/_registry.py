@@ -2,7 +2,7 @@
 Centralized router registry for all API endpoints
 """
 from . import (
-    auth,
+    auth_open,  # New open SaaS authentication
     auth_fastapi_users,
     admin,
     two_factor,
@@ -30,7 +30,7 @@ from . import (
 # All routers to be registered with the FastAPI app
 ROUTERS = [
     auth_fastapi_users.router,  # FastAPI Users authentication (primary)
-    auth.router,  # Real JWT auth endpoints with registration key validation
+    auth_open.router,  # Open SaaS authentication (no registration keys)
     two_factor.router,  # Two-Factor Authentication endpoints
     admin.router,  # Admin authentication and management system
     user_credentials.router,  # User social media credentials management

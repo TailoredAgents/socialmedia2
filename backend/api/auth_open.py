@@ -14,13 +14,12 @@ from pydantic import BaseModel, EmailStr, Field
 from backend.db.database import get_db
 from backend.db.models import User
 from backend.core.security import JWTHandler
-from backend.services.email_service import EmailService
+from backend.services.email_service import email_methods
 from backend.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 jwt_handler = JWTHandler()
-email_service = EmailService()
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
@@ -151,7 +150,7 @@ async def open_register(
     
     # Send verification email in background
     background_tasks.add_task(
-        email_service.send_verification_email,
+        email_methods.send_verification_email,
         new_user.email,
         new_user.username,
         verification_token
@@ -247,7 +246,7 @@ async def resend_verification(
     
     # Send email in background
     background_tasks.add_task(
-        email_service.send_verification_email,
+        email_methods.send_verification_email,
         user.email,
         user.username,
         verification_token
@@ -287,7 +286,7 @@ async def forgot_password(
     
     # Send reset email in background
     background_tasks.add_task(
-        email_service.send_password_reset_email,
+        email_methods.send_password_reset_email,
         user.email,
         user.username,
         reset_token

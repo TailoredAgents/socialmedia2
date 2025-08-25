@@ -15,8 +15,11 @@ def suppress_third_party_warnings():
     # This is a known issue with Tweepy and Python 3.12+
     warnings.filterwarnings("ignore", category=SyntaxWarning, module="tweepy")
     warnings.filterwarnings("ignore", category=DeprecationWarning, module="tweepy")
+    warnings.filterwarnings("ignore", category=DeprecationWarning, module="tweepy.api")
+    warnings.filterwarnings("ignore", category=DeprecationWarning, module="tweepy.auth")
     warnings.filterwarnings("ignore", message=".*imghdr.*deprecated.*")
     warnings.filterwarnings("ignore", message=".*OAuthHandler.*deprecated.*")
+    warnings.filterwarnings("ignore", message=".*'imghdr' is deprecated.*")
     
     # pysbd library - uses regex patterns with deprecated escape sequences
     warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
@@ -27,7 +30,9 @@ def suppress_third_party_warnings():
     # ChromaDB uses deprecated Pydantic v1 patterns
     # They are migrating to Pydantic v2 but haven't completed yet
     warnings.filterwarnings("ignore", category=DeprecationWarning, module="chromadb")
+    warnings.filterwarnings("ignore", category=DeprecationWarning, module="chromadb.types")
     warnings.filterwarnings("ignore", message=".*model_fields.*attribute.*deprecated.*")
+    warnings.filterwarnings("ignore", message=".*PydanticDeprecatedSince211.*")
     
     # Pydantic v2 migration warnings from dependencies
     warnings.filterwarnings("ignore", category=DeprecationWarning, module="pydantic")

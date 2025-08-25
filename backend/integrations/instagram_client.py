@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import json
 import time
 from dataclasses import dataclass
+from enum import Enum
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -18,6 +19,13 @@ from backend.core.token_encryption import get_token_manager
 from backend.core.audit_logger import log_content_event, AuditEventType
 
 logger = logging.getLogger(__name__)
+
+class InstagramMediaType(Enum):
+    """Instagram media types"""
+    IMAGE = "IMAGE"
+    VIDEO = "VIDEO" 
+    CAROUSEL_ALBUM = "CAROUSEL_ALBUM"
+    REELS = "REELS"
 
 class InstagramAPIError(Exception):
     """Custom exception for Instagram API errors"""

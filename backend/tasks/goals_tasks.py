@@ -8,6 +8,10 @@ These tasks run periodically to:
 4. Generate daily/weekly goal reports
 """
 
+# Ensure warnings are suppressed in worker processes
+from backend.core.suppress_warnings import suppress_third_party_warnings
+suppress_third_party_warnings()
+
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from datetime import datetime, timedelta

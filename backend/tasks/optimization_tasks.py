@@ -1,3 +1,7 @@
+# Ensure warnings are suppressed in worker processes
+from backend.core.suppress_warnings import suppress_third_party_warnings
+suppress_third_party_warnings()
+
 from backend.tasks.celery_app import celery_app
 from backend.agents.tools import openai_tool, memory_tool
 import logging

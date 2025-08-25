@@ -2,6 +2,10 @@
 Autonomous Scheduler - Production Celery beat schedules
 Handles daily/weekly autonomous content generation and posting loops
 """
+# Ensure warnings are suppressed in worker processes
+from backend.core.suppress_warnings import suppress_third_party_warnings
+suppress_third_party_warnings()
+
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional

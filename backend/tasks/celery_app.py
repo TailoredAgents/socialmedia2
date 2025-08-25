@@ -1,3 +1,7 @@
+# Import warning suppression FIRST before any other imports
+from backend.core.suppress_warnings import suppress_third_party_warnings
+suppress_third_party_warnings()
+
 from celery import Celery
 from backend.core.config import get_settings
 

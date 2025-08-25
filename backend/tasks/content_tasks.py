@@ -1,3 +1,7 @@
+# Ensure warnings are suppressed in worker processes
+from backend.core.suppress_warnings import suppress_third_party_warnings
+suppress_third_party_warnings()
+
 from celery import current_task
 from backend.tasks.celery_app import celery_app
 from backend.agents.crew_config import create_daily_crew

@@ -1029,3 +1029,10 @@ content_automation = ContentGenerationAutomation()
 
 # Export alias for backward compatibility
 content_automation_service = content_automation
+
+# Explicit exports for better maintainability
+__all__ = [
+    'ContentGenerationAutomation',
+    'content_automation',
+    'content_automation_service'
+]

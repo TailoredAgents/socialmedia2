@@ -18,8 +18,24 @@ class Settings(BaseSettings):
     serper_api_key: str = ""
     
     # Database
-    database_url: str = os.getenv("DATABASE_URL", "sqlite:///./socialmedia.db")  # Read from env or default to SQLite
+    database_url: str = os.getenv("DATABASE_URL", "")  # PostgreSQL from environment
     postgres_url: str = os.getenv("DATABASE_URL", "")  # PostgreSQL for production (same as database_url)
+    
+    def get_database_url(self) -> str:
+        """Get database URL with PostgreSQL preference and Render SSL support"""
+        db_url = self.database_url or os.getenv("DATABASE_URL")
+        if not db_url:
+            # Fallback to SQLite only in development
+            if self.environment == "development":
+                return "sqlite:///./socialmedia.db"
+            else:
+                raise ValueError("DATABASE_URL must be set in production")
+        
+        # Add SSL mode for Render PostgreSQL if not already present
+        if db_url.startswith("postgresql://") and "sslmode" not in db_url:
+            db_url += "?sslmode=require"
+        
+        return db_url
     
     # JWT (Updated with proper naming)
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")

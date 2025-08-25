@@ -857,3 +857,12 @@ research_pipeline = AutomatedResearchPipeline()
 
 # Export alias for backward compatibility
 research_service = research_pipeline
+
+# Explicit exports for better maintainability
+__all__ = [
+    'AutomatedResearchPipeline',
+    'ResearchSource',
+    'ResearchQuery',
+    'research_pipeline',
+    'research_service'
+]

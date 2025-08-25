@@ -151,7 +151,16 @@ class Settings(BaseSettings):
     
     def get_celery_broker_url(self) -> str:
         """Get Celery broker URL, defaulting to redis_url if not set"""
-        return self.celery_broker_url or self.redis_url
+        broker_url = self.celery_broker_url or self.redis_url
+        
+        # If no Redis is configured and we're in production, log a warning
+        if broker_url == "redis://localhost:6379/0" and self.environment == "production":
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning("⚠️ No Redis URL configured for Celery in production! Background tasks will not work.")
+            logger.warning("⚠️ Set REDIS_URL environment variable to enable background task processing.")
+        
+        return broker_url
     
     def get_celery_result_backend(self) -> str:
         """Get Celery result backend URL, defaulting to redis_url if not set"""

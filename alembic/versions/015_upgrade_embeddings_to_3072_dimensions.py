@@ -1,7 +1,7 @@
 """Upgrade embeddings to text-embedding-3-large (3072 dimensions)
 
 Revision ID: 015_upgrade_embeddings
-Revises: 014_add_admin_system
+Revises: 014
 Create Date: 2025-08-23 12:00:00.000000
 
 """

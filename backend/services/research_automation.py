@@ -854,3 +854,6 @@ class AutomatedResearchPipeline:
 
 # Global research pipeline instance
 research_pipeline = AutomatedResearchPipeline()
+
+# Export alias for backward compatibility
+research_service = research_pipeline

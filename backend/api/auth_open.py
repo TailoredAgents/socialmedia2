@@ -136,9 +136,9 @@ async def open_register(
         hashed_password=hashed_password,
         is_active=True,
         is_superuser=is_first_user,  # First user becomes admin
-        email_verified=False,  # Require email verification
-        email_verification_token=verification_token,
-        email_verification_sent_at=get_current_time(),
+        email_verified=not settings.require_email_verification,  # Auto-verify if verification disabled
+        email_verification_token=verification_token if settings.require_email_verification else None,
+        email_verification_sent_at=get_current_time() if settings.require_email_verification else None,
         tier="free",  # Start with free tier
         subscription_status="free",
         auth_provider="local"
@@ -148,13 +148,14 @@ async def open_register(
     db.commit()
     db.refresh(new_user)
     
-    # Send verification email in background
-    background_tasks.add_task(
-        email_methods.send_verification_email,
-        new_user.email,
-        new_user.username,
-        verification_token
-    )
+    # Send verification email in background only if required
+    if settings.require_email_verification:
+        background_tasks.add_task(
+            email_methods.send_verification_email,
+            new_user.email,
+            new_user.username,
+            verification_token
+        )
     
     # Generate JWT token (but user needs to verify email to fully access features)
     access_token = jwt_handler.create_access_token(

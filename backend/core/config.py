@@ -165,8 +165,8 @@ class Settings(BaseSettings):
     demo_mode: str = "false"
     mock_social_apis: str = "false"
     show_sample_data: str = "false"
-    enable_registration: str = "false"  # Disabled by default for security
-    require_email_verification: str = "true"  # Enabled by default for security
+    enable_registration: str = "true"  # Enable registration for open SaaS
+    require_email_verification: str = "false"  # Disable email verification until email service is configured
     
     # Timezone Configuration
     timezone: str = "America/New_York"

@@ -327,11 +327,22 @@ def get_cors_middleware_config(environment: str = "production"):
             "allow_methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             "allow_headers": [
                 "Accept",
+                "Accept-Encoding",
                 "Accept-Language",
+                "Access-Control-Request-Headers",
+                "Access-Control-Request-Method",
+                "Cache-Control",
+                "Connection",
                 "Content-Language", 
                 "Content-Type",
                 "Authorization",
-                "X-Requested-With"
+                "Origin",
+                "Pragma",
+                "Referer",
+                "User-Agent",
+                "X-Requested-With",
+                "X-CSRF-Token",
+                "X-Request-ID"
             ]
         }
 
@@ -347,9 +358,18 @@ def get_trusted_host_middleware(environment: str = "production"):
     allowed_hosts = [host.strip() for host in allowed_hosts if host.strip()]
     
     if not allowed_hosts:
-        # Default to common patterns
-        allowed_hosts = ["localhost", "127.0.0.1", "*.herokuapp.com", "*.render.com"]
-        logger.warning("No ALLOWED_HOSTS specified, using default patterns")
+        # Default to current production domains and common patterns
+        allowed_hosts = [
+            "localhost", 
+            "127.0.0.1", 
+            "socialmedia-api-wxip.onrender.com",
+            "socialmedia-frontend-pycc.onrender.com",
+            "lily-ai-socialmedia.com",
+            "www.lily-ai-socialmedia.com",
+            "*.herokuapp.com", 
+            "*.render.com"
+        ]
+        logger.warning("No ALLOWED_HOSTS specified, using default patterns including current production domains")
     
     # Return configuration dict for middleware, not the class itself
     return {"allowed_hosts": allowed_hosts}

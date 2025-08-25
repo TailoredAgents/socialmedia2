@@ -39,7 +39,7 @@ class UserUpdate(schemas.BaseUserUpdate):
     email: Optional[EmailStr] = None
 
 # Create router
-router = APIRouter(prefix="/api/auth", tags=["authentication"])
+router = APIRouter(prefix="/api/auth-legacy", tags=["authentication-legacy"])
 
 # Include FastAPI Users auth routes
 router.include_router(

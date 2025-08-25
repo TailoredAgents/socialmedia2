@@ -125,7 +125,7 @@ class ConnectionPoolManager:
                 config["connect_args"] = {
                     "application_name": f"social_media_agent_{pool_name}",
                     "connect_timeout": 10,
-                    "options": "-c default_transaction_isolation=read_committed -c timezone=UTC"
+                    "options": "-c default_transaction_isolation='read committed' -c timezone=UTC"
                 }
             elif is_mysql:
                 config["connect_args"] = {

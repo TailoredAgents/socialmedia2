@@ -5,8 +5,24 @@ Production-ready FastAPI app with comprehensive security hardening
 """
 import sys
 import os
-import logging
 from pathlib import Path
+
+# Add backend to path FIRST so we can import our warning suppression
+backend_path = Path(__file__).parent / "backend"
+if str(backend_path) not in sys.path:
+    sys.path.insert(0, str(backend_path))
+
+# Import warning suppression before any third-party libraries
+try:
+    from backend.core.suppress_warnings import suppress_third_party_warnings
+    suppress_third_party_warnings()
+except ImportError:
+    # Fallback if module not available
+    import warnings
+    warnings.filterwarnings("ignore", category=SyntaxWarning)
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+import logging
 
 # Configure production logging
 logging.basicConfig(
@@ -18,12 +34,7 @@ logger = logging.getLogger(__name__)
 logger.info("Starting AI Social Media Content Agent (Production)")
 logger.info("Python version: {}".format(sys.version))
 logger.info("Working directory: {}".format(os.getcwd()))
-
-# Add backend to Python path
-backend_path = Path(__file__).parent / "backend"
-if str(backend_path) not in sys.path:
-    sys.path.insert(0, str(backend_path))
-    logger.info("Added backend path: {}".format(backend_path))
+logger.info("Backend path already added: {}".format(backend_path))
 
 # Import FastAPI with fallback
 try:

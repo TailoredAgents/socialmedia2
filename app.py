@@ -177,27 +177,6 @@ except ImportError as e:
 # Root endpoints
 @app.get("/")
 async def root():
-    """Root endpoint with detailed status"""
-    # Get CORS configuration for debugging
-    cors_env = os.getenv("ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS", "")
-    return {
-        "message": "AI Social Media Content Agent API",
-        "status": "operational",
-        "version": "2.0.0",
-        "environment": os.getenv("ENVIRONMENT", "production"),
-        "loaded_modules": loaded_routers,
-        "cors_debug": {
-            "allowed_origins_env": os.getenv("ALLOWED_ORIGINS"),
-            "cors_origins_env": os.getenv("CORS_ORIGINS"),
-            "has_cors_config": bool(cors_env)
-        },
-        "failed_modules": [f[0] for f in failed_routers],
-        "total_routes": len(app.routes),
-        "api_docs": "/docs"
-    }
-
-@app.get("/")
-async def root():
     """Root endpoint for service status"""
     return {
         "name": "AI Social Media Content Agent",

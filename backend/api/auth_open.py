@@ -392,3 +392,65 @@ async def login(
         tier=user.tier,
         is_superuser=user.is_superuser
     )
+
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh_token(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Refresh access token using existing token
+    For now, just validates current token and returns a new one
+    """
+    # Get Authorization header
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid authorization header"
+        )
+    
+    token = auth_header.split(" ")[1]
+    
+    try:
+        # Verify current token
+        payload = jwt_handler.verify_token(token)
+        user_id = int(payload.get("sub"))
+        
+        # Get user from database
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
+        
+        # Generate new token
+        access_token = jwt_handler.create_access_token(
+            data={"sub": str(user.id), "email": user.email}
+        )
+        
+        return TokenResponse(
+            access_token=access_token,
+            user_id=user.id,
+            email=user.email,
+            username=user.username,
+            email_verified=user.email_verified,
+            tier=user.tier,
+            is_superuser=user.is_superuser
+        )
+        
+    except Exception as e:
+        logger.error(f"Token refresh failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token"
+        )
+
+@router.post("/logout")
+async def logout():
+    """
+    Logout endpoint - in JWT stateless auth, this just returns success
+    Frontend should discard the token
+    """
+    return {"message": "Logout successful", "status": "success"}

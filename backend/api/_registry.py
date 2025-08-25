@@ -25,6 +25,7 @@ from . import (
     performance_monitoring,
     social_platforms,
     organizations,
+    system_logs,  # System logging and error tracking
 )
 
 # All routers to be registered with the FastAPI app
@@ -52,4 +53,5 @@ ROUTERS = [
     # performance_monitoring.router,  # Middleware only - no router
     social_platforms.router,  # Social media platform connections and posting
     organizations.router,  # Multi-tenant organization management
+    system_logs.router,  # System logging and error tracking endpoints
 ]

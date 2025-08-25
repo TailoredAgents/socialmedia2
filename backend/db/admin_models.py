@@ -250,8 +250,8 @@ class RegistrationKey(Base):
     created_by = Column(String, ForeignKey("admin_users.id"), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
-    # Track usage
-    users_registered = relationship("User", back_populates="registered_with_key", foreign_keys="User.registration_key_id")
+    # Track usage - DISABLED for open SaaS (no registration keys required)
+    # users_registered = relationship("User", back_populates="registered_with_key", foreign_keys="User.registration_key_id")
     created_by_admin = relationship("AdminUser", foreign_keys=[created_by])
     
     def __repr__(self):

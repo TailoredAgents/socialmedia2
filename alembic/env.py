@@ -32,6 +32,10 @@ target_metadata = Base.metadata
 
 def get_database_url():
     """Get database URL from settings"""
+    # Force PostgreSQL in production to avoid SQLite fallback
+    if os.getenv('RENDER'):
+        return "postgresql://socialmedia:BbsIYQtjBnhKwRL3F9kXbv1wrtsVxuTg@dpg-d2ln7eer433s739509lg-a/socialmedia_uq72?sslmode=require"
+    
     settings = get_settings()
     return settings.get_database_url()
 

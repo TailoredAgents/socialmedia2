@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     
     def get_database_url(self) -> str:
         """Get database URL with PostgreSQL preference and Render SSL support"""
+        # Force production PostgreSQL URL when environment is production
+        if self.environment == "production":
+            return "postgresql://socialmedia:BbsIYQtjBnhKwRL3F9kXbv1wrtsVxuTg@dpg-d2ln7eer433s739509lg-a/socialmedia_uq72?sslmode=require"
+        
         db_url = self.database_url or os.getenv("DATABASE_URL")
         if not db_url:
             # Fallback to SQLite only in development

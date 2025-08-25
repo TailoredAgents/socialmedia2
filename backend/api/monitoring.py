@@ -6,7 +6,7 @@ import asyncio
 import logging
 import psutil
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
@@ -14,6 +14,7 @@ from sqlalchemy import text
 import json
 
 from backend.db.database import get_db
+from backend.core.config import get_utc_now
 from backend.db.database_optimized import health_check as db_health, db_optimizer
 from backend.services.redis_cache import redis_cache
 from backend.services.quota_management import quota_manager
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 # Global monitoring state
 monitoring_state = {
-    "startup_time": datetime.utcnow(),
+    "startup_time": get_utc_now(),
     "health_checks": [],
     "alerts": [],
     "system_metrics": {},
@@ -65,9 +66,9 @@ class SystemMonitor:
         """Get comprehensive system health status"""
         
         health_status = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": get_utc_now().isoformat(),
             "overall_status": "healthy",
-            "uptime_seconds": (datetime.utcnow() - monitoring_state["startup_time"]).total_seconds(),
+            "uptime_seconds": (get_utc_now() - monitoring_state["startup_time"]).total_seconds(),
             "components": {},
             "alerts": [],
             "performance_metrics": {}
@@ -233,7 +234,7 @@ class SystemMonitor:
         """Get status of all social media integrations"""
         
         integration_status = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": get_utc_now().isoformat(),
             "platforms": {},
             "overall_status": "healthy"
         }
@@ -329,7 +330,7 @@ async def get_system_metrics(current_user: User = Depends(get_current_active_use
     """
     try:
         metrics = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": get_utc_now().isoformat(),
             "system": system_monitor._get_system_metrics(),
             "database": db_optimizer.get_stats(),
             "cache": await redis_cache.get_cache_stats(),
@@ -361,7 +362,7 @@ async def get_metrics_history(
     """
     try:
         hours = min(hours, 168)  # Limit to 1 week
-        cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+        cutoff_time = get_utc_now() - timedelta(hours=hours)
         
         # Filter metrics history
         filtered_metrics = [
@@ -395,7 +396,7 @@ async def get_system_alerts(current_user: User = Depends(get_current_active_user
         health_status = await system_monitor.get_system_health()
         
         return {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": get_utc_now().isoformat(),
             "alert_count": len(health_status["alerts"]),
             "alerts": health_status["alerts"],
             "system_status": health_status["overall_status"],
@@ -451,7 +452,7 @@ async def service_status():
         return {
             "service_name": "AI Social Media Content Agent",
             "status": health_status["overall_status"],
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": get_utc_now().isoformat(),
             "uptime_seconds": health_status["uptime_seconds"],
             "components": {
                 "api": {"status": "operational" if health_status["overall_status"] != "critical" else "major_outage"},
@@ -467,7 +468,7 @@ async def service_status():
         return {
             "service_name": "AI Social Media Content Agent",
             "status": "major_outage",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": get_utc_now().isoformat(),
             "error": str(e)
         }
 

@@ -6,7 +6,7 @@ import asyncio
 import logging
 import time
 from typing import Dict, List, Optional, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, asdict
 from contextlib import asynccontextmanager
 from collections import defaultdict, deque
@@ -17,7 +17,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import OperationalError, TimeoutError
 
-from backend.core.config import get_settings
+from backend.core.config import get_settings, get_utc_now
 from backend.db.database_optimized import db_optimizer
 
 settings = get_settings()
@@ -125,7 +125,7 @@ class ConnectionPoolManager:
                 config["connect_args"] = {
                     "application_name": f"social_media_agent_{pool_name}",
                     "connect_timeout": 10,
-                    "options": "-c default_transaction_isolation='read committed' -c timezone=UTC"
+                    "options": "-c default_transaction_isolation=read_committed -c timezone=UTC"
                 }
             elif is_mysql:
                 config["connect_args"] = {
@@ -155,7 +155,7 @@ class ConnectionPoolManager:
             pool_exhaustion_count=0,
             connection_errors=0,
             slow_connections=0,
-            last_updated=datetime.utcnow()
+            last_updated=get_utc_now()
         )
         
         # Add event listeners for monitoring
@@ -194,7 +194,7 @@ class ConnectionPoolManager:
                 if current_total > metrics.peak_connections:
                     metrics.peak_connections = current_total
             
-            metrics.last_updated = datetime.utcnow()
+            metrics.last_updated = get_utc_now()
         
         @event.listens_for(engine, "checkout")
         def track_checkout(dbapi_connection, connection_record, connection_proxy):
@@ -217,13 +217,13 @@ class ConnectionPoolManager:
         def track_close(dbapi_connection, connection_record):
             """Track connection close"""
             metrics = self.pool_metrics[pool_name]
-            metrics.last_updated = datetime.utcnow()
+            metrics.last_updated = get_utc_now()
         
         @event.listens_for(engine, "close_detached")
         def track_detached_close(dbapi_connection):
             """Track detached connection close"""
             metrics = self.pool_metrics[pool_name]
-            metrics.last_updated = datetime.utcnow()
+            metrics.last_updated = get_utc_now()
     
     def _add_postgresql_optimizations(self, engine: Engine):
         """Add PostgreSQL-specific optimizations"""
@@ -387,13 +387,13 @@ class ConnectionPoolManager:
                 health_results[pool_name] = pool_status
                 
                 # Update last health check time
-                self.last_health_check[pool_name] = datetime.utcnow()
+                self.last_health_check[pool_name] = get_utc_now()
                 
             except Exception as e:
                 health_results[pool_name] = {
                     "healthy": False,
                     "error": str(e),
-                    "last_check": datetime.utcnow().isoformat()
+                    "last_check": get_utc_now().isoformat()
                 }
                 
                 # Increment error count
@@ -401,7 +401,7 @@ class ConnectionPoolManager:
                     self.pool_metrics[pool_name].connection_errors += 1
         
         return {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": get_utc_now().isoformat(),
             "pools": health_results,
             "total_pools": len(self.pools)
         }
@@ -498,7 +498,7 @@ class ConnectionPoolManager:
                 results[pool_name] = {"error": str(e)}
         
         return {
-            "optimization_timestamp": datetime.utcnow().isoformat(),
+            "optimization_timestamp": get_utc_now().isoformat(),
             "pools": results
         }
     

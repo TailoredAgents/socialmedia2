@@ -10,7 +10,7 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 import json
 
-from backend.core.config import get_settings
+from backend.core.config import get_settings, get_utc_now
 from backend.integrations.performance_optimizer import RateLimiter, PerformanceOptimizer
 from backend.integrations.twitter_client import twitter_client
 from backend.integrations.instagram_client import instagram_client
@@ -196,7 +196,7 @@ class QuotaManager:
             cache_key = f"{platform}_{user_id or 'global'}"
             if cache_key in self.quota_cache:
                 cached_quota = self.quota_cache[cache_key]
-                if datetime.utcnow() < cached_quota.reset_time:
+                if get_utc_now() < cached_quota.reset_time:
                     return cached_quota
             
             # Get platform-specific quota
@@ -248,7 +248,7 @@ class QuotaManager:
                 current_usage=current_usage,
                 quota_limit=quota_limit,
                 time_window=time_window,
-                reset_time=datetime.utcnow() + timedelta(seconds=time_window),
+                reset_time=get_utc_now() + timedelta(seconds=time_window),
                 utilization_percent=(current_usage / quota_limit) * 100 if quota_limit > 0 else 0,
                 status=QuotaStatus.NORMAL  # Will be calculated in __post_init__
             )
@@ -304,7 +304,7 @@ class QuotaManager:
             current_usage=0,
             quota_limit=config.get("base_quota", 100),
             time_window=config.get("window_seconds", 3600),
-            reset_time=datetime.utcnow() + timedelta(seconds=config.get("window_seconds", 3600)),
+            reset_time=get_utc_now() + timedelta(seconds=config.get("window_seconds", 3600)),
             utilization_percent=0,
             status=QuotaStatus.NORMAL
         )
@@ -346,7 +346,7 @@ class QuotaManager:
             Optimized request schedule
         """
         optimized_schedule = []
-        current_time = datetime.utcnow()
+        current_time = get_utc_now()
         
         # Group requests by platform
         platform_requests = {}
@@ -403,7 +403,7 @@ class QuotaManager:
             platforms_monitored=len(all_quotas),
             average_utilization=round(average_utilization, 1),
             critical_platforms=critical_platforms,
-            last_updated=datetime.utcnow()
+            last_updated=get_utc_now()
         )
     
     async def reset_quota_cache(self, platform: Optional[str] = None):

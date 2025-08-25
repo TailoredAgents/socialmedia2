@@ -15,7 +15,7 @@ from sqlalchemy.pool import QueuePool, StaticPool
 from sqlalchemy.engine import Engine
 import asyncio
 
-from backend.core.config import get_settings
+from backend.core.config import get_settings, get_utc_now
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -86,7 +86,7 @@ class DatabaseOptimizer:
             "slow_query_percentage": (
                 (self.connection_stats["slow_queries"] / max(1, self.connection_stats["total_queries"])) * 100
             ),
-            "last_updated": datetime.utcnow().isoformat()
+            "last_updated": get_utc_now().isoformat()
         }
 
 # Global database optimizer
@@ -141,7 +141,7 @@ def create_optimized_engine(database_url: str) -> Engine:
                 "application_name": "social_media_agent",
                 "connect_timeout": 10,
                 # PostgreSQL specific optimizations
-                "options": "-c default_transaction_isolation='read committed' -c timezone=UTC"
+                "options": "-c default_transaction_isolation=read_committed -c timezone=UTC"
             }
         elif is_mysql:
             engine_args["connect_args"] = {

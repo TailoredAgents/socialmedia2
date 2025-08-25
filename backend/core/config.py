@@ -2,15 +2,20 @@ from pydantic_settings import BaseSettings
 from pydantic import Field
 from functools import lru_cache
 import os
+from datetime import datetime, timezone
 from dotenv import load_dotenv
+
+def get_utc_now() -> datetime:
+    """Get current UTC time with timezone awareness"""
+    return datetime.now(timezone.utc)
 
 # Load environment variables from .env file
 load_dotenv()
 
 class Settings(BaseSettings):
-    # Environment
-    environment: str = "development"
-    debug: bool = True
+    # Environment - Auto-detect production on Render
+    environment: str = os.getenv("ENVIRONMENT", os.getenv("RENDER", "development") and "production" or "development")
+    debug: bool = os.getenv("ENVIRONMENT", "").lower() != "production"
     
     # API Keys
     openai_api_key: str = ""

@@ -10,7 +10,8 @@ import pickle
 import builtins
 import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
+from backend.core.config import get_utc_now
 import logging
 
 try:
@@ -198,7 +199,7 @@ class VectorStore:
         self._metadata[internal_id] = {
             'content_id': content_id,
             'metadata': metadata or {},
-            'created_at': datetime.utcnow().isoformat(),
+            'created_at': get_utc_now().isoformat(),
             'vector_norm': float(norm)
         }
         
@@ -256,7 +257,7 @@ class VectorStore:
             self._metadata[internal_id] = {
                 'content_id': content_id,
                 'metadata': metadata,
-                'created_at': datetime.utcnow().isoformat(),
+                'created_at': get_utc_now().isoformat(),
                 'vector_norm': float(norms[i])
             }
         

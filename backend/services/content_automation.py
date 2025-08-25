@@ -1026,3 +1026,6 @@ class ContentGenerationAutomation:
 
 # Global content automation instance
 content_automation = ContentGenerationAutomation()
+
+# Export alias for backward compatibility
+content_automation_service = content_automation

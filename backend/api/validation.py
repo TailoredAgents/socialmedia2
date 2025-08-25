@@ -108,6 +108,38 @@ def sanitize_text(text: str, max_length: int = 10000) -> str:
     
     return sanitized
 
+def validate_text_length(text: str, min_length: int = 1, max_length: int = 10000) -> str:
+    """Validate text length"""
+    if not text:
+        raise ValidationError(f"Text is required (minimum {min_length} characters)")
+    
+    text = text.strip()
+    if len(text) < min_length:
+        raise ValidationError(f"Text must be at least {min_length} characters long")
+    
+    if len(text) > max_length:
+        raise ValidationError(f"Text must not exceed {max_length} characters")
+    
+    return text
+
+def clean_text_input(text: str, max_length: int = 10000) -> str:
+    """Clean and sanitize text input"""
+    if not text:
+        return ""
+    
+    # Remove control characters and normalize whitespace
+    text = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', text)
+    text = ' '.join(text.split())
+    
+    # HTML escape for safety
+    text = html.escape(text)
+    
+    # Limit length
+    if len(text) > max_length:
+        text = text[:max_length]
+    
+    return text.strip()
+
 def validate_tags(tags: List[str]) -> List[str]:
     """Validate and sanitize tags"""
     if not tags:

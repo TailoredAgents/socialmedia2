@@ -6,7 +6,7 @@ import secrets
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Response, BackgroundTasks, status
+from fastapi import APIRouter, Depends, HTTPException, Response, BackgroundTasks, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, Field

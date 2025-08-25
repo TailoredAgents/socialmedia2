@@ -148,11 +148,6 @@ class Settings(BaseSettings):
         case_sensitive = False
         extra = "allow"  # Allow extra fields from environment
     
-    def get_database_url(self) -> str:
-        """Get the appropriate database URL based on environment"""
-        if self.environment == "production" and self.postgres_url:
-            return self.postgres_url
-        return self.database_url
     
     def get_celery_broker_url(self) -> str:
         """Get Celery broker URL, defaulting to redis_url if not set"""

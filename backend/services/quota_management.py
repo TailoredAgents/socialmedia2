@@ -289,7 +289,7 @@ class QuotaManager:
             current_usage=current_usage,
             quota_limit=quota_limit,
             time_window=time_window,
-            reset_time=datetime.utcnow() + timedelta(seconds=time_window),
+            reset_time=get_utc_now() + timedelta(seconds=time_window),
             utilization_percent=platform_stats.get("utilization", 0),
             status=QuotaStatus.NORMAL,  # Will be calculated in __post_init__
             burst_available=burst_available

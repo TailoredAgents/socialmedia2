@@ -141,7 +141,7 @@ def create_optimized_engine(database_url: str) -> Engine:
                 "application_name": "social_media_agent",
                 "connect_timeout": 10,
                 # PostgreSQL specific optimizations
-                "options": "-c default_transaction_isolation=read_committed -c timezone=UTC"
+                "options": "-c default_transaction_isolation='read committed' -c timezone=UTC"
             }
         elif is_mysql:
             engine_args["connect_args"] = {

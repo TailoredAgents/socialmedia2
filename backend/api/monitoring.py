@@ -227,7 +227,7 @@ class SystemMonitor:
             "network_bytes_recv": network.bytes_recv,
             "process_memory_mb": round(process_memory.rss / 1024 / 1024, 2),
             "process_threads": process.num_threads(),
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": get_utc_now().isoformat()
         }
     
     async def get_integration_status(self) -> Dict[str, Any]:
@@ -424,14 +424,14 @@ async def acknowledge_alert(
             "id": alert_id,
             "action": "acknowledged",
             "user_id": current_user.id,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": get_utc_now().isoformat()
         })
         
         return {
             "success": True,
             "message": f"Alert {alert_id} acknowledged",
             "acknowledged_by": current_user.email,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": get_utc_now().isoformat()
         }
         
     except Exception as e:

@@ -105,14 +105,15 @@ except Exception as e:
             allowed_origins = []
         
         if not allowed_origins:
-            # Always include the new domain as fallback
+            # Current production domains as fallback
             allowed_origins = [
+                "https://socialmedia-frontend-pycc.onrender.com",
+                "https://socialmedia-api-wxip.onrender.com",
                 "https://www.lily-ai-socialmedia.com",
-                "https://lily-ai-socialmedia.com", 
-                "https://ai-social-frontend.onrender.com",
+                "https://lily-ai-socialmedia.com",
                 "http://localhost:3000"
             ]
-            logger.warning("No CORS environment variables found, using default origins")
+            logger.warning("No CORS environment variables found, using current production domains as fallback")
         
         logger.info(f"CORS allowed origins: {allowed_origins}")
         

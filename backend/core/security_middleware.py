@@ -136,8 +136,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return None
     
     async def dispatch(self, request: Request, call_next):
-        # Skip rate limiting for health checks
-        if request.url.path in ["/health", "/ready", "/metrics"]:
+        # Skip rate limiting for health checks and CORS preflight requests
+        if request.url.path in ["/health", "/ready", "/metrics"] or request.method == "OPTIONS":
             return await call_next(request)
         
         client_ip = self.get_client_ip(request)
@@ -223,8 +223,8 @@ class RequestValidationMiddleware(BaseHTTPMiddleware):
         return None
     
     async def dispatch(self, request: Request, call_next):
-        # Skip validation for health checks
-        if request.url.path in ["/health", "/ready", "/metrics"]:
+        # Skip validation for health checks and CORS preflight requests
+        if request.url.path in ["/health", "/ready", "/metrics"] or request.method == "OPTIONS":
             return await call_next(request)
         
         # Check URL path

@@ -65,6 +65,7 @@ app = FastAPI(
 )
 
 # Setup comprehensive security middleware
+security_middleware_success = False
 try:
     from backend.core.security_middleware import setup_security_middleware
     from backend.core.audit_logger import AuditTrackingMiddleware, AuditLogger
@@ -75,11 +76,15 @@ try:
     
     # Setup all security middleware
     setup_security_middleware(app, environment=environment)
+    security_middleware_success = True
     
     logger.info("Security middleware configured for {} environment".format(environment))
 except Exception as e:
     logger.error("Failed to setup security middleware: {}".format(e))
-    # Fallback to basic CORS
+
+# Only add fallback CORS if security middleware failed
+if not security_middleware_success:
+    logger.warning("Using fallback CORS configuration")
     from fastapi.middleware.cors import CORSMiddleware
     
     if environment == "development":

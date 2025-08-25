@@ -129,8 +129,8 @@ def create_optimized_engine(database_url: str) -> Engine:
         # PostgreSQL/MySQL configuration for production
         engine_args.update({
             "poolclass": QueuePool,
-            "pool_size": 20,          # Base connections
-            "max_overflow": 30,       # Additional connections when needed
+            "pool_size": 25,          # Increased base connections for production
+            "max_overflow": 40,       # Increased overflow for peak loads
             "pool_pre_ping": True,    # Verify connections before use
             "pool_recycle": 3600,     # Recycle connections every hour
             "pool_timeout": 30,       # Timeout for getting connection from pool

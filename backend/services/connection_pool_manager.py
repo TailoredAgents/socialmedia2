@@ -55,11 +55,11 @@ class ConnectionPoolManager:
         self.connection_times = defaultdict(lambda: deque(maxlen=100))
         self.pool_configs = {}
         
-        # Thresholds for dynamic scaling
-        self.scale_up_threshold = 0.8  # Scale up when 80% of connections are in use
-        self.scale_down_threshold = 0.3  # Scale down when <30% of connections are in use
-        self.max_pool_size = 50
-        self.min_pool_size = 5
+        # Thresholds for dynamic scaling (optimized for production)
+        self.scale_up_threshold = 0.75  # Scale up when 75% of connections are in use
+        self.scale_down_threshold = 0.25  # Scale down when <25% of connections are in use
+        self.max_pool_size = 100  # Increased for production workload
+        self.min_pool_size = 10   # Higher minimum for production readiness
         
         # Health monitoring
         self.health_check_interval = 300  # 5 minutes
@@ -69,8 +69,8 @@ class ConnectionPoolManager:
         self,
         database_url: str,
         pool_name: str = "default",
-        initial_size: int = 10,
-        max_overflow: int = 20,
+        initial_size: int = 15,  # Optimized for production
+        max_overflow: int = 35,  # Increased overflow capacity
         custom_config: Optional[Dict[str, Any]] = None
     ) -> Engine:
         """

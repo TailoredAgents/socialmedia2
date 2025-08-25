@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 from pydantic import Field
 from functools import lru_cache
+from typing import List
 import os
 from datetime import datetime, timezone
 from dotenv import load_dotenv
@@ -34,7 +35,7 @@ class Settings(BaseSettings):
             if self.environment == "development":
                 return "sqlite:///./socialmedia.db"
             else:
-                raise ValueError("DATABASE_URL must be set in production")
+                raise ValueError("DATABASE_URL must be set in production environment")
         
         # Add SSL mode for Render PostgreSQL if not already present
         if db_url.startswith("postgresql://") and "sslmode" not in db_url:
@@ -42,13 +43,39 @@ class Settings(BaseSettings):
         
         return db_url
     
-    # JWT (Updated with proper naming)
+    def validate_production_config(self) -> List[str]:
+        """Validate production configuration and return missing required fields"""
+        missing_fields = []
+        
+        if self.environment == "production":
+            # Critical security fields
+            if not self.SECRET_KEY or self.SECRET_KEY == "your-secret-key-change-this-in-production":
+                missing_fields.append("SECRET_KEY")
+            
+            if not self.encryption_key or self.encryption_key == "your-32-byte-encryption-key-change-this":
+                missing_fields.append("ENCRYPTION_KEY")
+            
+            # Database
+            if not self.get_database_url():
+                missing_fields.append("DATABASE_URL")
+            
+            # Redis
+            if not self.redis_url or self.redis_url == "redis://localhost:6379/0":
+                missing_fields.append("REDIS_URL")
+            
+            # OpenAI API key (required for most features)
+            if not self.openai_api_key:
+                missing_fields.append("OPENAI_API_KEY")
+        
+        return missing_fields
+    
+    # JWT (Updated with proper naming and production security)
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
     encryption_key: str = os.getenv("ENCRYPTION_KEY", "your-32-byte-encryption-key-change-this")
     jwt_secret: str = "your-secret-key-change-this"
     jwt_algorithm: str = "HS256"
-    jwt_access_ttl_seconds: int = 900  # 15 minutes
-    jwt_refresh_ttl_seconds: int = 1209600  # 14 days
+    jwt_access_ttl_seconds: int = 900  # 15 minutes (secure for production)
+    jwt_refresh_ttl_seconds: int = 604800  # 7 days (reduced from 14 for security)
     
     # Redis/Celery
     redis_url: str = Field(default="redis://localhost:6379/0", env="REDIS_URL")
@@ -102,12 +129,16 @@ class Settings(BaseSettings):
     otel_service_name: str = "ai-social-agent-api"
     otel_exporter_otlp_endpoint: str = ""
     
-    # Production Features
+    # Monitoring & Observability
+    sentry_dsn: str = ""
+    prometheus_enabled: bool = False
+    
+    # Production Features (Hardened defaults)
     demo_mode: str = "false"
     mock_social_apis: str = "false"
     show_sample_data: str = "false"
-    enable_registration: str = "true"
-    require_email_verification: str = "false"
+    enable_registration: str = "false"  # Disabled by default for security
+    require_email_verification: str = "true"  # Enabled by default for security
     
     # Timezone Configuration
     timezone: str = "America/New_York"

@@ -119,8 +119,8 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     
     # CORS & Security
-    allowed_hosts: str = "localhost,127.0.0.1,lily-ai-socialmedia.com,www.lily-ai-socialmedia.com,api.lily-ai-socialmedia.com"
-    cors_origins: str = "http://localhost:5173,http://localhost:3000,https://lily-ai-socialmedia.com,https://www.lily-ai-socialmedia.com"
+    allowed_hosts: str = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,socialmedia-api-wxip.onrender.com")
+    cors_origins: str = os.getenv("CORS_ORIGINS", "https://socialmedia-frontend-pycc.onrender.com,https://socialmedia-api-wxip.onrender.com")
     
     # Feature Flags
     feature_flags: str = ""

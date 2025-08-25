@@ -185,6 +185,25 @@ async def root():
         "api_docs": "/docs"
     }
 
+@app.get("/")
+async def root():
+    """Root endpoint for service status"""
+    return {
+        "name": "AI Social Media Content Agent",
+        "version": "2.0.0",
+        "status": "operational",
+        "environment": os.getenv("ENVIRONMENT", "production"),
+        "message": "Service is running. Visit /docs for API documentation (if enabled).",
+        "health_check": "/health",
+        "routes_loaded": len(loaded_routers),
+        "total_endpoints": len(app.routes)
+    }
+
+@app.head("/")
+async def root_head():
+    """HEAD endpoint for health checks"""
+    return {}
+
 @app.get("/health")
 async def health_check():
     """Comprehensive health check"""

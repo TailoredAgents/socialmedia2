@@ -308,15 +308,16 @@ def get_cors_middleware_config(environment: str = "production"):
             allowed_origins = []
         
         if not allowed_origins:
-            # Always include the lily-ai domain as default
+            # Current production domains as defaults
             allowed_origins = [
+                "https://socialmedia-frontend-pycc.onrender.com",
+                "https://socialmedia-api-wxip.onrender.com",
                 "https://www.lily-ai-socialmedia.com",
                 "https://lily-ai-socialmedia.com",
-                "https://ai-social-frontend.onrender.com",
                 "https://localhost", 
                 "http://localhost"
             ]
-            logger.warning("No CORS environment variables found, using default origins including lily-ai domain")
+            logger.warning("No CORS environment variables found, using default origins including current production domains")
         
         logger.info(f"Security middleware CORS allowed origins: {allowed_origins}")
         

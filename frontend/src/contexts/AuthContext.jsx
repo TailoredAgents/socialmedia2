@@ -60,13 +60,13 @@ export const AuthProvider = ({ children }) => {
   const handleTokenRefresh = async () => {
     try {
       const response = await apiService.refreshToken()
-      const { access_token, user_id, email, username } = response
+      const { access_token, user_id, email, username, email_verified, tier, is_superuser } = response
       
       setAccessToken(access_token)
       apiService.setToken(access_token)
       localStorage.setItem('accessToken', access_token)
       
-      setUser({ id: user_id, email, username })
+      setUser({ id: user_id, email, username, email_verified, tier, is_superuser })
       setIsAuthenticated(true)
       setAuthError(null)
       
@@ -83,13 +83,13 @@ export const AuthProvider = ({ children }) => {
       setAuthError(null)
       
       const response = await apiService.login(credentials)
-      const { access_token, user_id, email, username } = response
+      const { access_token, user_id, email, username, email_verified, tier, is_superuser } = response
       
       setAccessToken(access_token)
       apiService.setToken(access_token)
       localStorage.setItem('accessToken', access_token)
       
-      setUser({ id: user_id, email, username })
+      setUser({ id: user_id, email, username, email_verified, tier, is_superuser })
       setIsAuthenticated(true)
       
       logInfo('User logged in successfully')
@@ -109,13 +109,13 @@ export const AuthProvider = ({ children }) => {
       setAuthError(null)
       
       const response = await apiService.register(userData)
-      const { access_token, user_id, email, username } = response
+      const { access_token, user_id, email, username, email_verified, tier, is_superuser } = response
       
       setAccessToken(access_token)
       apiService.setToken(access_token)
       localStorage.setItem('accessToken', access_token)
       
-      setUser({ id: user_id, email, username })
+      setUser({ id: user_id, email, username, email_verified, tier, is_superuser })
       setIsAuthenticated(true)
       
       logInfo('User registered successfully')

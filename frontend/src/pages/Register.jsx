@@ -12,7 +12,7 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     full_name: '',
-    registration_key: ''
+    accept_terms: false
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -78,11 +78,9 @@ const Register = () => {
       errors.full_name = 'Full name must be at least 2 characters'
     }
 
-    // Registration key validation
-    if (!formData.registration_key) {
-      errors.registration_key = 'Registration key is required'
-    } else if (formData.registration_key.length < 10) {
-      errors.registration_key = 'Registration key appears to be invalid'
+    // Terms acceptance validation
+    if (!formData.accept_terms) {
+      errors.accept_terms = 'You must accept the Terms of Service to register'
     }
 
     return errors
@@ -105,8 +103,7 @@ const Register = () => {
         email: formData.email,
         username: formData.username,
         password: formData.password,
-        full_name: formData.full_name || formData.username,
-        registration_key: formData.registration_key
+        full_name: formData.full_name || formData.username
       })
       
       // Navigation is handled by the useEffect above
@@ -230,31 +227,6 @@ const Register = () => {
               )}
             </div>
 
-            {/* Registration Key */}
-            <div>
-              <label htmlFor="registration_key" className="block text-sm font-medium text-gray-700">
-                Registration Key
-              </label>
-              <input
-                id="registration_key"
-                name="registration_key"
-                type="text"
-                required
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                  validationErrors.registration_key ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-                placeholder="Enter your registration key"
-                value={formData.registration_key}
-                onChange={handleInputChange}
-                disabled={isSubmitting}
-              />
-              {validationErrors.registration_key && (
-                <p className="mt-1 text-sm text-red-600">{validationErrors.registration_key}</p>
-              )}
-              <p className="mt-1 text-xs text-gray-500">
-                Registration keys are provided by administrators to control access to the platform.
-              </p>
-            </div>
 
             {/* Password */}
             <div>
@@ -343,6 +315,32 @@ const Register = () => {
             </div>
           </div>
 
+          {/* Terms and Conditions */}
+          <div className="flex items-center">
+            <input
+              id="accept_terms"
+              name="accept_terms"
+              type="checkbox"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              checked={formData.accept_terms}
+              onChange={(e) => setFormData(prev => ({ ...prev, accept_terms: e.target.checked }))}
+              disabled={isSubmitting}
+            />
+            <label htmlFor="accept_terms" className="ml-2 block text-sm text-gray-900">
+              I accept the{' '}
+              <a href="/terms" className="text-blue-600 hover:text-blue-500" target="_blank" rel="noopener noreferrer">
+                Terms of Service
+              </a>{' '}
+              and{' '}
+              <a href="/privacy" className="text-blue-600 hover:text-blue-500" target="_blank" rel="noopener noreferrer">
+                Privacy Policy
+              </a>
+            </label>
+          </div>
+          {validationErrors.accept_terms && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.accept_terms}</p>
+          )}
+
           <div>
             <button
               type="submit"
@@ -358,10 +356,6 @@ const Register = () => {
                 'Create account'
               )}
             </button>
-          </div>
-
-          <div className="text-center text-xs text-gray-500">
-            By creating an account, you agree to our Terms of Service and Privacy Policy
           </div>
         </form>
       </div>

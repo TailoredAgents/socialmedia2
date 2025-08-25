@@ -49,7 +49,7 @@ ROUTERS = [
     integration_services.router,
     feature_flags.router,
     autonomous.router,
-    performance_monitoring.router,
+    # performance_monitoring.router,  # Middleware only - no router
     social_platforms.router,  # Social media platform connections and posting
     organizations.router,  # Multi-tenant organization management
 ]

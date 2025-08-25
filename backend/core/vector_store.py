@@ -7,6 +7,7 @@ import os
 import json
 import uuid
 import pickle
+import builtins
 import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
@@ -110,7 +111,7 @@ class VectorStore:
         """Load metadata mapping internal IDs to content information."""
         if os.path.exists(self.metadata_file):
             try:
-                with open(self.metadata_file, 'r', encoding='utf-8') as f:
+                with builtins.open(self.metadata_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
             except Exception as e:
                 logger.error(f"Failed to load metadata: {e}")
@@ -120,7 +121,7 @@ class VectorStore:
         """Load mapping from internal IDs to content IDs."""
         if os.path.exists(self.id_mapping_file):
             try:
-                with open(self.id_mapping_file, 'r', encoding='utf-8') as f:
+                with builtins.open(self.id_mapping_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
             except Exception as e:
                 logger.error(f"Failed to load ID mapping: {e}")
@@ -140,7 +141,7 @@ class VectorStore:
     def _save_metadata(self):
         """Save metadata to disk."""
         try:
-            with open(self.metadata_file, 'w', encoding='utf-8') as f:
+            with builtins.open(self.metadata_file, 'w', encoding='utf-8') as f:
                 json.dump(self._metadata, f, indent=2, default=str, ensure_ascii=False)
             logger.info("Metadata saved successfully")
         except Exception as e:
@@ -149,7 +150,7 @@ class VectorStore:
     def _save_id_mapping(self):
         """Save ID mapping to disk."""
         try:
-            with open(self.id_mapping_file, 'w', encoding='utf-8') as f:
+            with builtins.open(self.id_mapping_file, 'w', encoding='utf-8') as f:
                 json.dump(self._id_mapping, f, indent=2)
             logger.info("ID mapping saved successfully")
         except Exception as e:

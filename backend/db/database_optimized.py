@@ -140,9 +140,11 @@ def create_optimized_engine(database_url: str) -> Engine:
             engine_args["connect_args"] = {
                 "application_name": "social_media_agent",
                 "connect_timeout": 10,
-                # PostgreSQL specific optimizations  
-                "options": "-c default_transaction_isolation='read committed' -c timezone=UTC"
+                # PostgreSQL specific optimizations
+                "options": "-c timezone=UTC"
             }
+            # Set isolation level using SQLAlchemy's parameter
+            engine_args["isolation_level"] = "READ COMMITTED"
         elif is_mysql:
             engine_args["connect_args"] = {
                 "charset": "utf8mb4",

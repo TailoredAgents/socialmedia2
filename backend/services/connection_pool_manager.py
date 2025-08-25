@@ -125,8 +125,10 @@ class ConnectionPoolManager:
                 config["connect_args"] = {
                     "application_name": f"social_media_agent_{pool_name}",
                     "connect_timeout": 10,
-                    "options": "-c default_transaction_isolation='read committed' -c timezone=UTC"
+                    "options": "-c timezone=UTC"
                 }
+                # Set isolation level using SQLAlchemy's parameter
+                config["isolation_level"] = "READ COMMITTED"
             elif is_mysql:
                 config["connect_args"] = {
                     "charset": "utf8mb4",

@@ -29,6 +29,10 @@ except ImportError as e:
     async def root():
         return {"message": "Fallback app is running", "status": "success"}
     
+    @app.head("/")
+    async def root_head():
+        return {}
+    
     @app.get("/health")
     async def health():
         return {"status": "healthy", "fallback": True}

@@ -32,11 +32,21 @@ class User(Base):
     two_factor_secret = Column(String, nullable=True)  # Base32 secret for TOTP
     two_factor_backup_codes = Column(JSON, nullable=True)  # Recovery codes
     
+    # Email Verification & Password Reset
+    email_verified = Column(Boolean, default=False)
+    email_verification_token = Column(String(255), nullable=True, index=True)
+    email_verification_sent_at = Column(DateTime(timezone=True), nullable=True)
+    password_reset_token = Column(String(255), nullable=True, index=True)
+    password_reset_sent_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Subscription Management
+    subscription_status = Column(String(50), default="free")  # free, active, cancelled, past_due
+    subscription_end_date = Column(DateTime(timezone=True), nullable=True)
+    stripe_customer_id = Column(String(255), nullable=True, index=True)
+    stripe_subscription_id = Column(String(255), nullable=True)
+    
     # Multi-tenancy: Default organization for personal accounts
     default_organization_id = Column(String, ForeignKey("organizations.id"), nullable=True)
-    
-    # Registration key tracking
-    registration_key_id = Column(String, ForeignKey("registration_keys.id"), nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

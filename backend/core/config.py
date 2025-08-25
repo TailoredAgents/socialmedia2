@@ -82,6 +82,29 @@ class Settings(BaseSettings):
     celery_broker_url: str = ""  # Will default to redis_url if empty
     celery_result_backend: str = ""  # Will default to redis_url if empty
     
+    # Open SaaS Configuration
+    enable_registration: bool = Field(default=True, env="ENABLE_REGISTRATION")
+    frontend_url: str = Field(default="https://lily-ai-socialmedia.com", env="FRONTEND_URL")
+    email_verification_expiry_hours: int = Field(default=24, env="EMAIL_VERIFICATION_EXPIRY_HOURS")
+    password_reset_expiry_hours: int = Field(default=2, env="PASSWORD_RESET_EXPIRY_HOURS")
+    
+    # Email Service Configuration
+    from_email: str = Field(default="noreply@lily-ai-socialmedia.com", env="FROM_EMAIL")
+    email_provider: str = Field(default="smtp", env="EMAIL_PROVIDER")  # smtp, sendgrid, ses, resend
+    
+    # SMTP Settings
+    smtp_host: str = Field(default="", env="SMTP_HOST")
+    smtp_port: int = Field(default=587, env="SMTP_PORT")
+    smtp_username: str = Field(default="", env="SMTP_USERNAME")
+    smtp_password: str = Field(default="", env="SMTP_PASSWORD")
+    
+    # Provider API Keys
+    sendgrid_api_key: str = Field(default="", env="SENDGRID_API_KEY")
+    resend_api_key: str = Field(default="", env="RESEND_API_KEY")
+    aws_region: str = Field(default="us-east-1", env="AWS_REGION")
+    aws_access_key_id: str = Field(default="", env="AWS_ACCESS_KEY_ID")
+    aws_secret_access_key: str = Field(default="", env="AWS_SECRET_ACCESS_KEY")
+    
     # Social Media APIs - Twitter/X OAuth 2.0 (Primary)
     twitter_client_id: str = ""
     twitter_client_secret: str = ""

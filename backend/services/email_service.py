@@ -377,6 +377,98 @@ class EmailTemplates:
             html_body=html_body,
             text_body=text_body
         )
+    
+    @staticmethod
+    def email_verification(verification_url: str, user_name: str) -> EmailMessage:
+        """Email verification template"""
+        subject = "Verify Your Email - AI Social Media Agent"
+        
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h1>Welcome to AI Social Media Agent!</h1>
+            </div>
+            <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+                <h2>Hi {user_name},</h2>
+                <p>Thanks for signing up! Please verify your email address to get started with our AI-powered social media management platform.</p>
+                <p style="text-align: center; margin: 30px 0;">
+                    <a href="{verification_url}" style="display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                        Verify Email Address
+                    </a>
+                </p>
+                <p>Or copy and paste this link into your browser:</p>
+                <p style="word-break: break-all; background: #fff; padding: 10px; border: 1px solid #ddd; font-family: monospace; font-size: 12px;">
+                    {verification_url}
+                </p>
+                <p><strong>This link expires in 24 hours.</strong></p>
+                <hr style="margin: 30px 0; border: none; height: 1px; background: #ddd;">
+                <p style="font-size: 12px; color: #666; text-align: center;">
+                    If you didn't create an account, you can safely ignore this email.<br>
+                    &copy; 2025 AI Social Media Agent. All rights reserved.
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        text_body = f"""
+        Welcome to AI Social Media Agent!
+        
+        Hi {user_name},
+        
+        Thanks for signing up! Please verify your email address by visiting:
+        {verification_url}
+        
+        This link expires in 24 hours.
+        
+        If you didn't create an account, you can safely ignore this email.
+        
+        Best regards,
+        The AI Social Media Agent Team
+        """
+        
+        return EmailMessage(
+            to="",  # Will be set when sending
+            subject=subject,
+            html_body=html_body,
+            text_body=text_body
+        )
+
+# Convenience methods for the EmailService
+class EmailServiceMethods:
+    """Additional methods for the email service"""
+    
+    @staticmethod
+    async def send_verification_email(to_email: str, username: str, verification_token: str):
+        """Send email verification using existing service"""
+        from backend.core.config import get_settings
+        settings = get_settings()
+        
+        frontend_url = getattr(settings, 'frontend_url', 'https://lily-ai-socialmedia.com')
+        verification_url = f"{frontend_url}/verify-email?token={verification_token}"
+        
+        template = EmailTemplates.email_verification(verification_url, username)
+        template.to = to_email
+        
+        service = EmailService()
+        return await service.send_email(template)
+    
+    @staticmethod
+    async def send_password_reset_email(to_email: str, username: str, reset_token: str):
+        """Send password reset using existing service"""
+        from backend.core.config import get_settings
+        settings = get_settings()
+        
+        frontend_url = getattr(settings, 'frontend_url', 'https://lily-ai-socialmedia.com')
+        reset_url = f"{frontend_url}/reset-password?token={reset_token}"
+        
+        template = EmailTemplates.password_reset(reset_url, username)
+        template.to = to_email
+        
+        service = EmailService()
+        return await service.send_email(template)
 
 # Global email service instance
 email_service = EmailService()
+email_methods = EmailServiceMethods()

@@ -3,8 +3,11 @@ from pydantic import Field
 from functools import lru_cache
 from typing import List
 import os
+import logging
 from datetime import datetime, timezone
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 def get_utc_now() -> datetime:
     """Get current UTC time with timezone awareness"""
@@ -82,7 +85,7 @@ class Settings(BaseSettings):
     # JWT (Updated with proper naming and production security)
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
     encryption_key: str = os.getenv("ENCRYPTION_KEY", "your-32-byte-encryption-key-change-this")
-    jwt_secret: str = "your-secret-key-change-this"
+    jwt_secret: str = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")  # Use same as SECRET_KEY
     jwt_algorithm: str = "HS256"
     jwt_access_ttl_seconds: int = 900  # 15 minutes (secure for production)
     jwt_refresh_ttl_seconds: int = 604800  # 7 days (reduced from 14 for security)

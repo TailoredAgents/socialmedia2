@@ -4,7 +4,7 @@ Handles JWT token generation, validation, and password hashing
 """
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from passlib.hash import bcrypt
@@ -87,7 +87,7 @@ class JWTHandler:
             logger.error(f"Failed to create refresh token: {e}")
             raise
     
-    def verify_token(self, token: str) -> Optional[Dict[str, Any]]:
+    def verify_token(self, token: str) -> Dict[str, Any]:
         """
         Verify and decode JWT token
         
@@ -95,14 +95,21 @@ class JWTHandler:
             token: JWT token string to verify
             
         Returns:
-            Decoded payload if valid, None if invalid
+            Decoded payload if valid
+            
+        Raises:
+            HTTPException: If token is invalid or expired
         """
         try:
             payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
             return payload
         except JWTError as e:
             logger.debug(f"Token validation failed: {e}")
-            return None
+            from fastapi import HTTPException, status
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired token"
+            )
     
     def hash_password(self, password: str) -> str:
         """

@@ -60,7 +60,7 @@ class Organization(Base):
     
     # Owner relationship
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    owner = relationship("User", foreign_keys=[owner_id])
+    owner = relationship("User", foreign_keys=[owner_id], overlaps="owned_organizations")
     
     # Relationships
     teams = relationship("Team", back_populates="organization", cascade="all, delete-orphan")
@@ -196,8 +196,8 @@ class OrganizationInvitation(Base):
     # Relationships
     organization = relationship("Organization", back_populates="invitations")
     team = relationship("Team")
-    invited_by = relationship("User", foreign_keys=[invited_by_id])
-    invited_user = relationship("User", foreign_keys=[invited_user_id])
+    invited_by = relationship("User", foreign_keys=[invited_by_id], overlaps="sent_invitations")
+    invited_user = relationship("User", foreign_keys=[invited_user_id], overlaps="received_invitations")
 
     def __repr__(self):
         return f"<OrganizationInvitation(email='{self.email}', org='{self.organization_id}', status='{self.status}')>"

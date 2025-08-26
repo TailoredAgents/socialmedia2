@@ -2,7 +2,7 @@
 System logs and error tracking API endpoints
 """
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict, Any
 import asyncio
 import json
@@ -49,7 +49,7 @@ class ErrorLogStore:
     def add_warning(self, warning_data: Dict[str, Any]):
         """Add warning to store"""
         with self._lock:
-            warning_data['timestamp'] = datetime.utcnow().isoformat()
+            warning_data['timestamp'] = datetime.now(timezone.utc).isoformat()
             warning_data['id'] = str(uuid.uuid4())  # Unique ID
             self.warnings.appendleft(warning_data)
         
@@ -143,7 +143,7 @@ class ErrorLogStore:
     
     def get_stats(self) -> Dict[str, Any]:
         """Get error statistics"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         hour_ago = now - timedelta(hours=1)
         day_ago = now - timedelta(days=1)
         
@@ -346,7 +346,7 @@ async def detailed_health_check():
     
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "system": {
             "platform": platform.system(),
             "platform_version": platform.version(),

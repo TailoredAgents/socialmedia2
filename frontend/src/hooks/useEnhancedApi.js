@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import apiService from '../services/api'
 import { useNotifications } from './useNotifications'
@@ -166,8 +166,8 @@ export const useEnhancedApi = () => {
     return executeRequest()
   }, [accessToken, refreshToken, logout])
 
-  // Specific API methods with enhanced features
-  const api = {
+  // Specific API methods with enhanced features - memoized to prevent recreation
+  const api = useMemo(() => ({
     // Memory operations
     memory: {
       search: (query, limit = 5) => makeEnhancedRequest(
@@ -396,7 +396,7 @@ export const useEnhancedApi = () => {
         { retries: 2, retryDelay: 2000 }
       )
     }
-  }
+  }), [makeEnhancedRequest, showSuccess]) // Only recreate when dependencies change
 
   // Utility functions
   const clearCache = useCallback((pattern = null) => {

@@ -440,8 +440,8 @@ class ContentCategory(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
-    parent = relationship("ContentCategory", remote_side=[id])
-    children = relationship("ContentCategory")
+    parent = relationship("ContentCategory", remote_side=[id], overlaps="children")
+    children = relationship("ContentCategory", overlaps="parent")
 
 
 class ContentTemplate(Base):

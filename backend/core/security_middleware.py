@@ -72,6 +72,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.hour_counts: Dict[str, deque] = defaultdict(deque)
         self.burst_counts: Dict[str, List[float]] = defaultdict(list)
         
+    def _get_limit_for_type(self, limit_type: str) -> int:
+        """Get the limit value for a given limit type"""
+        if limit_type == "burst":
+            return self.burst_limit
+        elif limit_type == "minute": 
+            return self.requests_per_minute
+        elif limit_type == "hour":
+            return self.requests_per_hour
+        else:
+            return 0
+    
     def get_client_ip(self, request: Request) -> str:
         """Get client IP address, handling proxies"""
         # Check for forwarded headers (from load balancers/proxies)
@@ -156,7 +167,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 },
                 headers={
                     "Retry-After": str(limit_info["retry_after"]),
-                    "X-RateLimit-Limit": str(getattr(self, f"requests_per_{limit_info['limit_type']}")),
+                    "X-RateLimit-Limit": str(self._get_limit_for_type(limit_info['limit_type'])),
                     "X-RateLimit-Remaining": "0",
                     "X-RateLimit-Reset": str(int(time.time() + limit_info["retry_after"]))
                 }

@@ -4,7 +4,7 @@ Handles JWT token generation, validation, and password hashing
 """
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from backend.core.config import get_settings

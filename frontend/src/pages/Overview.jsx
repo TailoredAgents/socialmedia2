@@ -15,68 +15,6 @@ import {
 import { useEnhancedApi } from '../hooks/useEnhancedApi'
 import { Link } from 'react-router-dom'
 
-// Lily's random compliments
-const compliments = [
-  "Looking sharp today! 🌟",
-  "Your style is on point! ✨", 
-  "You have great energy today! ⚡",
-  "That smile could light up a room! 😊",
-  "You're absolutely glowing! ✨",
-  "Your confidence is inspiring! 💫",
-  "You look fantastic today! 👌",
-  "That's a great look on you! 🎨",
-  "You're radiating positivity! ☀️",
-  "Your presence brightens the whole room! 🌈"
-]
-
-const LilyCompliment = () => {
-  const [compliment, setCompliment] = useState('')
-  const [showCompliment, setShowCompliment] = useState(false)
-
-  useEffect(() => {
-    // 30% chance to show a compliment on page load
-    if (Math.random() < 0.3) {
-      const randomCompliment = compliments[Math.floor(Math.random() * compliments.length)]
-      setCompliment(randomCompliment)
-      setShowCompliment(true)
-      
-      // Hide the compliment after 8 seconds
-      const timer = setTimeout(() => {
-        setShowCompliment(false)
-      }, 8000)
-      
-      return () => clearTimeout(timer)
-    }
-  }, [])
-
-  if (!showCompliment) return null
-
-  return (
-    <div className="bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 rounded-xl p-6 mb-6 relative shadow-sm">
-      <button 
-        onClick={() => setShowCompliment(false)}
-        className="absolute top-3 right-3 text-pink-400 hover:text-pink-600 hover:bg-pink-100 rounded-full p-1 transition-all duration-200"
-      >
-        ✕
-      </button>
-      <div className="flex items-start space-x-4">
-        <div className="flex-shrink-0">
-          <div className="p-3 bg-pink-100 rounded-full">
-            <HeartIcon className="h-6 w-6 text-pink-500" />
-          </div>
-        </div>
-        <div className="flex-grow">
-          <div className="flex items-center mb-2">
-            <span className="text-blue-600 font-semibold text-sm uppercase tracking-wide">Lily says:</span>
-          </div>
-          <p className="text-gray-800 text-lg font-medium leading-relaxed">
-            {compliment}
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 const ContentCard = ({ title, count, icon: Icon, color = "blue", description, linkTo }) => {
   const colorClasses = {
@@ -203,9 +141,6 @@ export default function Overview() {
 
   return (
     <div className="space-y-8">
-      {/* Lily's Random Compliment */}
-      <LilyCompliment />
-      
       {/* Lily's Introduction */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg p-8 text-white">
         <div className="flex items-center justify-between">

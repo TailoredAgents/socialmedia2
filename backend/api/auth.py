@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, validator
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend.db.database import get_db
 from backend.db.models import User, UserSetting, RefreshTokenBlacklist
@@ -344,7 +344,7 @@ async def refresh_token(
             old_token_blacklist = RefreshTokenBlacklist(
                 token_jti=jti,
                 user_id=int(user_id),
-                expires_at=datetime.fromtimestamp(payload.get("exp"))
+                expires_at=datetime.fromtimestamp(payload.get("exp"), tz=timezone.utc)
             )
             db.add(old_token_blacklist)
             db.commit()
@@ -396,7 +396,7 @@ async def logout_user(
                 blacklist_entry = RefreshTokenBlacklist(
                     token_jti=jti,
                     user_id=int(user_id),
-                    expires_at=datetime.fromtimestamp(payload.get("exp"))
+                    expires_at=datetime.fromtimestamp(payload.get("exp"), tz=timezone.utc)
                 )
                 db.add(blacklist_entry)
                 db.commit()

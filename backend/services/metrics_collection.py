@@ -5,7 +5,7 @@ Integration Specialist Component - Comprehensive metrics aggregation from all pl
 import asyncio
 import logging
 from typing import Dict, List, Optional, Any, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, asdict
 from enum import Enum
 import json
@@ -68,7 +68,7 @@ class UnifiedMetrics:
     
     def __post_init__(self):
         if self.collected_at is None:
-            self.collected_at = datetime.utcnow()
+            self.collected_at = datetime.now(timezone.utc)
         
         # Calculate engagement rate if not provided
         if self.engagement_rate == 0.0 and self.impressions > 0:
@@ -177,7 +177,7 @@ class SocialMediaMetricsCollector:
                         platform=platform_name,
                         metrics_collected=0,
                         errors=[str(result)],
-                        collection_time=datetime.utcnow()
+                        collection_time=datetime.now(timezone.utc)
                     )
         
         # Log collection summary
@@ -207,7 +207,7 @@ class SocialMediaMetricsCollector:
                     platform="twitter",
                     metrics_collected=0,
                     errors=[],
-                    collection_time=datetime.utcnow()
+                    collection_time=datetime.now(timezone.utc)
                 )
             
             total_metrics = 0
@@ -260,8 +260,8 @@ class SocialMediaMetricsCollector:
                 platform="twitter",
                 metrics_collected=total_metrics,
                 errors=errors,
-                collection_time=datetime.utcnow(),
-                next_collection=datetime.utcnow() + self.collection_intervals[Platform.TWITTER]
+                collection_time=datetime.now(timezone.utc),
+                next_collection=datetime.now(timezone.utc) + self.collection_intervals[Platform.TWITTER]
             )
             
         except Exception as e:
@@ -271,7 +271,7 @@ class SocialMediaMetricsCollector:
                 platform="twitter",
                 metrics_collected=0,
                 errors=[str(e)],
-                collection_time=datetime.utcnow()
+                collection_time=datetime.now(timezone.utc)
             )
     
     async def _collect_instagram_metrics(
@@ -293,7 +293,7 @@ class SocialMediaMetricsCollector:
                     platform="instagram",
                     metrics_collected=0,
                     errors=[],
-                    collection_time=datetime.utcnow()
+                    collection_time=datetime.now(timezone.utc)
                 )
             
             total_metrics = 0
@@ -346,8 +346,8 @@ class SocialMediaMetricsCollector:
                 platform="instagram",
                 metrics_collected=total_metrics,
                 errors=errors,
-                collection_time=datetime.utcnow(),
-                next_collection=datetime.utcnow() + self.collection_intervals[Platform.INSTAGRAM]
+                collection_time=datetime.now(timezone.utc),
+                next_collection=datetime.now(timezone.utc) + self.collection_intervals[Platform.INSTAGRAM]
             )
             
         except Exception as e:
@@ -357,7 +357,7 @@ class SocialMediaMetricsCollector:
                 platform="instagram",
                 metrics_collected=0,
                 errors=[str(e)],
-                collection_time=datetime.utcnow()
+                collection_time=datetime.now(timezone.utc)
             )
     
     async def _collect_facebook_metrics(
@@ -379,7 +379,7 @@ class SocialMediaMetricsCollector:
                     platform="facebook",
                     metrics_collected=0,
                     errors=[],
-                    collection_time=datetime.utcnow()
+                    collection_time=datetime.now(timezone.utc)
                 )
             
             total_metrics = 0
@@ -432,8 +432,8 @@ class SocialMediaMetricsCollector:
                 platform="facebook",
                 metrics_collected=total_metrics,
                 errors=errors,
-                collection_time=datetime.utcnow(),
-                next_collection=datetime.utcnow() + self.collection_intervals[Platform.FACEBOOK]
+                collection_time=datetime.now(timezone.utc),
+                next_collection=datetime.now(timezone.utc) + self.collection_intervals[Platform.FACEBOOK]
             )
             
         except Exception as e:
@@ -443,7 +443,7 @@ class SocialMediaMetricsCollector:
                 platform="facebook",
                 metrics_collected=0,
                 errors=[str(e)],
-                collection_time=datetime.utcnow()
+                collection_time=datetime.now(timezone.utc)
             )
     
     async def _collect_linkedin_metrics(
@@ -465,7 +465,7 @@ class SocialMediaMetricsCollector:
                     platform="linkedin",
                     metrics_collected=0,
                     errors=[],
-                    collection_time=datetime.utcnow()
+                    collection_time=datetime.now(timezone.utc)
                 )
             
             total_metrics = 0
@@ -518,8 +518,8 @@ class SocialMediaMetricsCollector:
                 platform="linkedin",
                 metrics_collected=total_metrics,
                 errors=errors,
-                collection_time=datetime.utcnow(),
-                next_collection=datetime.utcnow() + self.collection_intervals[Platform.LINKEDIN]
+                collection_time=datetime.now(timezone.utc),
+                next_collection=datetime.now(timezone.utc) + self.collection_intervals[Platform.LINKEDIN]
             )
             
         except Exception as e:
@@ -529,7 +529,7 @@ class SocialMediaMetricsCollector:
                 platform="linkedin",
                 metrics_collected=0,
                 errors=[str(e)],
-                collection_time=datetime.utcnow()
+                collection_time=datetime.now(timezone.utc)
             )
     
     
@@ -545,13 +545,13 @@ class SocialMediaMetricsCollector:
         
         # Check if enough time has passed since last collection
         if content_item.last_metrics_update:
-            time_since_last = datetime.utcnow() - content_item.last_metrics_update
+            time_since_last = datetime.now(timezone.utc) - content_item.last_metrics_update
             if time_since_last < self.collection_intervals[platform]:
                 return False
         
         # Always collect for recently published content (within 24 hours)
         if content_item.published_at:
-            time_since_publish = datetime.utcnow() - content_item.published_at
+            time_since_publish = datetime.now(timezone.utc) - content_item.published_at
             if time_since_publish < timedelta(hours=24):
                 return True
         
@@ -648,7 +648,7 @@ class SocialMediaMetricsCollector:
             video_views=analytics.get("video_views"),
             saves=None,  # LinkedIn doesn't have saves
             engagement_rate=0.0,  # Will be calculated in __post_init__
-            collected_at=datetime.utcnow()
+            collected_at=datetime.now(timezone.utc)
         )
     
     async def _save_metrics_to_db(
@@ -710,7 +710,7 @@ class SocialMediaMetricsCollector:
         Returns:
             Metrics summary
         """
-        since_date = datetime.utcnow() - timedelta(days=days)
+        since_date = datetime.now(timezone.utc) - timedelta(days=days)
         
         query = db.query(ContentPerformanceSnapshot).filter(
             ContentPerformanceSnapshot.timestamp >= since_date
@@ -765,7 +765,7 @@ class SocialMediaMetricsCollector:
             "average_engagement_rate": avg_engagement_rate,
             "platforms": platforms,
             "collection_period_days": days,
-            "last_updated": datetime.utcnow()
+            "last_updated": datetime.now(timezone.utc)
         }
 
 # Global metrics collector instance

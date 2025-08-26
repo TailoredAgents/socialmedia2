@@ -8,7 +8,7 @@ import hashlib
 import json
 import logging
 from typing import Any, Dict, List, Optional, Callable
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
 from enum import Enum
 from fastapi import HTTPException, Request
@@ -186,7 +186,7 @@ class WebhookProcessor:
                 'platform': platform,
                 'handlers_executed': len(handlers),
                 'results': results,
-                'processed_at': datetime.utcnow().isoformat()
+                'processed_at': datetime.now(timezone.utc).isoformat()
             }
             
         except Exception as e:
@@ -225,7 +225,7 @@ class WebhookProcessor:
                 user_id=None,  # Would need to map from Twitter user ID
                 resource_id=tweet['id'],
                 data=tweet,
-                timestamp=datetime.utcnow()
+                timestamp=datetime.now(timezone.utc)
             )
         
         elif 'tweet_delete_events' in payload:
@@ -236,7 +236,7 @@ class WebhookProcessor:
                 user_id=None,
                 resource_id=delete_event['status']['id'],
                 data=delete_event,
-                timestamp=datetime.utcnow()
+                timestamp=datetime.now(timezone.utc)
             )
         
         # Add more Twitter event types as needed
@@ -259,7 +259,7 @@ class WebhookProcessor:
                             user_id=None,
                             resource_id=value['post_id'],
                             data=value,
-                            timestamp=datetime.utcnow()
+                            timestamp=datetime.now(timezone.utc)
                         )
                     
                     elif value.get('verb') == 'remove':
@@ -269,7 +269,7 @@ class WebhookProcessor:
                             user_id=None,
                             resource_id=value['post_id'],
                             data=value,
-                            timestamp=datetime.utcnow()
+                            timestamp=datetime.now(timezone.utc)
                         )
         
         return None
@@ -299,7 +299,7 @@ class WebhookProcessor:
                     user_id=None,
                     resource_id=payload.get('resourceId', ''),
                     data=payload,
-                    timestamp=datetime.utcnow()
+                    timestamp=datetime.now(timezone.utc)
                 )
         
         return None
@@ -324,7 +324,7 @@ class WebhookProcessor:
                     user_id=None,
                     resource_id=payload.get('data', {}).get('video_id', ''),
                     data=payload,
-                    timestamp=datetime.utcnow()
+                    timestamp=datetime.now(timezone.utc)
                 )
         
         return None
@@ -405,7 +405,7 @@ class WebhookProcessor:
                 
                 if content:
                     content.status = 'deleted'
-                    content.updated_at = datetime.utcnow()
+                    content.updated_at = datetime.now(timezone.utc)
                     db.commit()
             
             return {'status': 'success', 'action': 'content_deleted'}
@@ -493,7 +493,7 @@ class WebhookProcessor:
                         content.comment_count = metrics.get('reply_count', 0)
                         content.view_count = metrics.get('impression_count', 0)
                     
-                    content.updated_at = datetime.utcnow()
+                    content.updated_at = datetime.now(timezone.utc)
                     db.commit()
                     
                     logger.info(f"Updated content {content.id} from webhook")
@@ -519,7 +519,7 @@ class WebhookProcessor:
                         comment_count=event.data.get('comment_count', content.comment_count),
                         view_count=event.data.get('view_count', content.view_count),
                         engagement_rate=event.data.get('engagement_rate', 0),
-                        created_at=datetime.utcnow()
+                        created_at=datetime.now(timezone.utc)
                     )
                     
                     db.add(snapshot)

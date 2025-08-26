@@ -5,7 +5,7 @@ This service handles automated posting to connected social media platforms
 """
 import logging
 from typing import Dict, List, Any, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from backend.db.models import ContentLog, User
@@ -81,7 +81,7 @@ class AutonomousPostingService:
                 "content_ideas_generated": len(content_ideas) + len(posting_results),
                 "posts_created": len(posting_results),
                 "platforms_posted": [r["platform"] for r in posting_results if r["status"] == "success"],
-                "cycle_completed_at": datetime.utcnow()
+                "cycle_completed_at": datetime.now(timezone.utc)
             }
             
         except Exception as e:
@@ -90,7 +90,7 @@ class AutonomousPostingService:
                 "status": "error",
                 "user_id": user_id,
                 "error": str(e),
-                "cycle_attempted_at": datetime.utcnow()
+                "cycle_attempted_at": datetime.now(timezone.utc)
             }
     
     async def _generate_content_ideas(self, research_results: Dict) -> List[Dict]:
@@ -197,7 +197,7 @@ Focus on providing value, showcasing AI automation benefits, and engaging with t
                 content_type=content_idea.get("content_type", "text"),
                 status="draft",
                 engagement_data={"hashtags": content_idea.get("hashtags", [])},
-                created_at=datetime.utcnow()
+                created_at=datetime.now(timezone.utc)
             )
             
             db.add(content_record)
@@ -228,7 +228,7 @@ Focus on providing value, showcasing AI automation benefits, and engaging with t
                 if post_result.get("success"):
                     # Update content record as published
                     content_record.status = "published"
-                    content_record.published_at = datetime.utcnow()
+                    content_record.published_at = datetime.now(timezone.utc)
                     content_record.engagement_data["platform_post_id"] = post_result.get("post_id")
                     
                     db.commit()
@@ -302,7 +302,7 @@ Focus on providing value, showcasing AI automation benefits, and engaging with t
             return {
                 "success": True,
                 "post_id": f"{platform}_{uuid.uuid4().hex[:8]}",
-                "posted_at": datetime.utcnow()
+                "posted_at": datetime.now(timezone.utc)
             }
         else:
             return {
@@ -317,7 +317,7 @@ Focus on providing value, showcasing AI automation benefits, and engaging with t
             return
         
         # Schedule posts for the next few days
-        base_time = datetime.utcnow() + timedelta(hours=4)  # Start 4 hours from now
+        base_time = datetime.now(timezone.utc) + timedelta(hours=4)  # Start 4 hours from now
         
         for i, idea in enumerate(remaining_ideas[:3]):  # Schedule up to 3 more
             scheduled_time = base_time + timedelta(hours=i * 8)  # 8 hours apart
@@ -330,7 +330,7 @@ Focus on providing value, showcasing AI automation benefits, and engaging with t
                 status="scheduled",
                 scheduled_for=scheduled_time,
                 engagement_data={"hashtags": idea.get("hashtags", [])},
-                created_at=datetime.utcnow()
+                created_at=datetime.now(timezone.utc)
             )
             
             db.add(content_record)

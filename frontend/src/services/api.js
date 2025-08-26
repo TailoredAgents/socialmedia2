@@ -529,6 +529,96 @@ class ApiService {
     return this.request('/api/social/analytics/overview')
   }
 
+  // Social Inbox endpoints
+  async getInboxInteractions(params = {}) {
+    const searchParams = new URLSearchParams()
+    Object.keys(params).forEach(key => {
+      if (params[key] !== undefined && params[key] !== null) {
+        searchParams.append(key, params[key])
+      }
+    })
+    return this.request(`/api/social-inbox/interactions?${searchParams}`)
+  }
+
+  async updateInteractionStatus(interactionId, status) {
+    return this.request(`/api/social-inbox/interactions/${interactionId}/status`, {
+      method: 'PATCH',
+      body: { status }
+    })
+  }
+
+  async generateInteractionResponse(interactionId, personalityStyle = 'professional') {
+    return this.request(`/api/social-inbox/interactions/${interactionId}/generate-response`, {
+      method: 'POST',
+      body: { personality_style: personalityStyle }
+    })
+  }
+
+  async sendInteractionResponse(interactionId, responseText) {
+    return this.request(`/api/social-inbox/interactions/${interactionId}/respond`, {
+      method: 'POST',
+      body: { response_text: responseText }
+    })
+  }
+
+  async getInboxStats() {
+    return this.request('/api/social-inbox/stats')
+  }
+
+  async getResponseTemplates() {
+    return this.request('/api/social-inbox/templates')
+  }
+
+  async createResponseTemplate(templateData) {
+    return this.request('/api/social-inbox/templates', {
+      method: 'POST',
+      body: templateData
+    })
+  }
+
+  async updateResponseTemplate(templateId, templateData) {
+    return this.request(`/api/social-inbox/templates/${templateId}`, {
+      method: 'PUT',
+      body: templateData
+    })
+  }
+
+  async deleteResponseTemplate(templateId) {
+    return this.request(`/api/social-inbox/templates/${templateId}`, {
+      method: 'DELETE'
+    })
+  }
+
+  async getCompanyKnowledge(params = {}) {
+    const searchParams = new URLSearchParams()
+    Object.keys(params).forEach(key => {
+      if (params[key] !== undefined && params[key] !== null) {
+        searchParams.append(key, params[key])
+      }
+    })
+    return this.request(`/api/social-inbox/knowledge?${searchParams}`)
+  }
+
+  async createCompanyKnowledge(knowledgeData) {
+    return this.request('/api/social-inbox/knowledge', {
+      method: 'POST',
+      body: knowledgeData
+    })
+  }
+
+  async updateCompanyKnowledge(knowledgeId, knowledgeData) {
+    return this.request(`/api/social-inbox/knowledge/${knowledgeId}`, {
+      method: 'PUT',
+      body: knowledgeData
+    })
+  }
+
+  async deleteCompanyKnowledge(knowledgeId) {
+    return this.request(`/api/social-inbox/knowledge/${knowledgeId}`, {
+      method: 'DELETE'
+    })
+  }
+
   // Health and system endpoints
   async getHealth() {
     return this.request('/health')

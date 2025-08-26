@@ -24,6 +24,7 @@ from . import (
     autonomous,
     performance_monitoring,
     social_platforms,
+    social_inbox,  # Phase 3A social inbox for managing interactions
     organizations,
     system_logs,  # System logging and error tracking
     database_health,  # Database schema health checks
@@ -53,6 +54,7 @@ ROUTERS = [
     autonomous.router,
     # performance_monitoring.router,  # Middleware only - no router
     social_platforms.router,  # Social media platform connections and posting
+    social_inbox.router,  # Phase 3A social inbox for managing interactions
     organizations.router,  # Multi-tenant organization management
     system_logs.router,  # System logging and error tracking endpoints
     database_health.router,  # Database schema health monitoring

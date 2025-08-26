@@ -30,6 +30,7 @@ import CreatePost from './pages/CreatePost'
 import Scheduler from './pages/Scheduler'
 import Content from './pages/Content'
 import MemoryExplorer from './pages/MemoryExplorer'
+import SocialInbox from './pages/SocialInbox'
 import Settings from './pages/Settings'
 import ErrorLogs from './components/ErrorLogs'
 
@@ -150,6 +151,16 @@ function AppRoutes() {
             <ProtectedRoute>
               <Layout>
                 <MemoryExplorer />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/inbox"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <SocialInbox />
               </Layout>
             </ProtectedRoute>
           }

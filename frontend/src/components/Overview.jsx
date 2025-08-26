@@ -123,7 +123,7 @@ const RecentActivity = ({ darkMode }) => {
   const activities = [
     { id: 1, type: 'post', content: 'Published "AI in Marketing 2025"', time: '2 hours ago', status: 'success' },
     { id: 2, type: 'analytics', content: 'Generated weekly report', time: '4 hours ago', status: 'info' },
-    { id: 3, type: 'alert', content: 'High engagement on LinkedIn post', time: '6 hours ago', status: 'warning' },
+    { id: 3, type: 'alert', content: 'High engagement on Instagram post', time: '6 hours ago', status: 'warning' },
     { id: 4, type: 'research', content: 'Completed trend analysis', time: '8 hours ago', status: 'success' }
   ]
 
@@ -620,7 +620,7 @@ const ContentPipeline = ({ darkMode }) => {
     drafts: {
       count: 4,
       items: [
-        { id: 1, title: "The Future of AI in Medicine", platform: "linkedin", progress: 85 },
+        { id: 1, title: "The Future of AI in Medicine", platform: "facebook", progress: 85 },
         { id: 2, title: "5 Remote Work Tools Every Team Needs", platform: "twitter", progress: 60 },
         { id: 3, title: "Building Sustainable Software", platform: "instagram", progress: 40 }
       ]
@@ -628,7 +628,7 @@ const ContentPipeline = ({ darkMode }) => {
     scheduled: {
       count: 8,
       items: [
-        { id: 1, title: "Weekly Industry Roundup", platform: "linkedin", scheduledFor: "Tomorrow 9:00 AM" },
+        { id: 1, title: "Weekly Industry Roundup", platform: "facebook", scheduledFor: "Tomorrow 9:00 AM" },
         { id: 2, title: "Tech Tip Tuesday", platform: "twitter", scheduledFor: "Tomorrow 2:00 PM" },
         { id: 3, title: "Behind the Scenes: Development", platform: "instagram", scheduledFor: "Wed 11:00 AM" }
       ]
@@ -636,7 +636,7 @@ const ContentPipeline = ({ darkMode }) => {
     published: {
       count: 23,
       items: [
-        { id: 1, title: "Monday Motivation: Growth Mindset", platform: "linkedin", engagement: 247 },
+        { id: 1, title: "Monday Motivation: Growth Mindset", platform: "facebook", engagement: 247 },
         { id: 2, title: "Quick CSS Grid Tutorial", platform: "twitter", engagement: 89 },
         { id: 3, title: "Office Setup Tour", platform: "instagram", engagement: 156 }
       ]
@@ -892,11 +892,11 @@ const SocialProofCarousel = ({ darkMode }) => {
     {
       id: 1,
       type: 'milestone',
-      title: 'Reached 5,000 LinkedIn Followers',
-      description: 'Lily\'s consistent posting strategy helped grow your professional network',
+      title: 'Reached 5,000 Facebook Followers',
+      description: 'Lily\'s consistent posting strategy helped grow your business network',
       metric: '5,000',
       metricLabel: 'followers',
-      platform: 'linkedin',
+      platform: 'facebook',
       icon: '🎉',
       timestamp: '2 days ago',
       trend: '+23% this month'
@@ -929,10 +929,10 @@ const SocialProofCarousel = ({ darkMode }) => {
       id: 4,
       type: 'lead',
       title: 'Generated Quality Business Leads',
-      description: '12 potential clients reached out after seeing your thought leadership posts',
+      description: '12 potential clients reached out after seeing your business posts',
       metric: '12',
       metricLabel: 'leads',
-      platform: 'linkedin',
+      platform: 'facebook',
       icon: '🎯',
       timestamp: '1 week ago',
       trend: '$24K potential value'
@@ -969,7 +969,7 @@ const SocialProofCarousel = ({ darkMode }) => {
 
   const getPlatformIcon = (platform) => {
     switch (platform) {
-      case 'linkedin': return '💼'
+      case 'facebook': return '📘'
       case 'twitter': return '🐦'
       case 'instagram': return '📸'
       case 'all': return '🌐'
@@ -1155,7 +1155,7 @@ const calculateSetupProgress = () => {
   const setupSteps = [
     { id: 'company_info', name: 'Company Information', completed: true, description: 'Basic company details configured' },
     { id: 'brand_voice', name: 'Brand Voice & Tone', completed: true, description: 'Brand personality settings defined' },
-    { id: 'social_platforms', name: 'Social Platform Connections', completed: false, description: 'Connect Twitter, LinkedIn, Instagram' },
+    { id: 'social_platforms', name: 'Social Platform Connections', completed: false, description: 'Connect X, Facebook, Instagram' },
     { id: 'content_categories', name: 'Content Categories', completed: true, description: 'Define content themes and topics' },
     { id: 'automation_rules', name: 'Automation Preferences', completed: false, description: 'Configure posting schedules and rules' },
     { id: 'first_post', name: 'First AI-Generated Post', completed: true, description: 'Create and publish your first post' }

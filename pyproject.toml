@@ -68,7 +68,6 @@ dependencies = [
     # Authentication & Security
     "python-jose[cryptography]==3.3.0",
     "passlib[bcrypt]==1.7.4",
-    "bcrypt>=3.2.0,<4.0.0",  # Pin bcrypt to 3.x for passlib compatibility
     "python-multipart==0.0.9",
 ]
 

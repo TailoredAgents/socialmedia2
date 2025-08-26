@@ -7,7 +7,6 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Any
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from passlib.hash import bcrypt
 from backend.core.config import get_settings
 
 logger = logging.getLogger(__name__)

@@ -40,6 +40,7 @@ logger.info("Backend path already added: {}".format(backend_path))
 try:
     from fastapi import FastAPI, Request, HTTPException
     from fastapi.responses import JSONResponse
+    from fastapi.staticfiles import StaticFiles
     logger.info("FastAPI imported successfully")
 except ImportError as e:
     logger.error("Failed to import FastAPI: {}".format(e))
@@ -179,6 +180,17 @@ except ImportError as e:
         logger.info("✅ Fallback auth and 2FA routers loaded")
     except Exception as fallback_e:
         logger.error("❌ Fallback routers failed: {}".format(fallback_e))
+
+# Static file serving for uploaded images
+try:
+    from pathlib import Path
+    uploads_dir = Path("uploads")
+    uploads_dir.mkdir(exist_ok=True)
+    
+    app.mount("/api/files/uploads", StaticFiles(directory="uploads"), name="uploads")
+    logger.info("✅ Static file serving configured for uploads")
+except Exception as e:
+    logger.error("❌ Failed to setup static file serving: {}".format(e))
 
 # Root endpoints
 @app.get("/")

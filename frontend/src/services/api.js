@@ -29,7 +29,10 @@ class ApiService {
       config.headers.Authorization = `Bearer ${this.token}`
     }
 
-    if (config.body && typeof config.body === 'object') {
+    // Handle FormData - don't set Content-Type, let browser set it with boundary
+    if (config.body instanceof FormData) {
+      delete config.headers['Content-Type']
+    } else if (config.body && typeof config.body === 'object') {
       config.body = JSON.stringify(config.body)
     }
 
@@ -329,6 +332,26 @@ class ApiService {
         specific_instructions: specificInstructions,
         company_research_data: companyResearchData
       }
+    })
+  }
+
+  async uploadImage(file, description = null) {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (description) {
+      formData.append('description', description)
+    }
+
+    return this.request('/api/content/upload-image', {
+      method: 'POST',
+      body: formData,
+      headers: {} // Remove Content-Type to let browser set it with boundary
+    })
+  }
+
+  async deleteUploadedImage(filename) {
+    return this.request(`/api/content/upload-image/${filename}`, {
+      method: 'DELETE'
     })
   }
 

@@ -72,6 +72,11 @@ pyotp==2.9.0
 qrcode[pil]==7.4.2
 Pillow==11.0.0
 
+# File Upload & Processing
+python-magic==0.4.27  # File type detection
+filetype==1.2.0  # Alternative file type detection
+Pillow==11.0.0  # Already included - Image processing
+
 # Monitoring & Observability
 prometheus-fastapi-instrumentator==7.0.0
 sentry-sdk[fastapi]==2.35.0

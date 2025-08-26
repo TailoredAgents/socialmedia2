@@ -1,7 +1,7 @@
 """
-Enhanced OpenAI Image Generation Service
+Enhanced xAI Grok 2 Vision Image Generation Service
 
-This service uses the new OpenAI Responses API with image_generation tool
+This service uses xAI Grok 2 Vision model through OpenAI-compatible API 
 for superior social media content creation and multi-turn editing capabilities.
 """
 import asyncio
@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 class ImageGenerationService:
     """
-    Enhanced image generation service using OpenAI's latest Responses API
-    with image_generation tool for social media content creation.
+    Enhanced image generation service using xAI Grok 2 Vision model
+    for superior social media content creation and editing capabilities.
     """
     
     def __init__(self):

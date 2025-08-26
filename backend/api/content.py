@@ -15,6 +15,7 @@ from backend.auth.dependencies import get_current_active_user
 from backend.services.cache_decorators import cached, cache_invalidate
 from backend.agents.tools import openai_tool
 from backend.services.image_generation_service import image_generation_service
+from backend.services.file_upload_service import file_upload_service
 from backend.utils.db_checks import ensure_table_exists, safe_table_query
 
 router = APIRouter(prefix="/api/content", tags=["content"])
@@ -634,7 +635,7 @@ async def generate_image(
     request: GenerateImageRequest,
     current_user: User = Depends(get_current_active_user)
 ):
-    """Generate an image using enhanced OpenAI Responses API with image_generation tool"""
+    """Generate an image using xAI Grok 2 Vision model"""
     
     result = await image_generation_service.generate_image(
         prompt=request.prompt,
@@ -699,4 +700,85 @@ async def generate_content_images(
         "platforms": request.platforms,
         "images": result,
         "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+@router.post("/upload-image")
+async def upload_image(
+    file: UploadFile = File(...),
+    description: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Upload an image file for use in posts.
+    
+    - **file**: Image file (JPG, PNG, GIF, WebP)
+    - **description**: Optional description of the image
+    
+    Returns file information and URL for use in posts.
+    """
+    
+    if not file.filename:
+        raise HTTPException(
+            status_code=400,
+            detail="No file provided"
+        )
+    
+    try:
+        result = await file_upload_service.upload_image(
+            file=file,
+            user_id=current_user.id,
+            description=description
+        )
+        
+        return {
+            "status": "success",
+            "message": "Image uploaded successfully",
+            "file": result
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Upload failed for user {current_user.id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to upload image"
+        )
+
+@router.delete("/upload-image/{filename}")
+async def delete_uploaded_image(
+    filename: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Delete an uploaded image file.
+    
+    - **filename**: Name of the file to delete
+    """
+    
+    success = file_upload_service.delete_image(filename, current_user.id)
+    
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Image not found or could not be deleted"
+        )
+    
+    return {
+        "status": "success",
+        "message": "Image deleted successfully"
+    }
+
+@router.get("/upload-stats")
+async def get_upload_stats(
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get file upload statistics (admin endpoint)"""
+    
+    # In production, you might want to restrict this to admin users
+    stats = file_upload_service.get_upload_stats()
+    
+    return {
+        "status": "success",
+        "stats": stats
     }

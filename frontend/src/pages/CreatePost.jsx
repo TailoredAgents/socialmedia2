@@ -44,6 +44,9 @@ export default function CreatePost() {
   const [contentGenerationProgress, setContentGenerationProgress] = useState(false)
   const [imageGenerationProgress, setImageGenerationProgress] = useState(false)
   const [specificInstructions, setSpecificInstructions] = useState('')
+  const [uploadedImage, setUploadedImage] = useState(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [imageSource, setImageSource] = useState('generate') // 'generate' or 'upload'
 
   const selectedPlatform = platforms.find(p => p.value === formData.platform)
 
@@ -285,11 +288,24 @@ export default function CreatePost() {
 
     setIsCreating(true)
     try {
+      // Determine which image to use based on source
+      const imageData = imageSource === 'upload' && uploadedImage 
+        ? {
+            image_url: uploadedImage.url,
+            image_data: null,
+            image_prompt: `Uploaded image: ${uploadedImage.original_filename}`,
+            image_source: 'uploaded'
+          }
+        : {
+            image_url: generatedImage?.image_url || generatedImage?.image_data_url,
+            image_data: generatedImage?.image_base64,
+            image_prompt: imagePrompt,
+            image_source: 'generated'
+          }
+
       const saveData = {
         ...formData,
-        image_url: generatedImage?.image_url || generatedImage?.image_data_url,
-        image_data: generatedImage?.image_base64, // Include base64 data if available
-        image_prompt: imagePrompt,
+        ...imageData,
         industry_context: industryContext,
         research_data: researchData,
         status: 'draft',
@@ -312,7 +328,9 @@ export default function CreatePost() {
           tags: []
         })
         setGeneratedImage(null)
+        setUploadedImage(null)
         setImagePrompt('')
+        setImageSource('generate')
       }
     } catch (error) {
       logError('Save to library failed:', error)
@@ -339,6 +357,52 @@ export default function CreatePost() {
 
   const isOverCharacterLimit = () => {
     return getCharacterCount() > (selectedPlatform.maxLength - 30)
+  }
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      showError('Please select a valid image file (JPG, PNG, GIF, WebP)')
+      return
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    if (file.size > maxSize) {
+      showError('File size must be less than 10MB')
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      const result = await api.uploadImage(file, `Image for ${formData.platform} post`)
+      setUploadedImage(result.file)
+      setImageSource('upload')
+      showSuccess('Image uploaded successfully!')
+    } catch (error) {
+      logError('Image upload failed:', error)
+      showError(error.message || 'Failed to upload image')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const removeUploadedImage = async () => {
+    if (uploadedImage && uploadedImage.filename) {
+      try {
+        await api.deleteUploadedImage(uploadedImage.filename)
+      } catch (error) {
+        logError('Failed to delete uploaded image:', error)
+      }
+    }
+    setUploadedImage(null)
+    if (imageSource === 'upload') {
+      setImageSource('generate')
+    }
   }
 
   return (
@@ -497,11 +561,11 @@ export default function CreatePost() {
             </div>
           </div>
 
-          {/* Generated Image Display */}
+          {/* Image Selection and Display */}
           {generateImageWithContent && (
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Generated Image</h3>
+                <h3 className="text-lg font-medium text-gray-900">Post Image</h3>
                 <div className="text-sm text-blue-600">
                   {imageGenerationProgress ? (
                     <span className="flex items-center">
@@ -511,11 +575,113 @@ export default function CreatePost() {
                       </svg>
                       Creating image...
                     </span>
+                  ) : isUploading ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Uploading image...
+                    </span>
                   ) : (
-                    <span>🎨 Images are auto-generated with your content</span>
+                    <span>🎨 Choose how to add an image</span>
                   )}
                 </div>
               </div>
+              
+              {/* Image Source Selection Tabs */}
+              <div className="mb-6">
+                <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+                  <button
+                    onClick={() => setImageSource('generate')}
+                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      imageSource === 'generate'
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <SparklesIcon className="h-4 w-4 inline mr-2" />
+                    Generate with AI
+                  </button>
+                  <button
+                    onClick={() => setImageSource('upload')}
+                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      imageSource === 'upload'
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <PhotoIcon className="h-4 w-4 inline mr-2" />
+                    Upload Your Image
+                  </button>
+                </div>
+              </div>
+
+              {/* Upload Image Section */}
+              {imageSource === 'upload' && (
+                <div className="mb-6">
+                  {!uploadedImage ? (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                      <div className="text-center">
+                        <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
+                        <div className="mt-4">
+                          <label htmlFor="image-upload" className="cursor-pointer">
+                            <span className="mt-2 block text-sm font-medium text-gray-900">
+                              Upload an image
+                            </span>
+                            <span className="mt-1 block text-sm text-gray-600">
+                              PNG, JPG, GIF, WebP up to 10MB
+                            </span>
+                          </label>
+                          <input
+                            id="image-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            className="sr-only"
+                            disabled={isUploading}
+                          />
+                        </div>
+                        <div className="mt-4">
+                          <button
+                            onClick={() => document.getElementById('image-upload').click()}
+                            disabled={isUploading}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                          >
+                            Choose File
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700">Uploaded Image</span>
+                        <button
+                          onClick={removeUploadedImage}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <div className="mt-3">
+                        <img
+                          src={uploadedImage.url}
+                          alt={uploadedImage.original_filename || 'Uploaded image'}
+                          className="max-w-full h-auto rounded-lg shadow-md max-h-64 mx-auto"
+                        />
+                      </div>
+                      <div className="mt-2 text-xs text-gray-500">
+                        {uploadedImage.original_filename} ({(uploadedImage.size / (1024 * 1024)).toFixed(1)}MB)
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* AI Generation Section */}
+              {imageSource === 'generate' && (
+                <div>
 
               {/* Image Generation Progress */}
               {imageGenerationProgress && (
@@ -595,6 +761,8 @@ export default function CreatePost() {
                   <PhotoIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                   <p className="text-sm">Your image will appear here after generating content</p>
                 </div>
+              )}
+              </div>
               )}
             </div>
           )}

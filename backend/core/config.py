@@ -162,6 +162,11 @@ class Settings(BaseSettings):
     # Feature Flags
     feature_flags: str = ""
     
+    # File Upload Configuration
+    upload_dir: str = Field(default="uploads", env="UPLOAD_DIR")
+    max_file_size: int = Field(default=10 * 1024 * 1024, env="MAX_FILE_SIZE")  # 10MB default
+    allowed_image_types: str = Field(default="jpg,jpeg,png,gif,webp", env="ALLOWED_IMAGE_TYPES")
+    
     # OpenTelemetry
     otel_service_name: str = "ai-social-agent-api"
     otel_exporter_otlp_endpoint: str = ""

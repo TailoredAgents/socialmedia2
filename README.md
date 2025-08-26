@@ -1,4 +1,4 @@
-# Lily AI Social Media 🤖
+# AI Social Media Manager 🤖
 
 **Enterprise-Grade AI-Powered Social Media Management Platform**
 
@@ -24,14 +24,14 @@
 
 ## 🌟 Overview
 
-Lily AI Social Media is a sophisticated, enterprise-grade platform that leverages artificial intelligence to automate social media content creation, publishing, and analytics across multiple platforms. Built with modern technologies and designed for scalability, it provides comprehensive social media management capabilities for businesses, marketers, and content creators.
+AI Social Media Manager is a sophisticated, enterprise-grade platform that leverages artificial intelligence to automate social media content creation, publishing, and analytics across multiple platforms. Built with modern technologies and designed for scalability, it provides comprehensive social media management capabilities for businesses, marketers, and content creators.
 
 **Current Status (August 2025)**: Recently converted from closed registration-key system to open SaaS authentication. Users can now register freely without registration keys.
 
 ### 🚀 Key Features
 
 - **🤖 AI-Powered Content Generation**: OpenAI GPT-5 and GPT-5 Mini with built-in web search and enhanced reasoning
-- **📱 Multi-Platform Support**: Twitter/X, Instagram, Facebook
+- **📱 Multi-Platform Support**: X/Twitter, Instagram, Facebook (LinkedIn removed)
 - **📊 Advanced Analytics**: Real-time performance tracking and insights
 - **🔍 Enhanced Semantic Memory**: text-embedding-3-large with 3072-dimensional vectors for superior search accuracy
 - **⚡ Automated Workflows**: Intelligent content scheduling and optimization

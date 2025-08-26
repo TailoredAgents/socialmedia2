@@ -309,7 +309,7 @@ class ContentItem(Base):
     
     # FAISS vector integration
     embedding_id = Column(String, index=True)  # Reference to FAISS vector store
-    embedding_model = Column(String, default="text-embedding-ada-002")
+    embedding_model = Column(String, default="text-embedding-3-large")
     
     # Performance metrics (updated by background tasks)
     likes_count = Column(Integer, default=0)

@@ -13,6 +13,7 @@ import sys
 import os
 import uuid
 from threading import Lock
+from datetime import datetime, timezone
 from backend.core.timezone_utils import now_in_est, format_lily_timestamp
 
 router = APIRouter(
@@ -33,12 +34,13 @@ class ErrorLogStore:
         """Add error to store and notify websocket clients"""
         with self._lock:
             error_data['timestamp'] = format_lily_timestamp()  # Use EST timezone
-            error_data['timestamp_utc'] = datetime.utcnow().isoformat()  # Keep UTC for compatibility
+            error_data['timestamp_utc'] = datetime.now(timezone.utc).isoformat()  # Use timezone-aware UTC
             error_data['id'] = str(uuid.uuid4())  # Unique ID
             self.errors.appendleft(error_data)
         
         # Notify all connected WebSocket clients (only if event loop is running)
         try:
+            loop = asyncio.get_running_loop()
             asyncio.create_task(self._notify_clients('error', error_data))
         except RuntimeError:
             # No event loop running (during startup) - skip notification
@@ -61,7 +63,7 @@ class ErrorLogStore:
     def add_info(self, info_data: Dict[str, Any]):
         """Add info log to store"""
         with self._lock:
-            info_data['timestamp'] = datetime.utcnow().isoformat()
+            info_data['timestamp'] = datetime.now(timezone.utc).isoformat()
             info_data['id'] = str(uuid.uuid4())  # Unique ID
             self.info.appendleft(info_data)
         

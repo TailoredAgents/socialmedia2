@@ -6,7 +6,7 @@ Ensures compliance with data protection regulations and security standards.
 import json
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, Optional, Union
 from contextlib import contextmanager
@@ -177,7 +177,7 @@ class AuditLogger:
         
         # Prepare audit log entry
         audit_entry = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "event_type": event_type,
             "user_id": user_id,
             "session_id": session_id,

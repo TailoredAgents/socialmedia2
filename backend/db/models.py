@@ -64,10 +64,10 @@ class User(Base):
     teams = relationship("Team", secondary="user_teams", back_populates="members")
     organization_roles = relationship("UserOrganizationRole", foreign_keys="UserOrganizationRole.user_id", back_populates="user")
     
-    # Organization ownership and invitations
-    owned_organizations = relationship("Organization", foreign_keys="Organization.owner_id")
-    sent_invitations = relationship("OrganizationInvitation", foreign_keys="OrganizationInvitation.invited_by_id")
-    received_invitations = relationship("OrganizationInvitation", foreign_keys="OrganizationInvitation.invited_user_id")
+    # Organization ownership and invitations  
+    owned_organizations = relationship("Organization", foreign_keys="Organization.owner_id", overlaps="default_organization")
+    sent_invitations = relationship("OrganizationInvitation", foreign_keys="OrganizationInvitation.invited_by_id", overlaps="received_invitations")
+    received_invitations = relationship("OrganizationInvitation", foreign_keys="OrganizationInvitation.invited_user_id", overlaps="sent_invitations")
     
     
     # User credentials for social media platforms

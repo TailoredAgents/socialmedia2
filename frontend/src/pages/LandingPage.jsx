@@ -69,7 +69,7 @@ const LandingPage = () => {
   const pricingTiers = [
     {
       name: "Starter",
-      price: "$29",
+      price: "$199",
       period: "per month",
       description: "Perfect for small businesses and solopreneurs",
       features: [
@@ -84,7 +84,7 @@ const LandingPage = () => {
     },
     {
       name: "Professional",
-      price: "$79",
+      price: "$499",
       period: "per month",
       description: "For growing businesses and marketing teams",
       features: [
@@ -93,6 +93,7 @@ const LandingPage = () => {
         "Smart scheduling optimization",
         "Advanced analytics & insights",
         "Team collaboration",
+        "Autonomous AI comment & messaging replies",
         "Priority support"
       ],
       cta: "Start Free Trial",

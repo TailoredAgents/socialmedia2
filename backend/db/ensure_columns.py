@@ -8,6 +8,55 @@ from backend.db.database import engine
 
 logger = logging.getLogger(__name__)
 
+def ensure_content_logs_table():
+    """
+    Ensure content_logs table exists with all required columns
+    """
+    try:
+        with engine.connect() as conn:
+            # Check if content_logs table exists
+            result = conn.execute(text("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_name = 'content_logs'
+            """)).fetchall()
+            
+            if not result:
+                logger.info("Creating missing content_logs table...")
+                
+                # Create content_logs table based on models.py
+                conn.execute(text("""
+                    CREATE TABLE content_logs (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        platform VARCHAR NOT NULL,
+                        content TEXT NOT NULL,
+                        content_type VARCHAR NOT NULL,
+                        metadata JSON,
+                        scheduled_time TIMESTAMP,
+                        published_at TIMESTAMP,
+                        status VARCHAR DEFAULT 'draft',
+                        engagement_score FLOAT DEFAULT 0.0,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP
+                    )
+                """))
+                
+                # Create indexes
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_content_logs_user_id ON content_logs (user_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_content_logs_platform ON content_logs (platform)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_content_logs_status ON content_logs (status)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_content_logs_created_at ON content_logs (created_at)"))
+                
+                conn.commit()
+                logger.info("✅ Successfully created content_logs table")
+            else:
+                logger.info("✅ Content_logs table already exists")
+                
+    except Exception as e:
+        logger.error(f"❌ Error ensuring content_logs table: {e}")
+        pass
+
 def ensure_notifications_table():
     """
     Ensure notifications table exists with all required columns

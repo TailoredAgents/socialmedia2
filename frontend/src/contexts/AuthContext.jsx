@@ -46,8 +46,25 @@ export const AuthProvider = ({ children }) => {
           await handleTokenRefresh()
         }
       } else {
-        // No stored token, try to refresh from cookie
-        await handleTokenRefresh()
+        // No stored token, try to refresh from cookie (only if cookies exist)
+        try {
+          // Check if we might have a refresh cookie before attempting
+          const response = await fetch(`${apiService.baseURL}/api/auth/refresh`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+          })
+          
+          if (response.status === 200) {
+            await handleTokenRefresh()
+          } else {
+            // No valid refresh cookie, just set as unauthenticated
+            logInfo('No valid refresh token available')
+          }
+        } catch (error) {
+          // No refresh possible, just set as unauthenticated
+          logInfo('No refresh token available, starting unauthenticated')
+        }
       }
     } catch (error) {
       logError('Auth initialization failed', error)
@@ -73,7 +90,10 @@ export const AuthProvider = ({ children }) => {
       logInfo('Token refreshed successfully')
     } catch (error) {
       logError('Token refresh failed', error)
-      await logout()
+      // Guard against infinite logout loops - only call logout if currently authenticated
+      if (isAuthenticated) {
+        await logout()
+      }
     }
   }
 
@@ -133,12 +153,16 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoading(true)
       
-      // Call backend logout to blacklist refresh token
-      try {
-        await apiService.logout()
-      } catch (error) {
-        logError('Backend logout failed', error)
-        // Continue with frontend logout even if backend fails
+      // Only call backend logout if user is currently authenticated
+      if (isAuthenticated && accessToken) {
+        try {
+          await apiService.logout()
+        } catch (error) {
+          logError('Backend logout failed', error)
+          // Continue with frontend logout even if backend fails
+        }
+      } else {
+        logInfo('User already unauthenticated, skipping backend logout')
       }
       
       // Clear local state

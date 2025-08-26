@@ -1,16 +1,18 @@
 """
 Local JWT token handling for fallback authentication
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status
 import uuid
+import logging
 
 from backend.core.config import get_settings
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 class JWTHandler:
     """Handle local JWT token creation and verification"""
@@ -21,20 +23,28 @@ class JWTHandler:
         self.access_token_expire_seconds = settings.jwt_access_ttl_seconds
         self.refresh_token_expire_seconds = settings.jwt_refresh_ttl_seconds
         self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        
+        if not self.secret_key or self.secret_key == "your-secret-key-change-this-in-production":
+            logger.warning("Using default JWT secret key - change this in production!")
     
     def create_access_token(self, data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
         """Create JWT access token"""
         to_encode = data.copy()
         
         if expires_delta:
-            expire = datetime.utcnow() + expires_delta
+            expire = datetime.now(timezone.utc) + expires_delta
         else:
-            expire = datetime.utcnow() + timedelta(seconds=self.access_token_expire_seconds)
+            expire = datetime.now(timezone.utc) + timedelta(seconds=self.access_token_expire_seconds)
         
-        to_encode.update({"exp": expire, "iat": datetime.utcnow()})
+        to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
         
-        encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
-        return encoded_jwt
+        try:
+            encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
+            logger.debug(f"Created access token for user: {data.get('sub', 'unknown')}")
+            return encoded_jwt
+        except Exception as e:
+            logger.error(f"Failed to create access token: {e}")
+            raise
     
     def verify_token(self, token: str) -> Dict[str, Any]:
         """Verify JWT token and return payload"""
@@ -44,12 +54,14 @@ class JWTHandler:
             # Check if token has expired
             exp = payload.get("exp")
             if exp is None:
+                logger.debug("Token validation failed: missing expiration")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Token missing expiration"
                 )
             
-            if datetime.utcnow() > datetime.fromtimestamp(exp):
+            if datetime.now(timezone.utc) > datetime.fromtimestamp(exp, tz=timezone.utc):
+                logger.debug("Token validation failed: token expired")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Token has expired"
@@ -58,9 +70,16 @@ class JWTHandler:
             return payload
             
         except JWTError as e:
+            logger.debug(f"Token validation failed: {e}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Invalid token: {str(e)}"
+                detail="Invalid or expired token"
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error verifying token: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired token"
             )
     
     def hash_password(self, password: str) -> str:
@@ -75,15 +94,21 @@ class JWTHandler:
         """Create JWT refresh token with JTI"""
         to_encode = data.copy()
         jti = str(uuid.uuid4())
-        expire = datetime.utcnow() + timedelta(seconds=self.refresh_token_expire_seconds)
+        expire = datetime.now(timezone.utc) + timedelta(seconds=self.refresh_token_expire_seconds)
         to_encode.update({
             "exp": expire, 
-            "iat": datetime.utcnow(), 
+            "iat": datetime.now(timezone.utc), 
             "type": "refresh",
             "jti": jti
         })
-        token = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
-        return {"token": token, "jti": jti, "expires_at": expire}
+        
+        try:
+            token = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
+            logger.debug(f"Created refresh token for user: {data.get('sub', 'unknown')}")
+            return {"token": token, "jti": jti, "expires_at": expire}
+        except Exception as e:
+            logger.error(f"Failed to create refresh token: {e}")
+            raise
     
     def create_user_tokens(self, user_id: str, email: str, username: str) -> Dict[str, Any]:
         """Create access and refresh tokens for user"""

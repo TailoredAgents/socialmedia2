@@ -336,8 +336,31 @@ async def refresh_token(
                 detail="Invalid token payload"
             )
         
-        # Create new tokens
-        new_tokens = jwt_handler.create_user_tokens(user_id, email, username)
+        # Validate user still exists and is active
+        user = db.query(User).filter(User.id == int(user_id)).first()
+        if not user or not user.is_active:
+            # User no longer exists or has been deactivated
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User account is no longer valid"
+            )
+        
+        # Update user data in case it changed (email verification, etc.)
+        current_user_data = {
+            "user_id": str(user.id),
+            "email": user.email,
+            "username": user.username,
+            "email_verified": user.email_verified,
+            "tier": user.tier,
+            "is_superuser": user.is_superuser
+        }
+        
+        # Create new tokens with current user data
+        new_tokens = jwt_handler.create_user_tokens(
+            str(user.id), 
+            user.email, 
+            user.username
+        )
         
         # Blacklist old refresh token
         if jti:
@@ -361,9 +384,12 @@ async def refresh_token(
         
         return TokenResponse(
             access_token=new_tokens["access_token"],
-            user_id=user_id,
-            email=email,
-            username=username
+            user_id=str(user.id),
+            email=user.email,
+            username=user.username,
+            email_verified=user.email_verified,
+            tier=user.tier,
+            is_superuser=user.is_superuser
         )
         
     except HTTPException:
@@ -382,8 +408,13 @@ async def logout_user(
 ):
     """Logout user and blacklist refresh token"""
     
-    # Clear refresh token cookie
-    response.delete_cookie(key="refresh_token")
+    # Clear refresh token cookie with proper attributes
+    response.delete_cookie(
+        key="refresh_token",
+        secure=True,
+        samesite="none",  # Match the cookie attributes used when setting
+        httponly=True
+    )
     
     # Blacklist refresh token if present
     if refresh_token:
@@ -393,15 +424,26 @@ async def logout_user(
             user_id = payload.get("sub")
             
             if jti and user_id:
-                blacklist_entry = RefreshTokenBlacklist(
-                    token_jti=jti,
-                    user_id=int(user_id),
-                    expires_at=datetime.fromtimestamp(payload.get("exp"), tz=timezone.utc)
-                )
-                db.add(blacklist_entry)
-                db.commit()
-        except Exception:
+                # Check if already blacklisted to avoid duplicates
+                existing_blacklist = db.query(RefreshTokenBlacklist).filter(
+                    RefreshTokenBlacklist.token_jti == jti
+                ).first()
+                
+                if not existing_blacklist:
+                    blacklist_entry = RefreshTokenBlacklist(
+                        token_jti=jti,
+                        user_id=int(user_id),
+                        expires_at=datetime.fromtimestamp(payload.get("exp"), tz=timezone.utc)
+                    )
+                    db.add(blacklist_entry)
+                    db.commit()
+                    logger.info(f"Refresh token blacklisted for user {user_id}")
+                else:
+                    logger.debug(f"Token already blacklisted for user {user_id}")
+                    
+        except Exception as e:
             # Token already invalid, just clear cookie
+            logger.debug(f"Could not blacklist invalid token during logout: {e}")
             pass
     
     return {"message": "Successfully logged out"}

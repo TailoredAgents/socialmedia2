@@ -27,33 +27,41 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         self.environment = environment.lower()
     
     async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        
-        # Security headers for production
-        if self.environment == "production":
-            # Prevent XSS attacks
-            response.headers["X-Content-Type-Options"] = "nosniff"
-            response.headers["X-Frame-Options"] = "DENY"
-            response.headers["X-XSS-Protection"] = "1; mode=block"
+        try:
+            response = await call_next(request)
             
-            # HTTPS enforcement
-            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+            # Security headers for production
+            if self.environment == "production":
+                # Prevent XSS attacks
+                response.headers["X-Content-Type-Options"] = "nosniff"
+                response.headers["X-Frame-Options"] = "DENY"
+                response.headers["X-XSS-Protection"] = "1; mode=block"
+                
+                # HTTPS enforcement
+                response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+                
+                # Content Security Policy
+                csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.openai.com https://google.serper.dev"
+                response.headers["Content-Security-Policy"] = csp
+                
+                # Referrer policy
+                response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+                
+            # Remove server information
+            if "server" in response.headers:
+                del response.headers["server"]
             
-            # Content Security Policy
-            csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.openai.com https://google.serper.dev"
-            response.headers["Content-Security-Policy"] = csp
+            # Add custom security header
+            response.headers["X-Security-Headers"] = "enabled"
             
-            # Referrer policy
-            response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-            
-        # Remove server information
-        if "server" in response.headers:
-            del response.headers["server"]
-        
-        # Add custom security header
-        response.headers["X-Security-Headers"] = "enabled"
-        
-        return response
+            return response
+        except Exception as e:
+            logger.error(f"Security headers middleware error: {e}")
+            # Return a safe error response
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={"error": "Internal server error", "message": "Security middleware encountered an error"}
+            )
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Simple in-memory rate limiting middleware"""
@@ -147,45 +155,57 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return None
     
     async def dispatch(self, request: Request, call_next):
-        # Skip rate limiting for health checks and CORS preflight requests
-        if request.url.path in ["/health", "/ready", "/metrics"] or request.method == "OPTIONS":
-            return await call_next(request)
-        
-        client_ip = self.get_client_ip(request)
-        
-        # Check rate limits
-        limit_info = self.is_rate_limited(client_ip)
-        if limit_info:
-            logger.warning(f"Rate limit exceeded for {client_ip}: {limit_info['message']}")
+        try:
+            # Skip rate limiting for health checks and CORS preflight requests
+            if request.url.path in ["/health", "/ready", "/metrics"] or request.method == "OPTIONS":
+                return await call_next(request)
             
-            return JSONResponse(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                content={
-                    "error": "Rate limit exceeded",
-                    "message": limit_info["message"],
-                    "retry_after": limit_info["retry_after"]
-                },
-                headers={
-                    "Retry-After": str(limit_info["retry_after"]),
-                    "X-RateLimit-Limit": str(self._get_limit_for_type(limit_info['limit_type'])),
-                    "X-RateLimit-Remaining": "0",
-                    "X-RateLimit-Reset": str(int(time.time() + limit_info["retry_after"]))
-                }
-            )
-        
-        # Add rate limit headers to successful responses
-        response = await call_next(request)
-        
-        # Add current rate limit status to response
-        minute_remaining = max(0, self.requests_per_minute - len(self.minute_counts[client_ip]))
-        hour_remaining = max(0, self.requests_per_hour - len(self.hour_counts[client_ip]))
-        
-        response.headers["X-RateLimit-Limit-Minute"] = str(self.requests_per_minute)
-        response.headers["X-RateLimit-Remaining-Minute"] = str(minute_remaining)
-        response.headers["X-RateLimit-Limit-Hour"] = str(self.requests_per_hour)
-        response.headers["X-RateLimit-Remaining-Hour"] = str(hour_remaining)
-        
-        return response
+            client_ip = self.get_client_ip(request)
+            
+            # Check rate limits
+            limit_info = self.is_rate_limited(client_ip)
+            if limit_info:
+                logger.warning(f"Rate limit exceeded for {client_ip}: {limit_info['message']}")
+                
+                return JSONResponse(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    content={
+                        "error": "Rate limit exceeded",
+                        "message": limit_info["message"],
+                        "retry_after": limit_info["retry_after"]
+                    },
+                    headers={
+                        "Retry-After": str(limit_info["retry_after"]),
+                        "X-RateLimit-Limit": str(self._get_limit_for_type(limit_info['limit_type'])),
+                        "X-RateLimit-Remaining": "0",
+                        "X-RateLimit-Reset": str(int(time.time() + limit_info["retry_after"]))
+                    }
+                )
+            
+            # Add rate limit headers to successful responses
+            response = await call_next(request)
+            
+            # Add current rate limit status to response
+            minute_remaining = max(0, self.requests_per_minute - len(self.minute_counts[client_ip]))
+            hour_remaining = max(0, self.requests_per_hour - len(self.hour_counts[client_ip]))
+            
+            response.headers["X-RateLimit-Limit-Minute"] = str(self.requests_per_minute)
+            response.headers["X-RateLimit-Remaining-Minute"] = str(minute_remaining)
+            response.headers["X-RateLimit-Limit-Hour"] = str(self.requests_per_hour)
+            response.headers["X-RateLimit-Remaining-Hour"] = str(hour_remaining)
+            
+            return response
+        except Exception as e:
+            logger.error(f"Rate limit middleware error: {e}")
+            # Fail open - allow request to continue if rate limiting fails
+            try:
+                return await call_next(request)
+            except Exception as inner_e:
+                logger.error(f"Fallback request processing failed: {inner_e}")
+                return JSONResponse(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    content={"error": "Internal server error", "message": "Rate limiting middleware encountered an error"}
+                )
 
 class RequestValidationMiddleware(BaseHTTPMiddleware):
     """Validate incoming requests for security threats"""
@@ -234,65 +254,87 @@ class RequestValidationMiddleware(BaseHTTPMiddleware):
         return None
     
     async def dispatch(self, request: Request, call_next):
-        # Skip validation for health checks and CORS preflight requests
-        if request.url.path in ["/health", "/ready", "/metrics"] or request.method == "OPTIONS":
-            return await call_next(request)
-        
-        # Check URL path
-        suspicious = self.check_suspicious_content(str(request.url))
-        if suspicious:
-            logger.warning(f"Suspicious request from {request.client.host if request.client else 'unknown'}: {suspicious}")
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={"error": "Invalid request", "message": "Request contains suspicious content"}
-            )
-        
-        # Check query parameters
-        for key, value in request.query_params.items():
-            suspicious = self.check_suspicious_content(f"{key}={value}")
-            if suspicious:
-                logger.warning(f"Suspicious query parameter from {request.client.host if request.client else 'unknown'}: {suspicious}")
-                return JSONResponse(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    content={"error": "Invalid request", "message": "Request contains suspicious content"}
-                )
-        
-        # Check headers for suspicious content
-        for header_name, header_value in request.headers.items():
-            if header_name.lower() not in ["authorization", "cookie", "user-agent"]:  # Skip sensitive headers
-                suspicious = self.check_suspicious_content(f"{header_name}: {header_value}")
+        try:
+            # Skip validation for health checks and CORS preflight requests
+            if request.url.path in ["/health", "/ready", "/metrics"] or request.method == "OPTIONS":
+                return await call_next(request)
+            
+            # Check URL path
+            try:
+                suspicious = self.check_suspicious_content(str(request.url))
                 if suspicious:
-                    logger.warning(f"Suspicious header from {request.client.host if request.client else 'unknown'}: {suspicious}")
+                    logger.warning(f"Suspicious request from {request.client.host if request.client else 'unknown'}: {suspicious}")
                     return JSONResponse(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         content={"error": "Invalid request", "message": "Request contains suspicious content"}
                     )
-        
-        # For POST/PUT requests, check body (limited to prevent DoS)
-        if request.method in ["POST", "PUT", "PATCH"]:
+            except Exception as e:
+                logger.error(f"Error checking URL path: {e}")
+            
+            # Check query parameters
             try:
-                # Only check first 10KB to prevent DoS
-                body = await request.body()
-                if len(body) > 10240:  # 10KB limit for security scanning
-                    body = body[:10240]
-                
-                if body:
-                    try:
-                        body_str = body.decode('utf-8', errors='ignore')
-                        suspicious = self.check_suspicious_content(body_str)
+                for key, value in request.query_params.items():
+                    suspicious = self.check_suspicious_content(f"{key}={value}")
+                    if suspicious:
+                        logger.warning(f"Suspicious query parameter from {request.client.host if request.client else 'unknown'}: {suspicious}")
+                        return JSONResponse(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            content={"error": "Invalid request", "message": "Request contains suspicious content"}
+                        )
+            except Exception as e:
+                logger.error(f"Error checking query parameters: {e}")
+            
+            # Check headers for suspicious content
+            try:
+                for header_name, header_value in request.headers.items():
+                    if header_name.lower() not in ["authorization", "cookie", "user-agent"]:  # Skip sensitive headers
+                        suspicious = self.check_suspicious_content(f"{header_name}: {header_value}")
                         if suspicious:
-                            logger.warning(f"Suspicious request body from {request.client.host if request.client else 'unknown'}: {suspicious}")
+                            logger.warning(f"Suspicious header from {request.client.host if request.client else 'unknown'}: {suspicious}")
                             return JSONResponse(
                                 status_code=status.HTTP_400_BAD_REQUEST,
                                 content={"error": "Invalid request", "message": "Request contains suspicious content"}
                             )
-                    except Exception:
-                        # If we can't decode, skip body validation
-                        pass
             except Exception as e:
-                logger.error(f"Error checking request body: {e}")
-        
-        return await call_next(request)
+                logger.error(f"Error checking headers: {e}")
+            
+            # For POST/PUT requests, check body (limited to prevent DoS)
+            if request.method in ["POST", "PUT", "PATCH"]:
+                try:
+                    # Only check first 10KB to prevent DoS
+                    body = await request.body()
+                    if len(body) > 10240:  # 10KB limit for security scanning
+                        body = body[:10240]
+                    
+                    if body:
+                        try:
+                            body_str = body.decode('utf-8', errors='ignore')
+                            suspicious = self.check_suspicious_content(body_str)
+                            if suspicious:
+                                logger.warning(f"Suspicious request body from {request.client.host if request.client else 'unknown'}: {suspicious}")
+                                return JSONResponse(
+                                    status_code=status.HTTP_400_BAD_REQUEST,
+                                    content={"error": "Invalid request", "message": "Request contains suspicious content"}
+                                )
+                        except Exception as decode_e:
+                            logger.debug(f"Could not decode request body for validation: {decode_e}")
+                            # If we can't decode, skip body validation
+                            pass
+                except Exception as e:
+                    logger.error(f"Error checking request body: {e}")
+            
+            return await call_next(request)
+        except Exception as e:
+            logger.error(f"Request validation middleware error: {e}")
+            # Fail open - allow request to continue if validation fails
+            try:
+                return await call_next(request)
+            except Exception as inner_e:
+                logger.error(f"Fallback request processing failed: {inner_e}")
+                return JSONResponse(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    content={"error": "Internal server error", "message": "Request validation middleware encountered an error"}
+                )
 
 def get_cors_middleware_config(environment: str = "production"):
     """Get CORS middleware configuration based on environment"""
@@ -390,30 +432,59 @@ def setup_security_middleware(app, environment: str = "production"):
     
     logger.info(f"Setting up security middleware for {environment} environment")
     
-    # 1. Request validation (first layer)
-    app.add_middleware(RequestValidationMiddleware)
-    
-    # 2. Rate limiting
-    app.add_middleware(
-        RateLimitMiddleware,
-        requests_per_minute=int(os.getenv("RATE_LIMIT_PER_MINUTE", "60")),
-        requests_per_hour=int(os.getenv("RATE_LIMIT_PER_HOUR", "1000")),
-        burst_limit=int(os.getenv("RATE_LIMIT_BURST", "10"))
-    )
-    
-    # 3. Security headers
-    app.add_middleware(SecurityHeadersMiddleware, environment=environment)
-    
-    # 4. CORS (if needed)
-    cors_config = get_cors_middleware_config(environment)
-    if cors_config:
-        app.add_middleware(CORSMiddleware, **cors_config)
-    
-    # 5. Trusted hosts (production only)
-    trusted_host_config = get_trusted_host_middleware(environment)
-    if trusted_host_config:
-        app.add_middleware(TrustedHostMiddleware, **trusted_host_config)
-    
-    logger.info("Security middleware setup completed")
+    try:
+        # 1. Request validation (first layer)
+        try:
+            app.add_middleware(RequestValidationMiddleware)
+            logger.info("✅ Request validation middleware added")
+        except Exception as e:
+            logger.error(f"❌ Failed to add request validation middleware: {e}")
+        
+        # 2. Rate limiting
+        try:
+            app.add_middleware(
+                RateLimitMiddleware,
+                requests_per_minute=int(os.getenv("RATE_LIMIT_PER_MINUTE", "60")),
+                requests_per_hour=int(os.getenv("RATE_LIMIT_PER_HOUR", "1000")),
+                burst_limit=int(os.getenv("RATE_LIMIT_BURST", "10"))
+            )
+            logger.info("✅ Rate limiting middleware added")
+        except Exception as e:
+            logger.error(f"❌ Failed to add rate limiting middleware: {e}")
+        
+        # 3. Security headers
+        try:
+            app.add_middleware(SecurityHeadersMiddleware, environment=environment)
+            logger.info("✅ Security headers middleware added")
+        except Exception as e:
+            logger.error(f"❌ Failed to add security headers middleware: {e}")
+        
+        # 4. CORS (if needed)
+        try:
+            cors_config = get_cors_middleware_config(environment)
+            if cors_config:
+                app.add_middleware(CORSMiddleware, **cors_config)
+                logger.info("✅ CORS middleware added")
+            else:
+                logger.info("CORS middleware skipped (no config)")
+        except Exception as e:
+            logger.error(f"❌ Failed to add CORS middleware: {e}")
+        
+        # 5. Trusted hosts (production only)
+        try:
+            trusted_host_config = get_trusted_host_middleware(environment)
+            if trusted_host_config:
+                app.add_middleware(TrustedHostMiddleware, **trusted_host_config)
+                logger.info("✅ Trusted host middleware added")
+            else:
+                logger.info("Trusted host middleware skipped (development mode)")
+        except Exception as e:
+            logger.error(f"❌ Failed to add trusted host middleware: {e}")
+        
+        logger.info("Security middleware setup completed")
+        
+    except Exception as e:
+        logger.error(f"❌ Critical error during security middleware setup: {e}")
+        logger.warning("Some security middleware may not be active")
     
     return app

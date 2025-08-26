@@ -362,13 +362,25 @@ async def get_content_analytics(
 ):
     """Get content analytics summary"""
     
+    # Ensure the content_logs table exists before querying
+    ensure_table_exists(db, "content_logs", "get_content_analytics")
     
     start_date = datetime.now(timezone.utc) - timedelta(days=days)
     
-    content_items = db.query(ContentLog).filter(
-        ContentLog.user_id == current_user.id,
-        ContentLog.created_at >= start_date
-    ).all()
+    def query_content_analytics(db_session: Session):
+        return db_session.query(ContentLog).filter(
+            ContentLog.user_id == current_user.id,
+            ContentLog.created_at >= start_date
+        ).all()
+    
+    # Use safe query wrapper
+    content_items = safe_table_query(
+        db=db,
+        table_name="content_logs", 
+        query_func=query_content_analytics,
+        fallback_value=[],
+        endpoint_name="get_content_analytics"
+    )
     
     # Calculate statistics
     total_posts = len(content_items)
@@ -386,8 +398,13 @@ async def get_content_analytics(
         status = content.status
         posts_by_status[status] = posts_by_status.get(status, 0) + 1
         
-        # Engagement stats
-        engagement_data = content.engagement_data or {}
+        # Engagement stats - safely access engagement_data column
+        try:
+            engagement_data = getattr(content, 'engagement_data', None) or {}
+        except AttributeError:
+            # Column doesn't exist in schema, use empty dict
+            engagement_data = {}
+        
         likes = engagement_data.get('likes', 0)
         comments = engagement_data.get('comments', 0)
         shares = engagement_data.get('shares', 0)
@@ -396,13 +413,20 @@ async def get_content_analytics(
     
     avg_engagement = sum(engagement_scores) / len(engagement_scores) if engagement_scores else 0
     
-    # Top performing posts
-    content_with_engagement = [
-        (content, content.engagement_data.get('likes', 0) + 
-         content.engagement_data.get('comments', 0) * 2 + 
-         content.engagement_data.get('shares', 0) * 3)
-        for content in content_items if content.status == "published"
-    ]
+    # Top performing posts - safely calculate engagement scores
+    content_with_engagement = []
+    for content in content_items:
+        if content.status == "published":
+            # Safely access engagement_data column
+            try:
+                engagement_data = getattr(content, 'engagement_data', None) or {}
+            except AttributeError:
+                engagement_data = {}
+            
+            score = (engagement_data.get('likes', 0) + 
+                    engagement_data.get('comments', 0) * 2 + 
+                    engagement_data.get('shares', 0) * 3)
+            content_with_engagement.append((content, score))
     
     top_performing = sorted(content_with_engagement, key=lambda x: x[1], reverse=True)[:5]
     

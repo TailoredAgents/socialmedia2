@@ -321,8 +321,8 @@ class ApiService {
     return this.request('/api/content/generate', {
       method: 'POST',
       body: { 
-        topic: prompt,
-        content_type: contentType, // Add content type to the request
+        prompt: prompt,  // Fixed: API expects 'prompt' field, not 'topic'
+        content_type: contentType,
         platform: platform,
         tone: 'professional',
         include_hashtags: true,

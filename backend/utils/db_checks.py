@@ -112,6 +112,12 @@ def safe_table_query(db: Session, table_name: str, query_func, fallback_value=No
         return query_func(db)
         
     except Exception as e:
+        # Always rollback the session on any exception to prevent failed state
+        try:
+            db.rollback()
+        except Exception as rollback_error:
+            logger.warning(f"Failed to rollback session in safe_table_query: {rollback_error}")
+        
         error_str = str(e).lower()
         
         # Check if it's a schema-related error (table/column missing)

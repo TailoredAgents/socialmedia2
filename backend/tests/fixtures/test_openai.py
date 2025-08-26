@@ -26,9 +26,9 @@ def test_openai_connection():
         
         print("🔄 Testing OpenAI API connectivity...")
         
-        # Make a simple test request to GPT-4o-mini
+        # Make a simple test request to GPT-5 mini
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-5-mini",
             messages=[
                 {
                     "role": "user", 

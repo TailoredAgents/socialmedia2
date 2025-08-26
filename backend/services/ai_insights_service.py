@@ -129,7 +129,7 @@ class AIInsightsService:
             """
             
             response = await self.async_client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-5",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.7
             )
@@ -208,7 +208,7 @@ class AIInsightsService:
             """
             
             response = await self.async_client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-5",
                 messages=[{"role": "user", "content": insight_prompt}],
                 temperature=0.7,
                 max_tokens=2000
@@ -248,7 +248,7 @@ class AIInsightsService:
                 "metadata": {
                     "search_queries_used": 6,
                     "news_sources_analyzed": len(news_results),
-                    "generation_model": "gpt-4",
+                    "generation_model": "gpt-5",
                     "has_real_time_data": self.serper_api_key is not None and self.serper_api_key != "your_serper_api_key_here"
                 }
             }

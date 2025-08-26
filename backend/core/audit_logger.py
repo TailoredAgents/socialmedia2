@@ -551,7 +551,7 @@ if __name__ == "__main__":
         AuditEventType.AI_REQUEST,
         user_id="user123",
         resource="content_generation",
-        details={"model": "gpt-4", "tokens": 150}
+        details={"model": "gpt-5", "tokens": 150}
     ):
         # AI content generation code
         pass

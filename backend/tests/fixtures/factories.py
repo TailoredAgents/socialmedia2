@@ -173,7 +173,7 @@ class MemoryFactory(factory.Factory):
     })
     
     vector_id = factory.LazyFunction(lambda: f"vec_{fake.uuid4()}")  
-    embedding_model = 'text-embedding-ada-002'
+    embedding_model = 'text-embedding-3-large'
     similarity_threshold = factory.LazyFunction(lambda: round(fake.random.uniform(0.7, 0.95), 3))
     
     created_at = factory.LazyFunction(lambda: datetime.now(timezone.utc))

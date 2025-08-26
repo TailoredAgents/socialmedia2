@@ -65,7 +65,7 @@ async def diagnose_ai_features():
             try:
                 client = AsyncOpenAI(api_key=settings.openai_api_key)
                 response = await client.chat.completions.create(
-                    model="gpt-4",
+                    model="gpt-5",
                     messages=[{"role": "user", "content": "Test connection - respond with 'OK'"}],
                     max_tokens=5
                 )
@@ -147,7 +147,7 @@ async def diagnose_industry_research():
             try:
                 client = AsyncOpenAI(api_key=settings.openai_api_key)
                 response = await client.chat.completions.create(
-                    model="gpt-4",
+                    model="gpt-5",
                     messages=[{"role": "user", "content": "Test research analysis: What are AI agents? One sentence."}],
                     max_tokens=50
                 )

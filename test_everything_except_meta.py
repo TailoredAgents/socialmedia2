@@ -81,16 +81,16 @@ async def test_openai_integration():
         settings = get_settings()
         client = AsyncOpenAI(api_key=settings.openai_api_key)
         
-        # Test GPT-4o mini (available model)
+        # Test GPT-5 mini (updated model)
         response = await client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-5-mini",
             messages=[{"role": "user", "content": "Say 'OpenAI test successful' and nothing else"}],
             max_tokens=10
         )
         
         result = response.choices[0].message.content.strip()
         success = "successful" in result.lower()
-        print_result("GPT-4o Mini", success, f"Response: {result}")
+        print_result("GPT-5 Mini", success, f"Response: {result}")
         
         return success
         

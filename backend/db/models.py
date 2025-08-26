@@ -331,7 +331,7 @@ class ContentItem(Base):
     
     # AI generation metadata
     ai_generated = Column(Boolean, default=False)
-    ai_model = Column(String)  # gpt-4, gpt-3.5-turbo, etc.
+    ai_model = Column(String)  # gpt-5, gpt-5-mini, etc.
     generation_prompt = Column(Text)
     generation_params = Column(JSON, default={})
     

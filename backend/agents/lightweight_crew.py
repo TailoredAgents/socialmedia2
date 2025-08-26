@@ -50,7 +50,7 @@ class LightweightAgent:
         try:
             # Use direct OpenAI API instead of full CrewAI
             response = self.openai_client.chat.completions.create(
-                model="gpt-4o-mini",  # Cheaper and faster
+                model="gpt-5-mini",  # Updated to GPT-5 mini
                 messages=[
                     {"role": "system", "content": f"You are a {self.role}. {self.backstory}"},
                     {"role": "user", "content": f"Goal: {self.goal}\n\nTask: {task_description}"}

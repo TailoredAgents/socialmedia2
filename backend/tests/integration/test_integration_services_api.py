@@ -476,7 +476,7 @@ class TestContentGenerationAPI:
                 "content": "🚀 Exciting news! Our AI-powered social media platform now supports multi-platform content generation with advanced optimization algorithms. Perfect for businesses looking to scale their social presence! #AI #SocialMedia #Innovation #TechStartup",
                 "hashtags": ["#AI", "#SocialMedia", "#Innovation", "#TechStartup"],
                 "engagement_score": 8.5,
-                "model": "openai-gpt-4",
+                "model": "openai-gpt-5",
                 "prompt": "Generate professional content about AI social media platform"
             })
             yield mock_service
@@ -511,7 +511,7 @@ class TestContentGenerationAPI:
         assert content_item.platform == "twitter"
         assert content_item.content_type == "post"
         assert content_item.status == "draft"
-        assert content_item.ai_model == "openai-gpt-4"
+        assert content_item.ai_model == "openai-gpt-5"
         
         # Verify generation parameters stored
         assert content_item.generation_params["topic"] == "AI-powered social media automation platform"

@@ -344,7 +344,7 @@ class TestIntegrationServicesAPI:
             "hashtags": ["AI", "Innovation", "TechTrends"],
             "optimal_posting_time": "2024-01-16T14:30:00Z",
             "generation_metadata": {
-                "model_used": "gpt-4",
+                "model_used": "gpt-5",
                 "generation_time": 2.1,
                 "confidence_score": 0.94
             }

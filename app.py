@@ -338,10 +338,11 @@ logger.info("=" * 50)
 # Ensure database columns exist (production safety net)
 if environment == "production":
     try:
-        from backend.db.ensure_columns import ensure_user_columns
-        logger.info("Checking database columns for production...")
+        from backend.db.ensure_columns import ensure_user_columns, ensure_notifications_table
+        logger.info("Checking database schema for production...")
         ensure_user_columns()
-        logger.info("Database column check complete")
+        ensure_notifications_table()
+        logger.info("Database schema check complete")
     except Exception as e:
         logger.error(f"Failed to ensure database columns: {e}")
         # Don't crash the app, continue anyway

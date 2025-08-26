@@ -8,6 +8,59 @@ from backend.db.database import engine
 
 logger = logging.getLogger(__name__)
 
+def ensure_notifications_table():
+    """
+    Ensure notifications table exists with all required columns
+    """
+    try:
+        with engine.connect() as conn:
+            # Check if notifications table exists
+            result = conn.execute(text("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_name = 'notifications'
+            """)).fetchall()
+            
+            if not result:
+                logger.info("Creating missing notifications table...")
+                
+                # Create notifications table
+                conn.execute(text("""
+                    CREATE TABLE notifications (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        title VARCHAR(255) NOT NULL,
+                        message TEXT,
+                        notification_type VARCHAR(50) DEFAULT 'info',
+                        priority VARCHAR(20) DEFAULT 'medium',
+                        goal_id INTEGER,
+                        content_id INTEGER, 
+                        workflow_id INTEGER,
+                        is_read BOOLEAN DEFAULT FALSE,
+                        is_dismissed BOOLEAN DEFAULT FALSE,
+                        read_at TIMESTAMP,
+                        action_url VARCHAR(500),
+                        action_label VARCHAR(100),
+                        notification_metadata JSON,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        expires_at TIMESTAMP
+                    )
+                """))
+                
+                # Create indexes
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_notifications_user_id ON notifications (user_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_notifications_is_read ON notifications (is_read)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_notifications_created_at ON notifications (created_at)"))
+                
+                conn.commit()
+                logger.info("✅ Successfully created notifications table")
+            else:
+                logger.info("✅ Notifications table already exists")
+                
+    except Exception as e:
+        logger.error(f"❌ Error ensuring notifications table: {e}")
+        pass
+
 def ensure_user_columns():
     """
     Ensure all required columns exist in the users table.

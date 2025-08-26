@@ -447,6 +447,54 @@ async def refresh_token(
             detail="Invalid or expired token"
         )
 
+@router.get("/me", response_model=TokenResponse)
+async def get_current_user(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Get current user information from JWT token
+    """
+    # Get Authorization header
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid authorization header"
+        )
+    
+    token = auth_header.split(" ")[1]
+    
+    try:
+        # Verify token
+        payload = jwt_handler.verify_token(token)
+        user_id = int(payload.get("sub"))
+        
+        # Get user from database
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
+        
+        return TokenResponse(
+            access_token=token,  # Return the same token
+            user_id=user.id,
+            email=user.email,
+            username=user.username,
+            email_verified=user.email_verified,
+            tier=user.tier,
+            is_superuser=user.is_superuser
+        )
+        
+    except Exception as e:
+        logger.error(f"Get current user failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token"
+        )
+
 @router.post("/logout")
 async def logout():
     """

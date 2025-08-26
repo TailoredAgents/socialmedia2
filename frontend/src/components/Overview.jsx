@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Line, Doughnut, Bar } from 'react-chartjs-2'
 import {
@@ -248,6 +248,159 @@ const AIStatus = ({ darkMode }) => {
   )
 }
 
+// Automations Panel Component
+const AutomationsPanel = ({ darkMode, autopilotMode }) => {
+  // Simulate automation status - in production this would come from API
+  const [automations] = useState([
+    {
+      id: 'daily_workflows',
+      name: 'Daily Content Workflows',
+      description: 'Automatic daily research and content generation',
+      enabled: true,
+      lastRun: '2 hours ago',
+      nextRun: 'in 22 hours',
+      status: 'running',
+      icon: '⏰'
+    },
+    {
+      id: 'smart_scheduling',
+      name: 'Smart Scheduling',
+      description: 'AI-powered optimal posting time detection',
+      enabled: true,
+      lastRun: '45 minutes ago',
+      nextRun: 'continuous',
+      status: 'active',
+      icon: '🎯'
+    },
+    {
+      id: 'content_generation',
+      name: 'Content Generation',
+      description: 'Automated content creation from trends',
+      enabled: true,
+      lastRun: '1 hour ago',
+      nextRun: 'in 3 hours',
+      status: 'active',
+      icon: '✍️'
+    },
+    {
+      id: 'auto_optimization',
+      name: 'Performance Optimization',
+      description: 'Automatic content optimization based on metrics',
+      enabled: false,
+      lastRun: 'yesterday',
+      nextRun: 'disabled',
+      status: 'disabled',
+      icon: '📈'
+    }
+  ])
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'running': return darkMode ? 'text-green-400 bg-green-900/20' : 'text-green-700 bg-green-100'
+      case 'active': return darkMode ? 'text-blue-400 bg-blue-900/20' : 'text-blue-700 bg-blue-100'
+      case 'disabled': return darkMode ? 'text-gray-400 bg-gray-900/20' : 'text-gray-700 bg-gray-100'
+      default: return darkMode ? 'text-gray-400 bg-gray-900/20' : 'text-gray-700 bg-gray-100'
+    }
+  }
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'running': return '🟢'
+      case 'active': return '🔵'  
+      case 'disabled': return '⚫'
+      default: return '⚪'
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.4 }}
+      className={`p-6 rounded-xl backdrop-blur-md ${
+        darkMode ? 'bg-gray-800/80' : 'bg-white/80'
+      } border border-gray-200/20 shadow-lg`}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            Automation Status
+          </h3>
+          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            {autopilotMode ? 'All systems running autonomously' : 'Automations ready for review mode'}
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className={`text-xs px-2 py-1 rounded-full ${
+            automations.filter(a => a.enabled).length === automations.length
+              ? 'bg-green-100 text-green-700'
+              : 'bg-yellow-100 text-yellow-700'
+          }`}>
+            {automations.filter(a => a.enabled).length}/{automations.length} Active
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {automations.map((automation, index) => (
+          <motion.div
+            key={automation.id}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.1 * index }}
+            className={`p-4 rounded-lg border ${
+              automation.enabled 
+                ? darkMode ? 'border-blue-600/30 bg-blue-900/10' : 'border-blue-200 bg-blue-50'
+                : darkMode ? 'border-gray-600/30 bg-gray-900/10' : 'border-gray-200 bg-gray-50'
+            } transition-all`}
+          >
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <span className="text-xl">{automation.icon}</span>
+                <div>
+                  <h4 className={`font-medium text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {automation.name}
+                  </h4>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs">{getStatusIcon(automation.status)}</span>
+                <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(automation.status)}`}>
+                  {automation.status}
+                </span>
+              </div>
+            </div>
+            
+            <p className={`text-xs mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              {automation.description}
+            </p>
+            
+            <div className="flex items-center justify-between text-xs">
+              <div className={`${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Last: {automation.lastRun}
+              </div>
+              <div className={`${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Next: {automation.nextRun}
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className={`mt-4 pt-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex items-center justify-between`}>
+        <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+          ⚙️ Manage automation settings in Settings → Automation
+        </p>
+        <button className={`text-xs px-3 py-1 rounded-md ${
+          darkMode ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-blue-500 text-white hover:bg-blue-600'
+        } transition-colors`}>
+          View Details
+        </button>
+      </div>
+    </motion.div>
+  )
+}
+
 // Today's Plan Action Strip Component
 const TodaysPlan = ({ darkMode, autopilotMode }) => {
   const [currentTime] = useState(new Date())
@@ -452,6 +605,205 @@ const TodaysPlan = ({ darkMode, autopilotMode }) => {
   )
 }
 
+// Content Pipeline Component
+const ContentPipeline = ({ darkMode }) => {
+  // Simulate pipeline data - in production this would come from API
+  const [pipelineData] = useState({
+    ideas: {
+      count: 12,
+      items: [
+        { id: 1, title: "AI in Healthcare Trends", priority: "high", source: "research" },
+        { id: 2, title: "Remote Work Best Practices", priority: "medium", source: "user" },
+        { id: 3, title: "Sustainability in Tech", priority: "high", source: "trending" }
+      ]
+    },
+    drafts: {
+      count: 4,
+      items: [
+        { id: 1, title: "The Future of AI in Medicine", platform: "linkedin", progress: 85 },
+        { id: 2, title: "5 Remote Work Tools Every Team Needs", platform: "twitter", progress: 60 },
+        { id: 3, title: "Building Sustainable Software", platform: "instagram", progress: 40 }
+      ]
+    },
+    scheduled: {
+      count: 8,
+      items: [
+        { id: 1, title: "Weekly Industry Roundup", platform: "linkedin", scheduledFor: "Tomorrow 9:00 AM" },
+        { id: 2, title: "Tech Tip Tuesday", platform: "twitter", scheduledFor: "Tomorrow 2:00 PM" },
+        { id: 3, title: "Behind the Scenes: Development", platform: "instagram", scheduledFor: "Wed 11:00 AM" }
+      ]
+    },
+    published: {
+      count: 23,
+      items: [
+        { id: 1, title: "Monday Motivation: Growth Mindset", platform: "linkedin", engagement: 247 },
+        { id: 2, title: "Quick CSS Grid Tutorial", platform: "twitter", engagement: 89 },
+        { id: 3, title: "Office Setup Tour", platform: "instagram", engagement: 156 }
+      ]
+    }
+  })
+
+  const stages = [
+    { key: 'ideas', name: 'Ideas', icon: '💡', color: 'yellow' },
+    { key: 'drafts', name: 'Drafts', icon: '✍️', color: 'blue' },
+    { key: 'scheduled', name: 'Scheduled', icon: '📅', color: 'purple' },
+    { key: 'published', name: 'Published', icon: '🚀', color: 'green' }
+  ]
+
+  const getStageColor = (color, darkMode) => {
+    const colors = {
+      yellow: darkMode ? 'border-yellow-400 bg-yellow-900/20' : 'border-yellow-300 bg-yellow-50',
+      blue: darkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-300 bg-blue-50',
+      purple: darkMode ? 'border-purple-400 bg-purple-900/20' : 'border-purple-300 bg-purple-50',
+      green: darkMode ? 'border-green-400 bg-green-900/20' : 'border-green-300 bg-green-50'
+    }
+    return colors[color]
+  }
+
+  const getCountColor = (color) => {
+    const colors = {
+      yellow: 'bg-yellow-100 text-yellow-800',
+      blue: 'bg-blue-100 text-blue-800',
+      purple: 'bg-purple-100 text-purple-800',
+      green: 'bg-green-100 text-green-800'
+    }
+    return colors[color]
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.6 }}
+      className={`p-6 rounded-xl backdrop-blur-md ${
+        darkMode ? 'bg-gray-800/80' : 'bg-white/80'
+      } border border-gray-200/20 shadow-lg`}
+    >
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            Content Pipeline
+          </h3>
+          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            Track content through the entire creation and publishing workflow
+          </p>
+        </div>
+        <div className={`text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700`}>
+          {Object.values(pipelineData).reduce((sum, stage) => sum + stage.count, 0)} Total Items
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {stages.map((stage, index) => {
+          const stageData = pipelineData[stage.key]
+          return (
+            <motion.div
+              key={stage.key}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 * index }}
+              className={`p-4 rounded-lg border-2 ${getStageColor(stage.color, darkMode)} transition-all hover:shadow-md`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xl">{stage.icon}</span>
+                  <h4 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {stage.name}
+                  </h4>
+                </div>
+                <span className={`text-sm font-semibold px-2 py-1 rounded-full ${getCountColor(stage.color)}`}>
+                  {stageData.count}
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {stageData.items.slice(0, 2).map((item, itemIndex) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 0.2 + (0.1 * itemIndex) }}
+                    className={`p-2 rounded text-xs ${
+                      darkMode ? 'bg-gray-700/50' : 'bg-white/70'
+                    } border ${darkMode ? 'border-gray-600/30' : 'border-gray-200/50'}`}
+                  >
+                    <div className={`font-medium mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {item.title}
+                    </div>
+                    <div className={`flex items-center justify-between ${
+                      darkMode ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      {stage.key === 'ideas' && (
+                        <>
+                          <span className={`px-1 py-0.5 rounded text-xs ${
+                            item.priority === 'high' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {item.priority}
+                          </span>
+                          <span>{item.source}</span>
+                        </>
+                      )}
+                      {stage.key === 'drafts' && (
+                        <>
+                          <span>{item.platform}</span>
+                          <span>{item.progress}%</span>
+                        </>
+                      )}
+                      {stage.key === 'scheduled' && (
+                        <>
+                          <span>{item.platform}</span>
+                          <span>{item.scheduledFor}</span>
+                        </>
+                      )}
+                      {stage.key === 'published' && (
+                        <>
+                          <span>{item.platform}</span>
+                          <span>{item.engagement} eng.</span>
+                        </>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+                
+                {stageData.count > 2 && (
+                  <div className={`text-center py-1 text-xs ${
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
+                    +{stageData.count - 2} more
+                  </div>
+                )}
+              </div>
+
+              <button className={`w-full mt-3 px-3 py-1 text-xs rounded-md transition-colors ${
+                darkMode 
+                  ? 'bg-gray-600 text-white hover:bg-gray-500' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}>
+                View All
+              </button>
+            </motion.div>
+          )
+        })}
+      </div>
+
+      {/* Pipeline Flow Arrows */}
+      <div className="hidden md:flex justify-center items-center mt-4 space-x-8">
+        {[0, 1, 2].map((index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.8 + (0.1 * index) }}
+            className={`text-2xl ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}
+          >
+            →
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  )
+}
+
 // Setup Progress Component
 const SetupProgress = ({ darkMode }) => {
   const setupProgress = calculateSetupProgress()
@@ -527,6 +879,256 @@ const SetupProgress = ({ darkMode }) => {
           </p>
         </div>
       )}
+    </motion.div>
+  )
+}
+
+// Social Proof Carousel Component
+const SocialProofCarousel = ({ darkMode }) => {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  
+  // Simulate social proof data - in production this would come from API
+  const [proofItems] = useState([
+    {
+      id: 1,
+      type: 'milestone',
+      title: 'Reached 5,000 LinkedIn Followers',
+      description: 'Lily\'s consistent posting strategy helped grow your professional network',
+      metric: '5,000',
+      metricLabel: 'followers',
+      platform: 'linkedin',
+      icon: '🎉',
+      timestamp: '2 days ago',
+      trend: '+23% this month'
+    },
+    {
+      id: 2,
+      type: 'viral',
+      title: 'Post Went Viral on Twitter',
+      description: '"10 AI Tools Every Developer Needs" reached 50K views',
+      metric: '50K',
+      metricLabel: 'views',
+      platform: 'twitter',
+      icon: '🚀',
+      timestamp: '5 days ago',
+      trend: '2,500% above average'
+    },
+    {
+      id: 3,
+      type: 'engagement',
+      title: 'Record Engagement This Week',
+      description: 'Your content generated 847 comments and shares across all platforms',
+      metric: '847',
+      metricLabel: 'interactions',
+      platform: 'all',
+      icon: '💬',
+      timestamp: '1 week ago',
+      trend: '+156% vs last week'
+    },
+    {
+      id: 4,
+      type: 'lead',
+      title: 'Generated Quality Business Leads',
+      description: '12 potential clients reached out after seeing your thought leadership posts',
+      metric: '12',
+      metricLabel: 'leads',
+      platform: 'linkedin',
+      icon: '🎯',
+      timestamp: '1 week ago',
+      trend: '$24K potential value'
+    },
+    {
+      id: 5,
+      type: 'efficiency',
+      title: 'Automation Milestone',
+      description: 'Lily has now created and scheduled 100+ posts automatically',
+      metric: '100+',
+      metricLabel: 'posts',
+      platform: 'all',
+      icon: '⚡',
+      timestamp: '2 weeks ago',
+      trend: '40 hours saved'
+    }
+  ])
+
+  const nextItem = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % proofItems.length)
+  }, [proofItems.length])
+
+  const prevItem = useCallback(() => {
+    setCurrentIndex((prev) => (prev - 1 + proofItems.length) % proofItems.length)
+  }, [proofItems.length])
+
+  // Auto-advance carousel
+  useEffect(() => {
+    const interval = setInterval(nextItem, 5000) // Change every 5 seconds
+    return () => clearInterval(interval)
+  }, [nextItem])
+
+  const currentItem = proofItems[currentIndex]
+
+  const getPlatformIcon = (platform) => {
+    switch (platform) {
+      case 'linkedin': return '💼'
+      case 'twitter': return '🐦'
+      case 'instagram': return '📸'
+      case 'all': return '🌐'
+      default: return '📱'
+    }
+  }
+
+  const getTypeColor = (type) => {
+    switch (type) {
+      case 'milestone': return darkMode ? 'text-yellow-400' : 'text-yellow-600'
+      case 'viral': return darkMode ? 'text-red-400' : 'text-red-600'
+      case 'engagement': return darkMode ? 'text-blue-400' : 'text-blue-600'
+      case 'lead': return darkMode ? 'text-green-400' : 'text-green-600'
+      case 'efficiency': return darkMode ? 'text-purple-400' : 'text-purple-600'
+      default: return darkMode ? 'text-gray-400' : 'text-gray-600'
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.8 }}
+      className={`p-6 rounded-xl backdrop-blur-md ${
+        darkMode ? 'bg-gray-800/80' : 'bg-white/80'
+      } border border-gray-200/20 shadow-lg relative overflow-hidden`}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            Recent Wins
+          </h3>
+          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            Celebrating your social media successes powered by AI
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={prevItem}
+            className={`p-1 rounded-full transition-colors ${
+              darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+            }`}
+          >
+            ←
+          </button>
+          <span className={`text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700`}>
+            {currentIndex + 1}/{proofItems.length}
+          </span>
+          <button
+            onClick={nextItem}
+            className={`p-1 rounded-full transition-colors ${
+              darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+            }`}
+          >
+            →
+          </button>
+        </div>
+      </div>
+
+      <motion.div
+        key={currentItem.id}
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -50 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-4"
+      >
+        {/* Main achievement card */}
+        <div className={`p-4 rounded-lg border-2 ${
+          darkMode 
+            ? 'border-blue-600/30 bg-gradient-to-br from-blue-900/20 to-purple-900/20' 
+            : 'border-blue-200 bg-gradient-to-br from-blue-50 to-purple-50'
+        }`}>
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center space-x-3">
+              <div className={`text-3xl`}>{currentItem.icon}</div>
+              <div>
+                <h4 className={`font-bold text-lg ${getTypeColor(currentItem.type)}`}>
+                  {currentItem.title}
+                </h4>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {currentItem.description}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-lg">{getPlatformIcon(currentItem.platform)}</span>
+              <span className={`text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700`}>
+                {currentItem.timestamp}
+              </span>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-end space-x-2">
+              <span className={`text-2xl font-bold ${getTypeColor(currentItem.type)}`}>
+                {currentItem.metric}
+              </span>
+              <span className={`text-sm pb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                {currentItem.metricLabel}
+              </span>
+            </div>
+            <div className={`text-sm font-medium ${
+              currentItem.trend.includes('%') ? 'text-green-600' : darkMode ? 'text-blue-400' : 'text-blue-600'
+            }`}>
+              {currentItem.trend}
+            </div>
+          </div>
+        </div>
+
+        {/* Metric highlights */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className={`p-3 rounded-lg text-center ${
+            darkMode ? 'bg-gray-700/50' : 'bg-white/70'
+          }`}>
+            <div className={`text-lg font-bold ${getTypeColor(currentItem.type)}`}>
+              47
+            </div>
+            <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Total Wins
+            </div>
+          </div>
+          <div className={`p-3 rounded-lg text-center ${
+            darkMode ? 'bg-gray-700/50' : 'bg-white/70'
+          }`}>
+            <div className={`text-lg font-bold ${getTypeColor(currentItem.type)}`}>
+              127K
+            </div>
+            <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Total Reach
+            </div>
+          </div>
+          <div className={`p-3 rounded-lg text-center ${
+            darkMode ? 'bg-gray-700/50' : 'bg-white/70'
+          }`}>
+            <div className={`text-lg font-bold ${getTypeColor(currentItem.type)}`}>
+              23
+            </div>
+            <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              This Month
+            </div>
+          </div>
+        </div>
+
+        {/* Progress dots */}
+        <div className="flex justify-center space-x-2 pt-2">
+          {proofItems.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentIndex(index)}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                index === currentIndex
+                  ? darkMode ? 'bg-blue-400' : 'bg-blue-600'
+                  : darkMode ? 'bg-gray-600' : 'bg-gray-300'
+              }`}
+            />
+          ))}
+        </div>
+      </motion.div>
     </motion.div>
   )
 }
@@ -732,6 +1334,15 @@ const Overview = ({ darkMode, searchQuery }) => {
           delay={0.4}
         />
       </div>
+
+      {/* Phase 2: Automations Panel */}
+      <AutomationsPanel darkMode={darkMode} autopilotMode={autopilotMode} />
+
+      {/* Phase 2: Content Pipeline */}
+      <ContentPipeline darkMode={darkMode} />
+
+      {/* Phase 2: Social Proof Carousel */}
+      <SocialProofCarousel darkMode={darkMode} />
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

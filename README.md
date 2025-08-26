@@ -32,6 +32,9 @@ AI Social Media Manager is a sophisticated, enterprise-grade platform that lever
 
 - **🤖 AI-Powered Content Generation**: OpenAI GPT-5 and GPT-5 Mini with built-in web search and enhanced reasoning
 - **📱 Multi-Platform Support**: X/Twitter, Instagram, Facebook (LinkedIn removed)
+- **🤖 Autonomous Social Inbox**: AI-powered comment and message reply automation with personality-driven responses
+- **💬 Real-Time Social Monitoring**: WebSocket-based live interaction tracking and response management
+- **🎯 Intelligent Response Templates**: Dynamic template system with variable substitution and escalation rules
 - **📊 Advanced Analytics**: Real-time performance tracking and insights
 - **🔍 Enhanced Semantic Memory**: text-embedding-3-large with 3072-dimensional vectors for superior search accuracy
 - **⚡ Automated Workflows**: Intelligent content scheduling and optimization
@@ -78,6 +81,43 @@ AI Social Media Manager is a sophisticated, enterprise-grade platform that lever
    │        │            │         │            │  Store  │
    └────────┘            └─────────┘            └─────────┘
 ```
+
+---
+
+## 🤖 Autonomous Social Inbox System
+
+The platform features a comprehensive **AI-powered social interaction management system** that automatically handles comments and messages across social media platforms:
+
+### 🔥 Core Capabilities
+
+- **Intelligent Response Generation**: GPT-5 powered responses using company knowledge base and personality profiles
+- **Real-Time WebSocket Updates**: Live monitoring and instant notifications for new interactions
+- **Multi-Platform Support**: Handles comments and direct messages on Facebook, Instagram, and X/Twitter
+- **Smart Escalation**: Automatically escalates complex issues or sensitive topics to human oversight
+
+### 🎯 Response Automation
+
+- **Personality-Driven Replies**: Configurable response personalities (professional, friendly, casual, etc.)
+- **Template Management**: Dynamic response templates with variable substitution
+- **Business Hours Integration**: Respects configured business hours and auto-response schedules
+- **Confidence Thresholds**: Only auto-responds when AI confidence exceeds configured thresholds
+- **Keyword Filtering**: Automatic escalation for predefined keywords (complaints, legal terms, etc.)
+
+### 🚀 Technical Implementation
+
+- **Production Webhooks**: Secure webhook endpoints for Facebook, Instagram, and X/Twitter APIs
+- **Signature Verification**: HMAC-based webhook security validation
+- **Database Integration**: Comprehensive interaction tracking and response history
+- **WebSocket Manager**: Real-time connection management with heartbeat and reconnection logic
+- **Content Library Integration**: Leverages uploaded images and brand assets in responses
+
+### 📊 Management Interface
+
+- **Live Social Inbox**: Real-time dashboard showing all incoming interactions
+- **Response History**: Complete audit trail of AI-generated and manual responses  
+- **Template Editor**: Visual template management with variable placeholders
+- **Settings Panel**: Granular control over auto-response behavior and escalation rules
+- **Analytics Dashboard**: Response performance metrics and engagement tracking
 
 ---
 

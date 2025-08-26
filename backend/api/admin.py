@@ -111,7 +111,7 @@ async def admin_login(
         value=tokens["refresh_token"],
         httponly=True,
         secure=True,
-        samesite="strict",
+        samesite="none",  # Allow cross-origin cookie sending
         max_age=7 * 24 * 60 * 60  # 7 days
     )
     

@@ -163,7 +163,7 @@ async def register_user(request: RegisterRequest, response: Response, db: Sessio
         value=tokens["refresh_token"],
         httponly=True,
         secure=True,  # Use HTTPS in production
-        samesite="strict",
+        samesite="none",  # Allow cross-origin cookie sending
         max_age=jwt_handler.refresh_token_expire_seconds
     )
     
@@ -263,7 +263,7 @@ async def login_user(request: LoginRequest, response: Response, db: Session = De
         value=tokens["refresh_token"],
         httponly=True,
         secure=True,  # Use HTTPS in production
-        samesite="strict",
+        samesite="none",  # Allow cross-origin cookie sending
         max_age=jwt_handler.refresh_token_expire_seconds
     )
     
@@ -355,7 +355,7 @@ async def refresh_token(
             value=new_tokens["refresh_token"],
             httponly=True,
             secure=True,
-            samesite="strict",
+            samesite="none",  # Allow cross-origin cookie sending
             max_age=jwt_handler.refresh_token_expire_seconds
         )
         

@@ -17,6 +17,7 @@ class ApiService {
     const url = `${this.baseURL}${endpoint}`
     
     const config = {
+      credentials: 'include', // Send cookies/credentials for CORS
       headers: {
         'Content-Type': 'application/json',
         ...(options.headers || {}),

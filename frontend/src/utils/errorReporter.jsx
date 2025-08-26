@@ -174,6 +174,18 @@ class ErrorReporter {
 
   // Network error reporting
   logNetworkError(url, method, status, error) {
+    // Skip reporting auth failures to prevent infinite loops
+    if (status === 401 || status === 403) {
+      console.warn(`Auth failure ${status} for ${method} ${url} - skipping error report to prevent loops`);
+      return;
+    }
+    
+    // Skip rate limiting errors since they're expected
+    if (status === 429) {
+      console.warn(`Rate limit ${status} for ${method} ${url} - skipping error report`);
+      return;
+    }
+    
     this.reportError({
       message: `Network error: ${method} ${url} - ${status}`,
       endpoint: url,

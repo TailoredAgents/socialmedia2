@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useEnhancedApi } from '../../hooks/useEnhancedApi'
 import { useNotifications } from '../../hooks/useNotifications'
+import { useAuth } from '../../contexts/AuthContext'
 
 // Toast notification component
 function Toast({ notification, onClose }) {
@@ -220,6 +221,7 @@ export default function NotificationSystem() {
   
   const { api, connectionStatus } = useEnhancedApi()
   const { showToast } = useNotifications()
+  const { isAuthenticated } = useAuth()
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
@@ -234,13 +236,18 @@ export default function NotificationSystem() {
     }
   }, [api])
 
-  // Poll for new notifications
+  // Poll for new notifications - only when authenticated
   useEffect(() => {
+    if (!isAuthenticated) {
+      setNotifications([]) // Clear notifications when not authenticated
+      return
+    }
+    
     fetchNotifications()
     
     const interval = setInterval(fetchNotifications, 30000) // Poll every 30 seconds
     return () => clearInterval(interval)
-  }, [fetchNotifications])
+  }, [fetchNotifications, isAuthenticated])
 
   // Add toast notification
   const addToast = useCallback((notification) => {

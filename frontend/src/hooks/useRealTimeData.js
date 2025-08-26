@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useApi } from './useApi'
+import { useSchemaStatus } from './useSchemaStatus'
 import { error as logError, debug as logDebug } from '../utils/logger.js'
 
 export const useRealTimeData = (endpoint, options = {}) => {
@@ -9,6 +10,7 @@ export const useRealTimeData = (endpoint, options = {}) => {
   const [lastUpdated, setLastUpdated] = useState(null)
   
   const { apiService, makeAuthenticatedRequest } = useApi()
+  const { shouldPoll, getPollingInterval } = useSchemaStatus()
   const intervalRef = useRef(null)
   const mountedRef = useRef(true)
   
@@ -21,7 +23,7 @@ export const useRealTimeData = (endpoint, options = {}) => {
   } = options
 
   const fetchData = useCallback(async (attemptCount = 0) => {
-    if (!mountedRef.current || !enabled) return
+    if (!mountedRef.current || !enabled || !shouldPoll()) return
 
     try {
       setError(null)
@@ -81,15 +83,19 @@ export const useRealTimeData = (endpoint, options = {}) => {
         }
       }
     }
-  }, [endpoint, enabled, apiService, makeAuthenticatedRequest, onDataUpdate, retryAttempts, retryDelay])
+  }, [endpoint, enabled, apiService, makeAuthenticatedRequest, onDataUpdate, retryAttempts, retryDelay, shouldPoll])
 
   const startPolling = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current)
     }
     
-    intervalRef.current = setInterval(fetchData, refreshInterval)
-  }, [fetchData, refreshInterval])
+    // Use schema-aware polling interval
+    const dynamicInterval = getPollingInterval(refreshInterval, refreshInterval * 10)
+    logDebug(`useRealTimeData: Polling ${endpoint} every ${dynamicInterval / 1000}s`)
+    
+    intervalRef.current = setInterval(fetchData, dynamicInterval)
+  }, [fetchData, refreshInterval, getPollingInterval, endpoint])
 
   const stopPolling = useCallback(() => {
     if (intervalRef.current) {
@@ -106,23 +112,29 @@ export const useRealTimeData = (endpoint, options = {}) => {
   useEffect(() => {
     mountedRef.current = true
     
-    if (enabled) {
+    // Only start polling if schema allows it
+    if (enabled && shouldPoll()) {
       fetchData() // Initial fetch
       startPolling() // Start polling
+    } else if (!shouldPoll()) {
+      logDebug(`useRealTimeData: Polling disabled for ${endpoint} due to database schema issues`)
+      setData(null)
+      setIsLoading(false)
+      setError(null)
     }
 
     return () => {
       mountedRef.current = false
       stopPolling()
     }
-  }, [enabled, fetchData, startPolling, stopPolling])
+  }, [enabled, fetchData, startPolling, stopPolling, shouldPoll, endpoint])
 
   useEffect(() => {
     // Handle visibility change to pause/resume polling when tab is hidden
     const handleVisibilityChange = () => {
       if (document.hidden) {
         stopPolling()
-      } else if (enabled) {
+      } else if (enabled && shouldPoll()) {
         refreshNow()
         startPolling()
       }
@@ -130,7 +142,7 @@ export const useRealTimeData = (endpoint, options = {}) => {
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [enabled, refreshNow, startPolling, stopPolling])
+  }, [enabled, refreshNow, startPolling, stopPolling, shouldPoll])
 
   return {
     data,

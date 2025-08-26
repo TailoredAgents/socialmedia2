@@ -12,6 +12,7 @@ import {
 import { useEnhancedApi } from '../../hooks/useEnhancedApi'
 import { useNotifications } from '../../hooks/useNotifications'
 import { useAuth } from '../../contexts/AuthContext'
+import { useSchemaStatus } from '../../hooks/useSchemaStatus'
 
 // Toast notification component
 function Toast({ notification, onClose }) {
@@ -222,6 +223,7 @@ export default function NotificationSystem() {
   const { api, connectionStatus } = useEnhancedApi()
   const { showToast } = useNotifications()
   const { isAuthenticated } = useAuth()
+  const { shouldPoll, getPollingInterval, getStatusMessage } = useSchemaStatus()
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
@@ -236,18 +238,30 @@ export default function NotificationSystem() {
     }
   }, [api])
 
-  // Poll for new notifications - only when authenticated
+  // Poll for new notifications with schema-aware throttling
   useEffect(() => {
     if (!isAuthenticated) {
       setNotifications([]) // Clear notifications when not authenticated
       return
     }
     
+    // Only start polling if schema allows it
+    if (!shouldPoll()) {
+      console.info('NotificationSystem: Polling disabled due to database schema issues')
+      setNotifications([])
+      return
+    }
+    
+    // Initial fetch
     fetchNotifications()
     
-    const interval = setInterval(fetchNotifications, 30000) // Poll every 30 seconds
+    // Set up polling with dynamic interval based on schema health
+    const pollingInterval = getPollingInterval(30000, 300000) // 30s normal, 5min degraded
+    console.info(`NotificationSystem: Polling every ${pollingInterval / 1000}s`)
+    
+    const interval = setInterval(fetchNotifications, pollingInterval)
     return () => clearInterval(interval)
-  }, [fetchNotifications, isAuthenticated])
+  }, [fetchNotifications, isAuthenticated, shouldPoll, getPollingInterval])
 
   // Add toast notification
   const addToast = useCallback((notification) => {

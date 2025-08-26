@@ -112,15 +112,22 @@ def safe_table_query(db: Session, table_name: str, query_func, fallback_value=No
         return query_func(db)
         
     except Exception as e:
-        logger.error(f"{endpoint_name}: Error querying table '{table_name}': {e}")
-        
-        # Check if it's a table-not-found error
         error_str = str(e).lower()
-        if any(phrase in error_str for phrase in ['does not exist', 'no such table', 'undefined table']):
-            logger.warning(f"{endpoint_name}: Table '{table_name}' missing, returning fallback value")
+        
+        # Check if it's a schema-related error (table/column missing)
+        schema_errors = [
+            'does not exist', 'no such table', 'undefined table', 'undefined column',
+            'no such column', 'column does not exist', 'relation does not exist'
+        ]
+        
+        if any(phrase in error_str for phrase in schema_errors):
+            # Schema mismatch - log as WARNING since we have fallback
+            logger.warning(f"{endpoint_name}: Schema mismatch for table '{table_name}': {e}")
+            logger.info(f"{endpoint_name}: Using fallback value due to schema mismatch")
             return fallback_value
         else:
-            # Re-raise other database errors
+            # Other database errors - still log as ERROR and re-raise
+            logger.error(f"{endpoint_name}: Database error querying table '{table_name}': {e}")
             raise
 
 def get_table_row_count(db: Session, table_name: str) -> Optional[int]:

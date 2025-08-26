@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field, validator
-from datetime import datetime, date
+from datetime import datetime, date, timezone, timedelta
 import uuid
 import json
 
@@ -29,7 +29,7 @@ class CreateContentRequest(BaseModel):
     
     @validator('scheduled_for')
     def scheduled_for_must_be_future(cls, v):
-        if v and v <= datetime.utcnow():
+        if v and v <= datetime.now(timezone.utc):
             raise ValueError('Scheduled time must be in the future')
         return v
 
@@ -40,7 +40,7 @@ class UpdateContentRequest(BaseModel):
     
     @validator('scheduled_for')
     def scheduled_for_must_be_future(cls, v):
-        if v and v <= datetime.utcnow():
+        if v and v <= datetime.now(timezone.utc):
             raise ValueError('Scheduled time must be in the future')
         return v
 
@@ -214,7 +214,7 @@ async def update_content(
     elif not request.scheduled_for and content.status == "scheduled":
         content.status = "draft"
     
-    content.updated_at = datetime.utcnow()
+    content.updated_at = datetime.now(timezone.utc)
     
     db.commit()
     db.refresh(content)
@@ -243,14 +243,14 @@ async def publish_content(
     
     # Update content status
     content.status = "published"
-    content.published_at = datetime.utcnow()
+    content.published_at = datetime.now(timezone.utc)
     content.platform_post_id = request.platform_post_id
     
     # Update engagement data
     if request.engagement_data:
         content.engagement_data.update(request.engagement_data)
     
-    content.updated_at = datetime.utcnow()
+    content.updated_at = datetime.now(timezone.utc)
     
     db.commit()
     db.refresh(content)
@@ -266,7 +266,7 @@ async def schedule_content(
 ):
     """Schedule content for publishing"""
     
-    if scheduled_for <= datetime.utcnow():
+    if scheduled_for <= datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Scheduled time must be in the future")
     
     content = db.query(ContentLog).filter(
@@ -282,7 +282,7 @@ async def schedule_content(
     
     content.scheduled_for = scheduled_for
     content.status = "scheduled"
-    content.updated_at = datetime.utcnow()
+    content.updated_at = datetime.now(timezone.utc)
     
     db.commit()
     
@@ -320,18 +320,17 @@ async def get_upcoming_content(
 ):
     """Get upcoming scheduled content"""
     
-    from datetime import timedelta
     
     # Ensure the content_logs table exists before querying
     ensure_table_exists(db, "content_logs", "get_upcoming_content")
     
     def query_upcoming_content(db_session):
-        end_date = datetime.utcnow() + timedelta(days=days)
+        end_date = datetime.now(timezone.utc) + timedelta(days=days)
         
         content_items = db_session.query(ContentLog).filter(
             ContentLog.user_id == current_user.id,
             ContentLog.status == "scheduled",
-            ContentLog.scheduled_for.between(datetime.utcnow(), end_date)
+            ContentLog.scheduled_for.between(datetime.now(timezone.utc), end_date)
         ).order_by(ContentLog.scheduled_for).all()
         
         return [
@@ -341,7 +340,7 @@ async def get_upcoming_content(
                 "content": content.content[:100] + "..." if len(content.content) > 100 else content.content,
                 "content_type": content.content_type,
                 "scheduled_for": content.scheduled_for,
-                "days_until": (content.scheduled_for - datetime.utcnow()).days
+                "days_until": (content.scheduled_for - datetime.now(timezone.utc)).days
             }
             for content in content_items
         ]
@@ -363,9 +362,8 @@ async def get_content_analytics(
 ):
     """Get content analytics summary"""
     
-    from datetime import timedelta
     
-    start_date = datetime.utcnow() - timedelta(days=days)
+    start_date = datetime.now(timezone.utc) - timedelta(days=days)
     
     content_items = db.query(ContentLog).filter(
         ContentLog.user_id == current_user.id,
@@ -453,20 +451,20 @@ async def generate_content(
                 "platform": request.platform,
                 "content_type": request.content_type,
                 "tone": request.tone,
-                "generated_at": datetime.utcnow()
+                "generated_at": datetime.now(timezone.utc)
             }
         else:
             return {
                 "status": "error",
                 "error": result.get("error", "Content generation failed"),
-                "generated_at": datetime.utcnow()
+                "generated_at": datetime.now(timezone.utc)
             }
             
     except Exception as e:
         return {
             "status": "error",
             "error": f"Content generation failed: {str(e)}",
-            "generated_at": datetime.utcnow()
+            "generated_at": datetime.now(timezone.utc)
         }
 
 @router.post("/generate-ideas")
@@ -567,7 +565,7 @@ async def generate_content_ideas(
             "topic": topic,
             "tone": tone,
             "suggestions": suggestions[:5],  # Return top 5
-            "generated_at": datetime.utcnow(),
+            "generated_at": datetime.now(timezone.utc),
             "ai_generated": True,
             "model_used": "gpt-5-mini"
         }
@@ -601,7 +599,7 @@ async def generate_content_ideas(
             "topic": topic,
             "tone": tone,
             "suggestions": suggestions,
-            "generated_at": datetime.utcnow(),
+            "generated_at": datetime.now(timezone.utc),
             "ai_generated": False,
             "fallback_used": True,
             "error": "AI generation unavailable"
@@ -676,5 +674,5 @@ async def generate_content_images(
         "content_text": request.content_text,
         "platforms": request.platforms,
         "images": result,
-        "generated_at": datetime.utcnow().isoformat()
+        "generated_at": datetime.now(timezone.utc).isoformat()
     }

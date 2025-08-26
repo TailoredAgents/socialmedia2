@@ -5,6 +5,7 @@ import { useNotifications } from '../hooks/useNotifications'
 import { error as logError, debug as logDebug } from '../utils/logger.js'
 import apiService from '../services/api'
 import { ApiErrorBoundary } from '../components/ErrorBoundary'
+import AIEmptyStateSuggestions from '../components/AIEmptyStatesSuggestions'
 import { 
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -632,14 +633,28 @@ export default function MemoryExplorer() {
 
       {/* Empty State */}
       {filteredContent.length === 0 && !isSearching && (
-        <div className="text-center py-12">
-          <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No content found</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Try adjusting your search criteria or filters.
-            {searchQuery && ' FAISS semantic search will be used when backend is connected.'}
-          </p>
-        </div>
+        <AIEmptyStateSuggestions 
+          type="memory"
+          context={{ 
+            hasSearch: !!searchQuery,
+            searchQuery,
+            selectedCategory,
+            selectedPlatform
+          }}
+          onSuggestionClick={(suggestion) => {
+            switch(suggestion.id) {
+              case 'import-content':
+                window.location.href = '/create-post?mode=import'
+                break
+              case 'semantic-search':
+                // Focus search input
+                document.querySelector('input[placeholder*="Search"]')?.focus()
+                break
+              default:
+                window.location.href = '/create-post'
+            }
+          }}
+        />
       )}
 
       {/* Loading State */}

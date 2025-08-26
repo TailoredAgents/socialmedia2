@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useSocialInboxWebSocket } from '../hooks/useWebSocket'
 import api from '../services/api'
 import TemplateManager from '../components/TemplateManager'
+import AIEmptyStateSuggestions from '../components/AIEmptyStatesSuggestions'
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -456,10 +457,26 @@ function SocialInbox() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
             </div>
           ) : interactions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-              <ChatBubbleLeftRightIcon className="h-12 w-12 mb-4" />
-              <p>No interactions found</p>
-            </div>
+            <AIEmptyStateSuggestions 
+              type="inbox"
+              context={{ 
+                hasFilters: selectedPriority !== 'all' || selectedPlatform !== 'all',
+                selectedPriority,
+                selectedPlatform
+              }}
+              onSuggestionClick={(suggestion) => {
+                switch(suggestion.id) {
+                  case 'auto-responses':
+                    window.location.href = '/settings#social-inbox'
+                    break
+                  case 'template-setup':
+                    setShowTemplates(true)
+                    break
+                  default:
+                    window.location.href = '/settings'
+                }
+              }}
+            />
           ) : (
             <div className="divide-y divide-gray-200">
               {interactions.map((interaction) => {

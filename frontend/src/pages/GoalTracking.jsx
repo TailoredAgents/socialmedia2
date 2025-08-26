@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEnhancedApi } from '../hooks/useEnhancedApi'
 import { error as logError } from '../utils/logger.js'
+import AIEmptyStateSuggestions from '../components/AIEmptyStatesSuggestions'
 import { 
   TrophyIcon,
   PlusIcon,
@@ -364,24 +365,23 @@ export default function GoalTracking() {
 
       {/* Empty State */}
       {filteredGoals.length === 0 && (
-        <div className="text-center py-12">
-          <TrophyIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No goals found</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {selectedStatus === 'all' 
-              ? 'Create your first goal to start tracking progress.'
-              : `No ${selectedStatus} goals found.`
+        <AIEmptyStateSuggestions 
+          type="goals"
+          context={{ 
+            hasFilters: selectedStatus !== 'all',
+            selectedStatus
+          }}
+          onSuggestionClick={(suggestion) => {
+            switch(suggestion.id) {
+              case 'growth-goals':
+              case 'engagement-goals':
+              case 'smart-goals':
+              default:
+                setShowCreateModal(true)
+                break
             }
-          </p>
-          {selectedStatus === 'all' && (
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Create Goal
-            </button>
-          )}
-        </div>
+          }}
+        />
       )}
 
       {/* Modals */}

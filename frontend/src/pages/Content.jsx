@@ -5,6 +5,7 @@ import { useEnhancedApi } from '../hooks/useEnhancedApi'
 import { useNotifications } from '../hooks/useNotifications'
 import { error as logError } from '../utils/logger.js'
 import VirtualizedContentList, { VirtualizedContentGrid } from '../components/VirtualizedContentList'
+import AIEmptyStateSuggestions from '../components/AIEmptyStatesSuggestions'
 import { 
   PlusIcon,
   MagnifyingGlassIcon,
@@ -523,25 +524,35 @@ export default function Content() {
           </div>
         )
       ) : (
-        <div className="text-center py-12">
-          <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No content found</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {searchQuery || selectedType !== 'all' || selectedPlatform !== 'all' || selectedStatus !== 'all'
-              ? 'Try adjusting your filters or search query.'
-              : 'Get started by creating your first piece of content.'
+        <AIEmptyStateSuggestions 
+          type="content"
+          context={{ 
+            hasFilters: searchQuery || selectedType !== 'all' || selectedPlatform !== 'all' || selectedStatus !== 'all',
+            searchQuery,
+            selectedType,
+            selectedPlatform,
+            selectedStatus
+          }}
+          onSuggestionClick={(suggestion) => {
+            // Handle different suggestion types
+            switch(suggestion.id) {
+              case 'trending-content':
+                window.location.href = '/create-post?mode=trending'
+                break
+              case 'weekly-content':
+                window.location.href = '/create-post?mode=weekly'
+                break
+              case 'hashtag-research':
+                window.location.href = '/create-post?mode=hashtags'
+                break
+              case 'visual-content':
+                window.location.href = '/create-post?mode=visual'
+                break
+              default:
+                window.location.href = '/create-post'
             }
-          </p>
-          <div className="mt-6">
-            <Link
-              to="/create-post"
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-            >
-              <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-              Create Content
-            </Link>
-          </div>
-        </div>
+          }}
+        />
       )}
 
       {/* Create Content Modal */}

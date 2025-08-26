@@ -46,24 +46,21 @@ export const AuthProvider = ({ children }) => {
           await handleTokenRefresh()
         }
       } else {
-        // No stored token, try to refresh from cookie (only if cookies exist)
-        try {
-          // Check if we might have a refresh cookie before attempting
-          const response = await fetch(`${apiService.baseURL}/api/auth/refresh`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' }
-          })
-          
-          if (response.status === 200) {
+        // No stored token - check if we have any indication of previous auth before attempting refresh
+        const hasAuthHistory = localStorage.getItem('hasBeenAuthenticated') === 'true' || 
+                              document.cookie.includes('refresh_token') ||
+                              document.cookie.includes('session')
+        
+        if (hasAuthHistory) {
+          try {
             await handleTokenRefresh()
-          } else {
+          } catch (error) {
             // No valid refresh cookie, just set as unauthenticated
-            logInfo('No valid refresh token available')
+            logInfo('No valid refresh token available', error)
           }
-        } catch (error) {
-          // No refresh possible, just set as unauthenticated
-          logInfo('No refresh token available, starting unauthenticated')
+        } else {
+          // No indication of previous auth, skip refresh attempt to avoid 401 spam
+          logInfo('No auth history found, starting unauthenticated')
         }
       }
     } catch (error) {
@@ -86,6 +83,9 @@ export const AuthProvider = ({ children }) => {
       setUser({ id: user_id, email, username, email_verified, tier, is_superuser })
       setIsAuthenticated(true)
       setAuthError(null)
+      
+      // Mark that user has been authenticated to avoid unnecessary refresh attempts
+      localStorage.setItem('hasBeenAuthenticated', 'true')
       
       logInfo('Token refreshed successfully')
     } catch (error) {
@@ -112,6 +112,9 @@ export const AuthProvider = ({ children }) => {
       setUser({ id: user_id, email, username, email_verified, tier, is_superuser })
       setIsAuthenticated(true)
       
+      // Mark that user has been authenticated to avoid unnecessary refresh attempts
+      localStorage.setItem('hasBeenAuthenticated', 'true')
+      
       logInfo('User logged in successfully')
       return response
     } catch (error) {
@@ -137,6 +140,9 @@ export const AuthProvider = ({ children }) => {
       
       setUser({ id: user_id, email, username, email_verified, tier, is_superuser })
       setIsAuthenticated(true)
+      
+      // Mark that user has been authenticated to avoid unnecessary refresh attempts  
+      localStorage.setItem('hasBeenAuthenticated', 'true')
       
       logInfo('User registered successfully')
       return response
@@ -171,8 +177,9 @@ export const AuthProvider = ({ children }) => {
       setAccessToken(null)
       setAuthError(null)
       
-      // Clear stored token
+      // Clear stored token and auth history
       localStorage.removeItem('accessToken')
+      localStorage.removeItem('hasBeenAuthenticated')
       apiService.setToken(null)
       
       logInfo('User logged out successfully')

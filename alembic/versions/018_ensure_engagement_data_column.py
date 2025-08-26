@@ -1,8 +1,8 @@
 """Ensure engagement_data column exists in content_logs
 
-Revision ID: 017_ensure_engagement_data
-Revises: 016_convert_to_open_saas_auth
-Create Date: 2025-01-15 12:00:00.000000
+Revision ID: 018_ensure_engagement_data
+Revises: 017_add_missing_user_columns
+Create Date: 2025-08-26 12:00:00.000000
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '017_ensure_engagement_data'
-down_revision = '016_convert_to_open_saas_auth'
+revision = '018_ensure_engagement_data'
+down_revision = '017_add_missing_user_columns'
 branch_labels = None
 depends_on = None
 

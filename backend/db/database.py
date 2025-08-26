@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from sqlalchemy.pool import QueuePool
 from typing import Generator
 import logging
+from fastapi import HTTPException
 from backend.core.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -74,6 +75,12 @@ def get_db() -> Generator[Session, None, None]:
     except Exception as e:
         # Rollback on any exception
         db.rollback()
+        
+        # Filter out expected authentication 401s from database error logs
+        if isinstance(e, HTTPException) and e.status_code == 401:
+            # This is an expected authentication error, don't log as database error
+            raise
+        
         logger.error(f"Database session error: {str(e)}")
         raise
     finally:

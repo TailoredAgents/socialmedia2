@@ -52,7 +52,7 @@ The AI Social Media Content Agent is an autonomous AI-powered software tool desi
 - **Framework:** FastAPI (v0.115.6) - Modern async Python web framework
 - **Database:** PostgreSQL with SQLAlchemy ORM
 - **AI/ML:** 
-  - OpenAI GPT-4 for content generation
+  - OpenAI GPT-5 and GPT-5 Mini for content generation
   - FAISS for vector search (40K+ embeddings)
   - CrewAI for multi-agent orchestration
 - **Task Queue:** Celery with Redis
@@ -111,7 +111,7 @@ The AI Social Media Content Agent is an autonomous AI-powered software tool desi
 
 ### 1. AI-Powered Content Generation
 - **CrewAI Multi-Agent System**: Orchestrates specialized agents for different tasks
-- **GPT-4 Integration**: Advanced natural language generation
+- **GPT-5 Integration**: Advanced natural language generation with built-in web search
 - **Platform Optimization**: Tailors content for each social media platform
 - **Brand Voice Consistency**: Maintains consistent tone across all content
 

@@ -11,7 +11,7 @@
 - **Content Generation:** GPT-5 with built-in web search
 - **Research Operations:** GPT-5 mini for efficient data gathering  
 - **Deep Analysis:** GPT-5 with enhanced reasoning capabilities
-- **Content Categorization:** GPT-4.1 mini
+- **Content Categorization:** GPT-5 mini
 - **Image Generation:** GPT Image 1 (direct model)
 - **Embeddings:** text-embedding-3-large (3072 dimensions)
 

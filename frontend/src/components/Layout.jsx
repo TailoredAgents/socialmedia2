@@ -16,12 +16,11 @@ import {
 } from '@heroicons/react/24/outline'
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+  { name: 'Flight Deck', href: '/dashboard', icon: HomeIcon },
   { name: 'Create Post', href: '/create-post', icon: PlusIcon },
   { name: 'Content Library', href: '/content', icon: DocumentTextIcon },
   { name: 'Scheduler', href: '/calendar', icon: CalendarDaysIcon },
-  { name: 'Memory', href: '/memory', icon: CpuChipIcon },
-  { name: 'Error Logs', href: '/error-logs', icon: ExclamationTriangleIcon },
+  { name: 'Brand Brain', href: '/memory', icon: CpuChipIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ]
 

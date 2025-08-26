@@ -4,6 +4,7 @@ import { useEnhancedApi } from '../hooks/useEnhancedApi'
 import { useNotifications } from '../hooks/useNotifications'
 import { error as logError } from '../utils/logger.js'
 import SocialPlatformManager from '../components/SocialPlatforms/SocialPlatformManager'
+import ErrorLogs from '../components/ErrorLogs'
 import {
   UserIcon,
   KeyIcon,
@@ -695,6 +696,22 @@ export default function Settings() {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* System Health */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900 flex items-center">
+            <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
+            System Health
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">
+            Monitor system logs, errors, and performance metrics
+          </p>
+        </div>
+        <div className="p-6">
+          <ErrorLogs />
         </div>
       </div>
 

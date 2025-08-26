@@ -1,6 +1,9 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
+import { useEnhancedApi } from '../hooks/useEnhancedApi'
+import { useNotifications } from '../hooks/useNotifications'
 import NotificationSystem from './Notifications/NotificationSystem'
 import { 
   HomeIcon, 
@@ -35,6 +38,12 @@ function Layout({ children }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const location = useLocation()
   const { user, logout, isAuthenticated } = useAuth()
+  const { api } = useEnhancedApi()
+  const { showSuccess, showError } = useNotifications()
+  
+  // Autonomous mode state
+  const [autopilotMode, setAutopilotMode] = useState(false)
+  const [loadingAutopilot, setLoadingAutopilot] = useState(false)
 
   // Memoize navigation items to prevent re-creation on every render
   const navigationItems = useMemo(() => navigation, [])
@@ -60,6 +69,31 @@ function Layout({ children }) {
     setUserMenuOpen(false)
     logout()
   }, [logout])
+
+  // Handle autonomous mode toggle
+  const handleAutopilotToggle = useCallback(async () => {
+    if (loadingAutopilot) return
+    
+    setLoadingAutopilot(true)
+    const newMode = !autopilotMode
+    
+    try {
+      // TODO: Call API to update user settings
+      // await api.settings.updateUserSettings({ enable_autonomous_mode: newMode })
+      
+      setAutopilotMode(newMode)
+      showSuccess(
+        newMode 
+          ? '🚁 Full Autopilot Activated! Lily will now handle everything automatically.'
+          : '👀 Review Mode Activated! Lily will ask for approval before posting.'
+      )
+    } catch (error) {
+      showError('Failed to update autonomous mode settings')
+      console.error('Autopilot toggle error:', error)
+    } finally {
+      setLoadingAutopilot(false)
+    }
+  }, [autopilotMode, loadingAutopilot, showSuccess, showError])
 
   return (
     <div>
@@ -184,6 +218,26 @@ function Layout({ children }) {
               </h1>
             </div>
             <div className="flex items-center gap-x-4 lg:gap-x-6">
+              {/* Autonomous Mode Toggle */}
+              <div className="flex items-center space-x-3 bg-gray-50 rounded-full px-4 py-2 border border-gray-200">
+                <span className="text-xs font-medium text-gray-600">Review</span>
+                <button
+                  onClick={handleAutopilotToggle}
+                  disabled={loadingAutopilot}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    autopilotMode ? 'bg-green-500' : 'bg-gray-300'
+                  } ${loadingAutopilot ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title={autopilotMode ? 'Switch to Review Mode' : 'Switch to Autopilot Mode'}
+                >
+                  <motion.span
+                    className="inline-block h-3 w-3 transform rounded-full bg-white shadow-sm"
+                    animate={{ x: autopilotMode ? 20 : 4 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  />
+                </button>
+                <span className="text-xs font-medium text-gray-600">Autopilot</span>
+              </div>
+
               <div className="flex items-center space-x-2">
                 <div className="h-2 w-2 bg-green-400 rounded-full"></div>
                 <span className="text-sm text-gray-600">Connected</span>

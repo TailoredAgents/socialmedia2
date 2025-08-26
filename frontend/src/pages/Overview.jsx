@@ -72,9 +72,6 @@ export default function Overview() {
   const { api } = useEnhancedApi()
   const { showSuccess, showError } = useNotifications()
   
-  // Autonomous mode state
-  const [autopilotMode, setAutopilotMode] = useState(false)
-  const [loadingAutopilot, setLoadingAutopilot] = useState(false)
   
   // Fetch content statistics
   const { data: contentStats, isLoading: contentLoading } = useQuery({
@@ -148,37 +145,6 @@ export default function Overview() {
     retry: 2
   })
 
-  // Update local state when settings are loaded
-  useEffect(() => {
-    if (userSettings) {
-      setAutopilotMode(userSettings.enable_autonomous_mode || false)
-    }
-  }, [userSettings])
-
-  // Handle autonomous mode toggle
-  const handleAutopilotToggle = async () => {
-    if (loadingAutopilot) return
-    
-    setLoadingAutopilot(true)
-    const newMode = !autopilotMode
-    
-    try {
-      // TODO: Call API to update user settings
-      // await api.settings.updateUserSettings({ enable_autonomous_mode: newMode })
-      
-      setAutopilotMode(newMode)
-      showSuccess(
-        newMode 
-          ? '🚁 Full Autopilot Activated! Lily will now handle everything automatically.'
-          : '👀 Review Mode Activated! Lily will ask for approval before posting.'
-      )
-    } catch (error) {
-      showError('Failed to update autonomous mode settings')
-      console.error('Autopilot toggle error:', error)
-    } finally {
-      setLoadingAutopilot(false)
-    }
-  }
 
   if (contentLoading) {
     return (
@@ -205,35 +171,14 @@ export default function Overview() {
                 <h2 className="text-2xl font-semibold mb-3 text-blue-100">Your new Social Media Manager 😊</h2>
               </div>
               
-              {/* Autonomous Mode Toggle */}
-              <div className="flex items-center space-x-3 bg-white/20 backdrop-blur-md rounded-full px-4 py-2">
-                <span className="text-sm font-medium text-blue-100">Review Mode</span>
-                <button
-                  onClick={handleAutopilotToggle}
-                  disabled={loadingAutopilot}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600 ${
-                    autopilotMode ? 'bg-green-500' : 'bg-gray-400'
-                  } ${loadingAutopilot ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <motion.span
-                    className="inline-block h-4 w-4 transform rounded-full bg-white shadow-lg"
-                    animate={{ x: autopilotMode ? 24 : 4 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  />
-                </button>
-                <span className="text-sm font-medium text-blue-100">Full Autopilot</span>
-              </div>
             </div>
             <p className="text-blue-100 text-lg mb-2">
-              {autopilotMode 
-                ? "🚁 Full Autopilot Mode: I'm handling everything automatically - researching trends, creating content, posting, and replying to comments without needing your approval!"
-                : "👀 Review Mode: I gather insights and create content, but I'll always ask for your approval before posting or replying to ensure everything meets your standards."
-              }
+              I'm your AI Social Media Manager! I can research trends, create content, schedule posts, and manage your social presence with your guidance.
             </p>
             <div className="flex items-center space-x-4 text-sm text-blue-200">
               <span className="flex items-center">
-                <span className="text-lg mr-1">{autopilotMode ? '⚡' : '🎯'}</span>
-                {autopilotMode ? 'Fully Autonomous' : 'Human-in-the-Loop'}
+                <span className="text-lg mr-1">🎯</span>
+                Smart Content Creation
               </span>
               <span className="flex items-center">
                 <span className="text-lg mr-1">⏱️</span>

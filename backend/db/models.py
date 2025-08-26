@@ -836,3 +836,209 @@ class SocialPostTemplate(Base):
     __table_args__ = (
         Index('idx_social_template_user_platform', user_id, platform),
     )
+
+
+# Phase 3A: Social Inbox Models
+
+class SocialInteraction(Base):
+    """Stores incoming social media interactions (comments, mentions, DMs)"""
+    __tablename__ = "social_interactions"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    connection_id = Column(Integer, ForeignKey("social_platform_connections.id"), nullable=True)
+    
+    # Platform and interaction details
+    platform = Column(String, nullable=False, index=True)  # facebook, instagram, twitter
+    interaction_type = Column(String, nullable=False, index=True)  # comment, mention, dm, reply
+    external_id = Column(String, nullable=False, index=True)  # Platform's ID for this interaction
+    parent_external_id = Column(String, nullable=True)  # For replies/nested comments
+    
+    # Author information
+    author_platform_id = Column(String, nullable=False)
+    author_username = Column(String, nullable=False)
+    author_display_name = Column(String)
+    author_profile_url = Column(String)
+    author_profile_image = Column(String)
+    author_verified = Column(Boolean, default=False)
+    
+    # Interaction content
+    content = Column(Text, nullable=False)
+    media_urls = Column(JSON, default=[])  # Images/videos in the interaction
+    hashtags = Column(JSON, default=[])
+    mentions = Column(JSON, default=[])
+    
+    # Analysis and categorization
+    sentiment = Column(String, default="neutral")  # positive, negative, neutral
+    intent = Column(String)  # question, complaint, praise, lead, spam
+    priority_score = Column(Float, default=0.0)  # 0-100 priority ranking
+    
+    # Response handling
+    status = Column(String, default="unread", index=True)  # unread, read, responded, archived, escalated
+    response_strategy = Column(String, default="auto")  # auto, manual, escalate, ignore
+    assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)  # For manual assignment
+    
+    # Platform metadata
+    platform_metadata = Column(JSON, default={})  # Platform-specific data
+    
+    # Timestamps
+    platform_created_at = Column(DateTime(timezone=True), nullable=False)
+    received_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+    connection = relationship("SocialPlatformConnection")
+    assigned_user = relationship("User", foreign_keys=[assigned_to])
+    responses = relationship("InteractionResponse", back_populates="interaction")
+    
+    __table_args__ = (
+        Index('idx_social_interaction_platform_type', platform, interaction_type),
+        Index('idx_social_interaction_status_priority', status, priority_score),
+        Index('idx_social_interaction_user_received', user_id, received_at),
+        Index('idx_social_interaction_external', platform, external_id),
+    )
+
+
+class InteractionResponse(Base):
+    """Stores responses sent to social media interactions"""
+    __tablename__ = "interaction_responses"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    interaction_id = Column(String, ForeignKey("social_interactions.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Response content
+    response_text = Column(Text, nullable=False)
+    media_urls = Column(JSON, default=[])
+    
+    # Response metadata
+    response_type = Column(String, default="manual")  # auto, manual, template
+    template_id = Column(String, ForeignKey("response_templates.id"), nullable=True)
+    ai_confidence_score = Column(Float, default=0.0)  # How confident AI was in this response
+    
+    # Platform posting details
+    platform = Column(String, nullable=False)
+    platform_response_id = Column(String)  # ID from platform after posting
+    platform_url = Column(String)  # Direct URL to the response
+    
+    # Status and timing
+    status = Column(String, default="pending")  # pending, sent, failed, deleted
+    failure_reason = Column(Text)
+    retry_count = Column(Integer, default=0)
+    
+    sent_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    interaction = relationship("SocialInteraction", back_populates="responses")
+    user = relationship("User")
+    template = relationship("ResponseTemplate")
+    
+    __table_args__ = (
+        Index('idx_interaction_response_interaction', interaction_id),
+        Index('idx_interaction_response_status', status),
+        Index('idx_interaction_response_user_sent', user_id, sent_at),
+    )
+
+
+class ResponseTemplate(Base):
+    """AI response templates with personality and trigger conditions"""
+    __tablename__ = "response_templates"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Template identification
+    name = Column(String, nullable=False)
+    description = Column(Text)
+    
+    # Trigger conditions
+    trigger_type = Column(String, nullable=False)  # intent, keyword, platform, sentiment
+    trigger_conditions = Column(JSON, default={})  # Specific conditions for activation
+    keywords = Column(JSON, default=[])  # Keywords that trigger this template
+    platforms = Column(JSON, default=[])  # Platforms where this template applies
+    
+    # Response content
+    response_text = Column(Text, nullable=False)
+    variables = Column(JSON, default=[])  # {company_name}, {customer_name}, etc.
+    
+    # Personality settings
+    personality_style = Column(String, default="professional")  # professional, friendly, casual, technical
+    tone = Column(String, default="helpful")  # helpful, apologetic, enthusiastic, informative
+    formality_level = Column(Integer, default=5)  # 1-10 scale
+    
+    # Platform-specific adaptations
+    platform_adaptations = Column(JSON, default={})  # Platform-specific variations
+    
+    # Usage and performance
+    usage_count = Column(Integer, default=0)
+    success_rate = Column(Float, default=0.0)  # Based on customer satisfaction
+    avg_response_time = Column(Float, default=0.0)
+    
+    # Status and settings
+    is_active = Column(Boolean, default=True)
+    auto_approve = Column(Boolean, default=False)  # Auto-send without human review
+    priority = Column(Integer, default=50)  # Template selection priority
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User")
+    responses = relationship("InteractionResponse", back_populates="template")
+    
+    __table_args__ = (
+        Index('idx_response_template_user_active', user_id, is_active),
+        Index('idx_response_template_trigger', trigger_type),
+    )
+
+
+class CompanyKnowledge(Base):
+    """Company knowledge base for AI-powered responses"""
+    __tablename__ = "company_knowledge"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Content identification
+    title = Column(String, nullable=False)
+    topic = Column(String, nullable=False)  # faq, policy, product_info, contact_info, etc.
+    
+    # Knowledge content
+    content = Column(Text, nullable=False)
+    summary = Column(String)  # Brief summary for quick reference
+    
+    # Searchability
+    keywords = Column(JSON, default=[])
+    tags = Column(JSON, default=[])
+    embedding_vector = Column(JSON, nullable=True)  # For semantic search
+    
+    # Context and usage
+    context_type = Column(String, default="general")  # customer_service, sales, technical, etc.
+    platforms = Column(JSON, default=["facebook", "instagram", "twitter"])  # Where to use this knowledge
+    
+    # Content metadata
+    source = Column(String)  # manual, imported, auto_generated
+    confidence_score = Column(Float, default=1.0)  # How confident we are in this info
+    
+    # Usage tracking
+    usage_count = Column(Integer, default=0)
+    last_used_at = Column(DateTime(timezone=True))
+    effectiveness_score = Column(Float, default=0.0)  # Based on response success
+    
+    # Status
+    is_active = Column(Boolean, default=True)
+    requires_approval = Column(Boolean, default=False)  # For sensitive information
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User")
+    
+    __table_args__ = (
+        Index('idx_company_knowledge_user_topic', user_id, topic),
+        Index('idx_company_knowledge_active', is_active),
+        Index('idx_company_knowledge_usage', usage_count, last_used_at),
+    )

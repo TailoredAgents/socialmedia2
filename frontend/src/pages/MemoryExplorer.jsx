@@ -6,6 +6,7 @@ import { error as logError, debug as logDebug } from '../utils/logger.js'
 import apiService from '../services/api'
 import { ApiErrorBoundary } from '../components/ErrorBoundary'
 import AIEmptyStateSuggestions from '../components/AIEmptyStatesSuggestions'
+import EnhancedSearch from '../components/EnhancedSearch'
 import { 
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -418,35 +419,37 @@ export default function MemoryExplorer() {
         </div>
       </div>
 
-      {/* Search and Filters */}
+      {/* Enhanced Search and Filters */}
       <div className="bg-white rounded-lg shadow p-6" role="search" aria-labelledby="search-filters-heading">
         <h2 id="search-filters-heading" className="sr-only">Search and filter content</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Search */}
-          <div className="relative">
-            <label htmlFor="content-search" className="sr-only">
-              Search content using AI similarity
-            </label>
-            <MagnifyingGlassIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" aria-hidden="true" />
-            <input
-              id="content-search"
-              type="text"
-              placeholder="Search content using AI similarity..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-describedby="search-help"
-            />
-            <div id="search-help" className="sr-only">
-              Type to search through content using AI-powered semantic similarity
-            </div>
-            {isSearching && (
-              <div className="absolute right-3 top-3" aria-label="Searching...">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-              </div>
-            )}
-          </div>
+        
+        <EnhancedSearch
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          filters={{
+            type: selectedType,
+            platform: selectedPlatform,
+            sortBy: sortBy
+          }}
+          onFiltersChange={(newFilters) => {
+            if (newFilters.type !== undefined) setSelectedType(newFilters.type)
+            if (newFilters.platform !== undefined) setSelectedPlatform(newFilters.platform)
+            if (newFilters.sortBy !== undefined) setSortBy(newFilters.sortBy)
+          }}
+          suggestions={[
+            { text: "viral content patterns", icon: SparklesIcon, type: "search" },
+            { text: "engagement optimization ideas", icon: ChartBarIcon, type: "search" },
+            { text: "competitor analysis insights", icon: FunnelIcon, type: "search" },
+            { text: "repurpose-ready content", icon: ArrowPathIcon, type: "filter" },
+            { text: "research and insights", icon: DocumentTextIcon, type: "filter" }
+          ]}
+          placeholder="Search your brand brain with AI semantic similarity..."
+          showAdvanced={true}
+          className="mb-4"
+        />
 
+        {/* Traditional Filter Row */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Content Type Filter */}
           <div>
             <label htmlFor="content-type-filter" className="sr-only">
@@ -456,7 +459,7 @@ export default function MemoryExplorer() {
               id="content-type-filter"
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full"
               aria-label="Filter by content type"
             >
               {contentTypes.map(type => (
@@ -474,7 +477,7 @@ export default function MemoryExplorer() {
               id="platform-filter"
               value={selectedPlatform}
               onChange={(e) => setSelectedPlatform(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full"
               aria-label="Filter by platform"
             >
               {platforms.map(platform => (
@@ -492,7 +495,7 @@ export default function MemoryExplorer() {
               id="sort-by"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full"
               aria-label="Sort content by"
             >
               <option value="created_at">Latest First</option>
@@ -500,6 +503,18 @@ export default function MemoryExplorer() {
               <option value="similarity">Most Similar</option>
               <option value="repurpose">Repurpose Ready</option>
             </select>
+          </div>
+
+          {/* Results Count */}
+          <div className="flex items-center justify-center">
+            <span className="text-sm text-gray-600">
+              {filteredContent.length} {filteredContent.length === 1 ? 'item' : 'items'} found
+              {isSearching && (
+                <span className="ml-2">
+                  <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                </span>
+              )}
+            </span>
           </div>
         </div>
       </div>

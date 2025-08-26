@@ -6,6 +6,7 @@ import { useNotifications } from '../hooks/useNotifications'
 import { error as logError } from '../utils/logger.js'
 import VirtualizedContentList, { VirtualizedContentGrid } from '../components/VirtualizedContentList'
 import AIEmptyStateSuggestions from '../components/AIEmptyStatesSuggestions'
+import EnhancedSearch from '../components/EnhancedSearch'
 import { 
   PlusIcon,
   MagnifyingGlassIcon,
@@ -22,7 +23,8 @@ import {
   PhotoIcon,
   PlayIcon,
   SparklesIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  TrophyIcon
 } from '@heroicons/react/24/outline'
 
 const contentTypes = [
@@ -327,26 +329,39 @@ export default function Content() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4">
+      {/* Enhanced Search and Filters */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <EnhancedSearch
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          filters={{
+            type: selectedType,
+            platform: selectedPlatform,
+            status: selectedStatus
+          }}
+          onFiltersChange={(newFilters) => {
+            if (newFilters.type !== undefined) setSelectedType(newFilters.type)
+            if (newFilters.platform !== undefined) setSelectedPlatform(newFilters.platform)
+            if (newFilters.status !== undefined) setSelectedStatus(newFilters.status)
+          }}
+          suggestions={[
+            { text: "trending posts from last week", icon: CalendarIcon, type: "search" },
+            { text: "viral content with high engagement", icon: TrophyIcon, type: "search" },
+            { text: "draft posts ready for review", icon: DocumentTextIcon, type: "filter" },
+            { text: "scheduled content for this month", icon: ClockIcon, type: "filter" },
+            { text: "Instagram carousel posts", icon: PhotoIcon, type: "filter" }
+          ]}
+          placeholder="Search your content library with AI semantic search..."
+          showAdvanced={true}
+          className="mb-4"
+        />
+
+        {/* Traditional Filter Row */}
         <div className="flex flex-wrap gap-4 items-center">
-          <div className="flex-1 min-w-64">
-            <div className="relative">
-              <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search content..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-          
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           >
             {contentTypes.map(type => (
               <option key={type.value} value={type.value}>{type.label}</option>
@@ -356,7 +371,7 @@ export default function Content() {
           <select
             value={selectedPlatform}
             onChange={(e) => setSelectedPlatform(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           >
             {platforms.map(platform => (
               <option key={platform.value} value={platform.value}>{platform.label}</option>
@@ -366,12 +381,18 @@ export default function Content() {
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           >
             {statusOptions.map(status => (
               <option key={status.value} value={status.value}>{status.label}</option>
             ))}
           </select>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-sm text-gray-600">
+              {filteredContent.length} {filteredContent.length === 1 ? 'item' : 'items'}
+            </span>
+          </div>
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { useEnhancedApi } from '../hooks/useEnhancedApi'
 import { useNotifications } from '../hooks/useNotifications'
 import { error as logError } from '../utils/logger.js'
 import ProgressBar from '../components/ProgressBar'
+import RealtimeContentPreview from '../components/RealtimeContentPreview'
 import {
   PhotoIcon,
   DocumentTextIcon,
@@ -806,8 +807,21 @@ export default function CreatePost() {
           </div>
         </div>
 
-        {/* Research Panel */}
-        <div className="lg:col-span-1">
+        {/* Right Sidebar - Real-time Preview and Research */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Real-time Content Preview */}
+          <RealtimeContentPreview 
+            content={formData.content || ''}
+            platform={formData.platform}
+            image={
+              imageSource === 'upload' && uploadedImage 
+                ? uploadedImage.url 
+                : generatedImage?.image_url || generatedImage?.image_data_url
+            }
+            title={formData.title}
+          />
+
+          {/* Research Panel */}
           <div className={`bg-white rounded-lg shadow p-6 transition-all duration-300 ${showResearchPanel ? 'block' : 'hidden lg:block'}`}>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">Industry Research</h3>
@@ -888,7 +902,7 @@ export default function CreatePost() {
               <p className="text-sm text-gray-600">No research data available</p>
             )}
           </div>
-        </div>
+          </div>
       </div>
     </div>
   )

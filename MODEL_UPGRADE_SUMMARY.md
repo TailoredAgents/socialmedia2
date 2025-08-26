@@ -13,7 +13,7 @@ This document summarizes the comprehensive AI model upgrades implemented to mode
 | **Industry/Topic Research (Hourly/Daily)** | `gpt-4o-mini` | `gpt-5-mini` | Built-in web search, better reasoning |
 | **Weekly Deep Dives** | `gpt-4o-mini` | `gpt-5` | Enhanced reasoning, comprehensive analysis |
 | **Content Generation** | `gpt-3.5-turbo`/`gpt-4` | `gpt-5` | Higher quality, web-search enabled |
-| **Content Categorization** | `gpt-3.5-turbo` | `gpt-4.1-mini` | Improved accuracy, faster processing |
+| **Content Categorization** | `gpt-3.5-turbo` | `gpt-5-mini` | Improved accuracy, faster processing |
 | **Image Generation** | `gpt-4o-mini`/`gpt-4.1-mini` | `gpt-image-1` | Direct image model, better quality |
 | **Embeddings** | `text-embedding-ada-002` | `text-embedding-3-large` | 3072-dim vectors, better semantic understanding |
 | **Autonomous Posting** | `gpt-4o-mini` | `gpt-5-mini` | Real-time research capabilities |

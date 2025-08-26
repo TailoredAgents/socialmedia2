@@ -36,7 +36,7 @@ We adopted a **modern three-tier architecture** with React frontend, FastAPI bac
 
 **AI Integration Layer:**
 - CrewAI for multi-agent AI workflows
-- OpenAI GPT-4 for content generation
+- OpenAI GPT-5 and GPT-5 Mini for content generation
 - FAISS vector database for semantic search
 - Custom AI tools for social media optimization
 

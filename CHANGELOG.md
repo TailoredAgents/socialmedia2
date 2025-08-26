@@ -60,7 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Multi-Platform Workflows**: Automated content distribution across platforms
 
 #### 🤖 **AI-Powered Features**
-- **Content Generation**: GPT-4 powered content creation with brand voice consistency
+- **Content Generation**: GPT-5 powered content creation with brand voice consistency
 - **Research Automation**: Intelligent trend detection and topic research
 - **Workflow Orchestration**: Multi-step automated content workflows
 - **Performance Optimization**: AI-driven content optimization based on engagement data

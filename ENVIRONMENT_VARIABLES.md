@@ -155,13 +155,12 @@ REDIS_URL=redis://username:password@host:port/0
 | `TWITTER_ACCESS_TOKEN_SECRET` | No | - | Twitter access token secret |
 | `TWITTER_BEARER_TOKEN` | No | - | Twitter Bearer token (for API v2) |
 
-#### ** API**
+#### **Facebook API (Additional)**
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `LINKEDIN_CLIENT_ID` | No | - |  application client ID |
-| `LINKEDIN_CLIENT_SECRET` | No | - |  application client secret |
-| `LINKEDIN_ACCESS_TOKEN` | No | - |  user access token |
-| `LINKEDIN_USER_ID` | No | - |  user ID |
+| `FACEBOOK_PAGE_TOKEN` | No | - | Facebook page-specific access token |
+| `FACEBOOK_USER_TOKEN` | No | - | Facebook user access token |
+| `FACEBOOK_WEBHOOK_SECRET` | No | - | Facebook webhook verification secret |
 
 #### **Instagram Business API**
 | Variable | Required | Default | Description |
@@ -189,10 +188,9 @@ TWITTER_ACCESS_TOKEN=your_twitter_access_token
 TWITTER_ACCESS_TOKEN_SECRET=your_twitter_access_token_secret
 TWITTER_BEARER_TOKEN=your_twitter_bearer_token
 
-# 
-LINKEDIN_CLIENT_ID=your__client_id
-LINKEDIN_CLIENT_SECRET=your__client_secret
-LINKEDIN_ACCESS_TOKEN=your__access_token
+# Additional Facebook Settings
+FACEBOOK_PAGE_TOKEN=your_facebook_page_token
+FACEBOOK_USER_TOKEN=your_facebook_user_token
 
 # Instagram
 INSTAGRAM_APP_ID=your_instagram_app_id
@@ -376,9 +374,9 @@ python -c "from backend.core.config import get_settings; print(get_settings().di
 
 ### **Platform Documentation**
 - [OpenAI API Docs](https://platform.openai.com/docs)
-- [Twitter API v2 Docs](https://developer.twitter.com/en/docs/twitter-api)
-- [ API Docs](https://docs.microsoft.com/en-us//)
+- [X/Twitter API v2 Docs](https://developer.x.com/en/docs/twitter-api)
 - [Facebook Graph API](https://developers.facebook.com/docs/graph-api)
+- [Instagram Basic Display API](https://developers.facebook.com/docs/instagram-basic-display-api)
 - [Auth0 Documentation](https://auth0.com/docs)
 
 ### **Deployment Guides**

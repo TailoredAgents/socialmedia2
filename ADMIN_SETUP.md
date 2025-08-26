@@ -1,6 +1,6 @@
 # Admin System Setup Guide
 
-This guide explains how to set up and use the comprehensive admin system for Lily AI Social Media platform.
+This guide explains how to set up and use the comprehensive admin system for AI Social Media Manager platform.
 
 ## Overview
 

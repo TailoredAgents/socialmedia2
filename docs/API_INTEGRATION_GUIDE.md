@@ -152,7 +152,7 @@ GET /api/v1/content?platform=twitter&status=published&limit=20&offset=0
 ```
 
 Query Parameters:
-- `platform`: Filter by social media platform (twitter, , facebook, instagram)
+- `platform`: Filter by social media platform (twitter, instagram, facebook)
 - `status`: Filter by status (draft, scheduled, published, failed)
 - `limit`: Number of items to return (default: 20, max: 100)
 - `offset`: Number of items to skip (default: 0)
@@ -270,7 +270,7 @@ Response:
 
 #### Content Suggestions
 ```
-GET /api/v1/ai/suggestions?topic=technology&platform=
+GET /api/v1/ai/suggestions?topic=technology&platform=instagram
 ```
 
 ### Analytics
@@ -294,7 +294,7 @@ Response:
       "views": 6800,
       "engagements": 485
     },
-    "": {
+    "instagram": {
       "posts": 15,
       "views": 3200,
       "engagements": 245
@@ -309,7 +309,7 @@ Response:
     {
       "id": 123,
       "title": "AI Revolution in Marketing",
-      "platform": "",
+      "platform": "instagram",
       "views": 450,
       "engagements": 67
     }
@@ -469,7 +469,7 @@ async function createAndSchedulePost() {
     const generated = await api.generateContent(
       'Create a post about the benefits of remote work',
       {
-        platform: '',
+        platform: 'instagram',
         tone: 'professional',
         hashtags: true
       }
@@ -479,7 +479,7 @@ async function createAndSchedulePost() {
     const post = await api.createContent({
       title: 'Remote Work Benefits',
       content: generated.generated_content,
-      platform: '',
+      platform: 'instagram',
       scheduled_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // Tomorrow
     });
 
@@ -1010,7 +1010,7 @@ Always validate data before sending to the API:
 const contentSchema = {
   title: { required: true, maxLength: 200 },
   content: { required: true, maxLength: 10000 },
-  platform: { required: true, enum: ['twitter', '', 'facebook', 'instagram'] },
+  platform: { required: true, enum: ['twitter', 'instagram', 'facebook'] },
   scheduled_at: { type: 'datetime', future: true }
 };
 

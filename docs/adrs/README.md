@@ -108,7 +108,7 @@ Key technology choices documented in ADRs:
 - **Frontend:** React 18 with TypeScript, TanStack Query, Auth0
 - **Backend:** FastAPI with SQLAlchemy, Celery, Redis
 - **Database:** PostgreSQL with FAISS for vector search
-- **AI Integration:** CrewAI with OpenAI GPT-4 and custom tools
+- **AI Integration:** CrewAI with OpenAI GPT-5 and GPT-5 Mini and custom tools
 - **Infrastructure:** Docker, GitHub Actions, comprehensive testing
 
 ### Performance and Scale Considerations

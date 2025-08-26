@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useSocialInboxWebSocket } from '../hooks/useWebSocket'
 import api from '../services/api'
+import TemplateManager from '../components/TemplateManager'
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -11,7 +13,8 @@ import {
   StarIcon,
   ChatBubbleLeftRightIcon,
   ClockIcon,
-  UserIcon
+  UserIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline'
 import { 
   CheckCircleIcon as CheckCircleIconSolid,
@@ -47,6 +50,21 @@ const priorityColors = {
 
 function SocialInbox() {
   const { user } = useAuth()
+  
+  // WebSocket connection for real-time updates
+  const {
+    isConnected,
+    newInteractions,
+    interactionUpdates,
+    responseGenerated,
+    responseSent,
+    clearNewInteractions,
+    clearInteractionUpdates,
+    clearResponseGenerated,
+    clearResponseSent
+  } = useSocialInboxWebSocket()
+  
+  const [activeTab, setActiveTab] = useState('inbox') // 'inbox' or 'templates'
   const [interactions, setInteractions] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedInteraction, setSelectedInteraction] = useState(null)
@@ -92,6 +110,105 @@ function SocialInbox() {
     fetchInteractions()
   }, [fetchInteractions])
 
+  // Handle real-time new interactions
+  useEffect(() => {
+    if (newInteractions.length > 0) {
+      newInteractions.forEach(newInteraction => {
+        setInteractions(prev => {
+          // Check if interaction already exists to avoid duplicates
+          const exists = prev.some(item => item.id === newInteraction.id)
+          if (!exists) {
+            return [newInteraction, ...prev]
+          }
+          return prev
+        })
+        
+        // Show browser notification for new interactions (if permission granted)
+        if (Notification.permission === 'granted') {
+          new Notification('New Social Media Interaction', {
+            body: `${newInteraction.author_username} on ${newInteraction.platform}: ${newInteraction.content.substring(0, 100)}...`,
+            icon: '/favicon.ico'
+          })
+        }
+      })
+      
+      // Update stats
+      setStats(prev => ({
+        ...prev,
+        total: (prev.total || 0) + newInteractions.length,
+        unread: (prev.unread || 0) + newInteractions.length
+      }))
+      
+      clearNewInteractions()
+    }
+  }, [newInteractions, clearNewInteractions])
+
+  // Request notification permission on component mount
+  useEffect(() => {
+    if (Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }, [])
+
+  // Handle real-time interaction updates
+  useEffect(() => {
+    if (interactionUpdates.length > 0) {
+      interactionUpdates.forEach(update => {
+        setInteractions(prev => 
+          prev.map(item => 
+            item.id === update.interaction_id 
+              ? { ...item, ...update.updates }
+              : item
+          )
+        )
+        
+        // Update selected interaction if it matches
+        if (selectedInteraction?.id === update.interaction_id) {
+          setSelectedInteraction(prev => ({ ...prev, ...update.updates }))
+        }
+      })
+      
+      clearInteractionUpdates()
+    }
+  }, [interactionUpdates, selectedInteraction?.id, clearInteractionUpdates])
+
+  // Handle real-time response generation
+  useEffect(() => {
+    if (responseGenerated && selectedInteraction?.id === responseGenerated.interaction_id) {
+      setResponseText(responseGenerated.response.response_text || '')
+      clearResponseGenerated()
+    }
+  }, [responseGenerated, selectedInteraction?.id, clearResponseGenerated])
+
+  // Handle real-time response sent confirmation
+  useEffect(() => {
+    if (responseSent) {
+      // Update interaction status to responded
+      setInteractions(prev => 
+        prev.map(item => 
+          item.id === responseSent.interaction_id 
+            ? { ...item, status: 'responded' }
+            : item
+        )
+      )
+      
+      // Update stats
+      setStats(prev => ({
+        ...prev,
+        responded: (prev.responded || 0) + 1,
+        read: Math.max(0, (prev.read || 0) - 1)
+      }))
+      
+      // Clear selection if it matches
+      if (selectedInteraction?.id === responseSent.interaction_id) {
+        setSelectedInteraction(null)
+        setResponseText('')
+      }
+      
+      clearResponseSent()
+    }
+  }, [responseSent, selectedInteraction?.id, clearResponseSent])
+
   const handleInteractionSelect = useCallback(async (interaction) => {
     setSelectedInteraction(interaction)
     setResponseText('')
@@ -110,12 +227,16 @@ function SocialInbox() {
     }
   }, [])
 
-  const generateResponse = useCallback(async (personalityStyle = 'professional') => {
+  const generateResponse = useCallback(async (personalityStyle = null) => {
     if (!selectedInteraction) return
     
     try {
       setIsGeneratingResponse(true)
-      const response = await api.generateInteractionResponse(selectedInteraction.id, personalityStyle)
+      // Use null to let backend use user's default personality if no style provided
+      const response = await api.generateInteractionResponse(
+        selectedInteraction.id, 
+        personalityStyle || null
+      )
       
       setResponseText(response.response_text || '')
     } catch (error) {
@@ -170,8 +291,44 @@ function SocialInbox() {
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Header with stats and filters */}
-      <div className="bg-white shadow-sm border-b border-gray-200 p-6">
+      {/* Tab Navigation */}
+      <div className="bg-white border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+          <button
+            onClick={() => setActiveTab('inbox')}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'inbox'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <ChatBubbleLeftRightIcon className="h-5 w-5 inline mr-2" />
+            Social Inbox
+            {stats.unread > 0 && (
+              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                {stats.unread}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('templates')}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'templates'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <DocumentTextIcon className="h-5 w-5 inline mr-2" />
+            Response Templates
+          </button>
+        </nav>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'inbox' ? (
+        <>
+          {/* Header with stats and filters */}
+          <div className="bg-white shadow-sm border-b border-gray-200 p-6">
         {/* Stats cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-blue-50 rounded-lg p-4">
@@ -279,6 +436,14 @@ function SocialInbox() {
             <ArrowPathIcon className="h-4 w-4 mr-2" />
             Refresh
           </button>
+          
+          {/* WebSocket connection status */}
+          <div className="inline-flex items-center px-3 py-2 rounded-md text-sm">
+            <div className={`h-2 w-2 rounded-full mr-2 ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}></div>
+            <span className={`text-xs ${isConnected ? 'text-green-700' : 'text-red-700'}`}>
+              {isConnected ? 'Live' : 'Offline'}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -408,6 +573,13 @@ function SocialInbox() {
                       Generate Response
                     </label>
                     <div className="flex space-x-2">
+                      <button
+                        onClick={() => generateResponse(null)}
+                        disabled={isGeneratingResponse}
+                        className="px-3 py-1 text-xs font-medium rounded-md border-2 border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                      >
+                        Default
+                      </button>
                       {['professional', 'friendly', 'casual', 'technical'].map((style) => (
                         <button
                           key={style}
@@ -497,6 +669,13 @@ function SocialInbox() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+        </>
+      ) : (
+        /* Templates Tab */
+        <div className="flex-1 overflow-y-auto p-6">
+          <TemplateManager />
         </div>
       )}
     </div>

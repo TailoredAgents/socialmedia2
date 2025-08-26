@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from backend.db.models import (
     SocialInteraction, ResponseTemplate, CompanyKnowledge, 
-    InteractionResponse, User
+    InteractionResponse, User, UserSetting
 )
 from backend.db.database import get_db
 from backend.agents.tools import openai_tool
@@ -443,7 +443,7 @@ class PersonalityResponseEngine:
         self,
         interaction_id: str,
         user_id: int,
-        personality_style: str = "professional"
+        personality_style: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Main method to process an interaction and generate a response.
@@ -466,6 +466,17 @@ class PersonalityResponseEngine:
             if not interaction:
                 logger.error(f"Interaction {interaction_id} not found")
                 return None
+            
+            # Get user's default personality style if not provided
+            if personality_style is None:
+                user_settings = self.db.query(UserSetting).filter(
+                    UserSetting.user_id == user_id
+                ).first()
+                personality_style = (
+                    user_settings.default_response_personality 
+                    if user_settings and user_settings.default_response_personality 
+                    else "professional"
+                )
             
             # Analyze the interaction
             analysis = self.analyze_interaction_intent(interaction.content)

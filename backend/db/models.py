@@ -136,6 +136,18 @@ class UserSetting(Base):
     # Integrations
     connected_accounts = Column(JSON, default={})
     
+    # Social Inbox Settings
+    default_response_personality = Column(String, default="professional")  # professional, friendly, casual, technical
+    auto_response_enabled = Column(Boolean, default=False)
+    auto_response_confidence_threshold = Column(Float, default=0.8)  # Only auto-respond if AI confidence >= 80%
+    auto_response_business_hours_only = Column(Boolean, default=True)
+    auto_response_delay_minutes = Column(Integer, default=5)  # Delay before auto-responding
+    business_hours_start = Column(String, default="09:00")  # 24h format
+    business_hours_end = Column(String, default="17:00")  # 24h format
+    business_days = Column(JSON, default=["monday", "tuesday", "wednesday", "thursday", "friday"])
+    escalation_keywords = Column(JSON, default=["complaint", "lawsuit", "refund", "angry", "terrible"])
+    excluded_response_keywords = Column(JSON, default=["spam", "bot", "fake"])  # Don't respond to these
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

@@ -34,6 +34,7 @@ const contentTypes = [
 
 const platforms = [
   { value: 'all', label: 'All Platforms' },
+  { value: 'upload', label: 'My Uploads' },
   { value: 'twitter', label: 'Twitter' },
   { value: 'instagram', label: 'Instagram' },
   { value: 'facebook', label: 'Facebook' }
@@ -70,7 +71,21 @@ export default function Content() {
     refetch 
   } = useQuery({
     queryKey: ['content', selectedType, selectedPlatform, selectedStatus, searchQuery],
-    queryFn: () => api.content.getAll(1, 50),
+    queryFn: async () => {
+      if (selectedPlatform === 'upload') {
+        // Use ContentItems API for uploaded content
+        return api.getContentItems({
+          platform: 'upload',
+          content_type: selectedType !== 'all' ? selectedType : undefined,
+          status: selectedStatus !== 'all' ? selectedStatus : undefined,
+          limit: 50,
+          offset: 0
+        })
+      } else {
+        // Use regular content API
+        return api.content.getAll(1, 50)
+      }
+    },
     staleTime: 30 * 1000, // 30 seconds
     retry: 2
   })

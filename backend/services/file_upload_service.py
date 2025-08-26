@@ -25,6 +25,9 @@ except ImportError:
     magic = None
 
 from backend.core.config import get_settings
+from backend.db.database import get_db
+from backend.db.models import ContentItem
+from sqlalchemy.orm import Session
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -258,6 +261,37 @@ class FileUploadService:
                 "status": "uploaded"
             }
             
+            # Create ContentItem for the uploaded image
+            try:
+                db = next(get_db())
+                content_item = ContentItem(
+                    user_id=user_id,
+                    content=f"/api/files/{relative_path}",  # Store file URL as content
+                    content_hash=file_hash,
+                    platform="upload",  # Special platform for uploaded content
+                    content_type="image",
+                    status="draft",
+                    title=description or f"Uploaded image: {file.filename}",
+                    # Store metadata in platform_metadata
+                    platform_metadata={
+                        "original_filename": file.filename,
+                        "size_bytes": total_size,
+                        "content_type": file.content_type,
+                        "image_metadata": image_metadata,
+                        "source": "user_upload"
+                    }
+                )
+                db.add(content_item)
+                db.commit()
+                file_info["content_item_id"] = content_item.id
+                logger.info(f"Created ContentItem {content_item.id} for uploaded image")
+            except Exception as e:
+                logger.warning(f"Failed to create ContentItem for upload: {e}")
+                # Don't fail the upload if ContentItem creation fails
+            finally:
+                if 'db' in locals():
+                    db.close()
+            
             logger.info(f"Image uploaded successfully: {final_filename} ({total_size} bytes) for user {user_id}")
             
             return file_info
@@ -297,6 +331,26 @@ class FileUploadService:
             # In a real application, you'd check if user owns this file
             # For now, we'll just delete it
             file_path.unlink()
+            
+            # Also delete the corresponding ContentItem
+            try:
+                db = next(get_db())
+                content_item = db.query(ContentItem).filter(
+                    ContentItem.user_id == user_id,
+                    ContentItem.content.like(f"%{filename}%"),
+                    ContentItem.platform == "upload"
+                ).first()
+                
+                if content_item:
+                    db.delete(content_item)
+                    db.commit()
+                    logger.info(f"Deleted ContentItem {content_item.id} for image {filename}")
+                
+            except Exception as e:
+                logger.warning(f"Failed to delete ContentItem for {filename}: {e}")
+            finally:
+                if 'db' in locals():
+                    db.close()
             
             logger.info(f"Image deleted: {filename} by user {user_id}")
             return True

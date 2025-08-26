@@ -97,6 +97,19 @@ try:
 except ImportError as e:
     logger.warning(f"⚠️ Could not import image streaming router: {e}")
 
+try:
+    # For now, skip social inbox due to complex dependencies
+    logger.info("⚠️ Social inbox router temporarily disabled due to import complexity")
+except Exception as e:
+    logger.warning(f"⚠️ Could not import social inbox router: {e}")
+
+try:
+    from backend.api.webhooks import router as webhooks_router
+    app.include_router(webhooks_router)
+    logger.info("✅ Webhooks router included")
+except ImportError as e:
+    logger.warning(f"⚠️ Could not import webhooks router: {e}")
+
 @app.get("/")
 async def root():
     """Root endpoint with production status"""

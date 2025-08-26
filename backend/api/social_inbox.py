@@ -8,19 +8,20 @@ for Facebook, Instagram, and X/Twitter integration.
 import logging
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 
-from backend.db.database import get_db
-from backend.db.models import (
+from db.database import get_db
+from db.models import (
     SocialInteraction, InteractionResponse, ResponseTemplate, 
     CompanyKnowledge, User, SocialPlatformConnection
 )
-from backend.auth.dependencies import get_current_active_user
-from backend.services.social_webhook_service import get_webhook_service
-from backend.services.personality_response_engine import get_personality_engine
+from auth.dependencies import get_current_active_user
+from services.social_webhook_service import get_webhook_service
+from services.personality_response_engine import get_personality_engine
+from services.websocket_manager import websocket_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/inbox", tags=["social-inbox"])
@@ -264,6 +265,13 @@ async def send_response(
             request.response_text
         )
         
+        # Send WebSocket notification about response being sent
+        await websocket_service.notify_interaction_responded(
+            current_user.id,
+            request.interaction_id,
+            response.id
+        )
+        
         return {
             "message": "Response queued successfully",
             "response_id": response.id
@@ -294,12 +302,21 @@ async def generate_ai_response(
         if not response_data:
             raise HTTPException(status_code=400, detail="Failed to generate response")
         
-        return {
+        result = {
             "suggested_response": response_data["response_text"],
             "confidence_score": response_data["confidence_score"],
             "personality_style": response_data["personality_style"],
             "reasoning": response_data["response_reasoning"]
         }
+        
+        # Send WebSocket notification about generated response
+        await websocket_service.notify_response_generated(
+            current_user.id,
+            request.interaction_id,
+            result
+        )
+        
+        return result
         
     except HTTPException:
         raise
@@ -571,3 +588,30 @@ async def _send_platform_response(
             db.commit()
     finally:
         db.close()
+
+
+@router.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: int):
+    """
+    WebSocket endpoint for real-time social inbox updates
+    
+    Handles real-time communication for:
+    - New interactions
+    - Status updates  
+    - Response generation
+    - Error notifications
+    """
+    try:
+        await websocket_service.handle_websocket(websocket, user_id)
+    except WebSocketDisconnect:
+        logger.info(f"WebSocket disconnected for user {user_id}")
+    except Exception as e:
+        logger.error(f"WebSocket error for user {user_id}: {e}")
+
+
+@router.get("/ws/stats")
+async def get_websocket_stats(
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get WebSocket connection statistics"""
+    return websocket_service.get_connection_stats()

@@ -280,6 +280,16 @@ class ApiService {
     return this.getContent(page, limit)
   }
 
+  async getContentItems(params = {}) {
+    const searchParams = new URLSearchParams()
+    Object.keys(params).forEach(key => {
+      if (params[key] !== undefined && params[key] !== null) {
+        searchParams.append(key, params[key])
+      }
+    })
+    return this.request(`/api/content/items?${searchParams}`)
+  }
+
   async getContentById(contentId) {
     return this.request(`/api/content/${contentId}`)
   }

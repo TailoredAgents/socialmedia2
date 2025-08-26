@@ -10,7 +10,7 @@ import uuid
 import json
 
 from backend.db.database import get_db
-from backend.db.models import ContentLog, User
+from backend.db.models import ContentLog, ContentItem, User
 from backend.auth.dependencies import get_current_active_user
 from backend.services.cache_decorators import cached, cache_invalidate
 from backend.agents.tools import openai_tool
@@ -164,6 +164,50 @@ async def get_user_content(
         fallback_value=[],
         endpoint_name="get_user_content"
     )
+
+
+@router.get("/items", response_model=List[dict])
+async def get_content_items(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+    platform: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    content_type: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0)
+):
+    """Get user's content items (including uploaded images) with filtering and pagination"""
+    
+    query = db.query(ContentItem).filter(ContentItem.user_id == current_user.id)
+    
+    if platform:
+        query = query.filter(ContentItem.platform == platform)
+    if status:
+        query = query.filter(ContentItem.status == status)
+    if content_type:
+        query = query.filter(ContentItem.content_type == content_type)
+    
+    content_items = query.order_by(ContentItem.created_at.desc()).offset(offset).limit(limit).all()
+    
+    # Convert to dict format for frontend compatibility
+    items = []
+    for item in content_items:
+        item_dict = {
+            "id": item.id,
+            "content": item.content,
+            "platform": item.platform,
+            "content_type": item.content_type,
+            "status": item.status,
+            "title": getattr(item, 'title', ''),
+            "created_at": item.created_at,
+            "updated_at": getattr(item, 'updated_at', None),
+            "platform_metadata": item.platform_metadata or {},
+            "is_uploaded": item.platform == "upload"
+        }
+        items.append(item_dict)
+    
+    return items
+
 
 @cached("content", "single_content", ttl=600)  # 10 minute cache
 @router.get("/{content_id}", response_model=ContentResponse)

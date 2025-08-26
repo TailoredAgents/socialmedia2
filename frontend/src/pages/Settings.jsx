@@ -15,7 +15,8 @@ import {
   XCircleIcon,
   ExclamationTriangleIcon,
   ArrowPathIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
 
 export default function Settings() {
@@ -50,6 +51,18 @@ export default function Settings() {
       autoOptimization: false,
       smartScheduling: true,
       contentGeneration: true
+    },
+    socialInbox: {
+      defaultResponsePersonality: 'professional',
+      autoResponseEnabled: false,
+      autoResponseConfidenceThreshold: 0.8,
+      autoResponseBusinessHoursOnly: true,
+      autoResponseDelayMinutes: 5,
+      businessHoursStart: '09:00',
+      businessHoursEnd: '17:00',
+      businessDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+      escalationKeywords: ['complaint', 'lawsuit', 'refund', 'angry', 'terrible'],
+      excludedResponseKeywords: ['spam', 'bot', 'fake']
     },
     platforms: {
       twitter: { connected: false, username: '' },
@@ -804,6 +817,160 @@ export default function Settings() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Social Inbox Settings */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900 flex items-center">
+            <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2" />
+            Social Inbox & Auto-Response
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">
+            Configure how Lily responds to comments, mentions, and messages
+          </p>
+        </div>
+        <div className="p-6 space-y-6">
+          {/* Default Response Personality */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Default Response Personality
+            </label>
+            <select
+              value={settings.socialInbox.defaultResponsePersonality}
+              onChange={(e) => setSettings(prev => ({
+                ...prev,
+                socialInbox: { ...prev.socialInbox, defaultResponsePersonality: e.target.value }
+              }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="professional">Professional - Formal and courteous</option>
+              <option value="friendly">Friendly - Warm and approachable</option>
+              <option value="casual">Casual - Relaxed and informal</option>
+              <option value="technical">Technical - Informative and precise</option>
+            </select>
+          </div>
+
+          {/* Auto-Response Toggle */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900">Enable Auto-Response</p>
+              <p className="text-sm text-gray-600">Automatically respond to interactions based on AI confidence</p>
+            </div>
+            <button
+              onClick={() => setSettings(prev => ({
+                ...prev,
+                socialInbox: { ...prev.socialInbox, autoResponseEnabled: !prev.socialInbox.autoResponseEnabled }
+              }))}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                settings.socialInbox.autoResponseEnabled ? 'bg-blue-600' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  settings.socialInbox.autoResponseEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Auto-Response Configuration (only shown if enabled) */}
+          {settings.socialInbox.autoResponseEnabled && (
+            <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Confidence Threshold ({Math.round(settings.socialInbox.autoResponseConfidenceThreshold * 100)}%)
+                </label>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="1"
+                  step="0.05"
+                  value={settings.socialInbox.autoResponseConfidenceThreshold}
+                  onChange={(e) => setSettings(prev => ({
+                    ...prev,
+                    socialInbox: { ...prev.socialInbox, autoResponseConfidenceThreshold: parseFloat(e.target.value) }
+                  }))}
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Only auto-respond when AI confidence is above this threshold
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-700">Business Hours Only</p>
+                  <p className="text-xs text-gray-500">Only send auto-responses during business hours</p>
+                </div>
+                <button
+                  onClick={() => setSettings(prev => ({
+                    ...prev,
+                    socialInbox: { ...prev.socialInbox, autoResponseBusinessHoursOnly: !prev.socialInbox.autoResponseBusinessHoursOnly }
+                  }))}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                    settings.socialInbox.autoResponseBusinessHoursOnly ? 'bg-blue-600' : 'bg-gray-200'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                      settings.socialInbox.autoResponseBusinessHoursOnly ? 'translate-x-5' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {settings.socialInbox.autoResponseBusinessHoursOnly && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                    <input
+                      type="time"
+                      value={settings.socialInbox.businessHoursStart}
+                      onChange={(e) => setSettings(prev => ({
+                        ...prev,
+                        socialInbox: { ...prev.socialInbox, businessHoursStart: e.target.value }
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                    <input
+                      type="time"
+                      value={settings.socialInbox.businessHoursEnd}
+                      onChange={(e) => setSettings(prev => ({
+                        ...prev,
+                        socialInbox: { ...prev.socialInbox, businessHoursEnd: e.target.value }
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Response Delay (minutes)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={settings.socialInbox.autoResponseDelayMinutes}
+                  onChange={(e) => setSettings(prev => ({
+                    ...prev,
+                    socialInbox: { ...prev.socialInbox, autoResponseDelayMinutes: parseInt(e.target.value) }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Wait this many minutes before sending auto-responses
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

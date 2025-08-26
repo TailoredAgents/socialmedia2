@@ -102,7 +102,8 @@ def run_migrations(reset_db=False):
             tables_to_check = [
                 'users', 'goals', 'goal_progress', 'milestones',
                 'memory_content', 'memories', 'notifications',
-                'content_items', 'content_performance_snapshots'
+                'content_items', 'content_performance_snapshots',
+                'content_logs', 'metrics', 'refresh_token_blacklist'
             ]
             
             existing_tables = []

@@ -15,6 +15,7 @@ from backend.auth.dependencies import get_current_active_user
 from backend.services.cache_decorators import cached, cache_invalidate
 from backend.agents.tools import openai_tool
 from backend.services.image_generation_service import image_generation_service
+from backend.utils.db_checks import ensure_table_exists, safe_table_query
 
 router = APIRouter(prefix="/api/content", tags=["content"])
 
@@ -139,18 +140,29 @@ async def get_user_content(
 ):
     """Get user's content with filtering and pagination"""
     
-    query = db.query(ContentLog).filter(ContentLog.user_id == current_user.id)
+    # Ensure the content_logs table exists before querying
+    ensure_table_exists(db, "content_logs", "get_user_content")
     
-    if platform:
-        query = query.filter(ContentLog.platform == platform)
-    if status:
-        query = query.filter(ContentLog.status == status)
-    if content_type:
-        query = query.filter(ContentLog.content_type == content_type)
+    def query_user_content(db_session):
+        query = db_session.query(ContentLog).filter(ContentLog.user_id == current_user.id)
+        
+        if platform:
+            query = query.filter(ContentLog.platform == platform)
+        if status:
+            query = query.filter(ContentLog.status == status)
+        if content_type:
+            query = query.filter(ContentLog.content_type == content_type)
+        
+        return query.order_by(ContentLog.created_at.desc()).offset(offset).limit(limit).all()
     
-    content_items = query.order_by(ContentLog.created_at.desc()).offset(offset).limit(limit).all()
-    
-    return content_items
+    # Use safe query with fallback
+    return safe_table_query(
+        db=db,
+        table_name="content_logs",
+        query_func=query_user_content,
+        fallback_value=[],
+        endpoint_name="get_user_content"
+    )
 
 @cached("content", "single_content", ttl=600)  # 10 minute cache
 @router.get("/{content_id}", response_model=ContentResponse)
@@ -310,25 +322,38 @@ async def get_upcoming_content(
     
     from datetime import timedelta
     
-    end_date = datetime.utcnow() + timedelta(days=days)
+    # Ensure the content_logs table exists before querying
+    ensure_table_exists(db, "content_logs", "get_upcoming_content")
     
-    content_items = db.query(ContentLog).filter(
-        ContentLog.user_id == current_user.id,
-        ContentLog.status == "scheduled",
-        ContentLog.scheduled_for.between(datetime.utcnow(), end_date)
-    ).order_by(ContentLog.scheduled_for).all()
+    def query_upcoming_content(db_session):
+        end_date = datetime.utcnow() + timedelta(days=days)
+        
+        content_items = db_session.query(ContentLog).filter(
+            ContentLog.user_id == current_user.id,
+            ContentLog.status == "scheduled",
+            ContentLog.scheduled_for.between(datetime.utcnow(), end_date)
+        ).order_by(ContentLog.scheduled_for).all()
+        
+        return [
+            {
+                "id": content.id,
+                "platform": content.platform,
+                "content": content.content[:100] + "..." if len(content.content) > 100 else content.content,
+                "content_type": content.content_type,
+                "scheduled_for": content.scheduled_for,
+                "days_until": (content.scheduled_for - datetime.utcnow()).days
+            }
+            for content in content_items
+        ]
     
-    return [
-        {
-            "id": content.id,
-            "platform": content.platform,
-            "content": content.content[:100] + "..." if len(content.content) > 100 else content.content,
-            "content_type": content.content_type,
-            "scheduled_for": content.scheduled_for,
-            "days_until": (content.scheduled_for - datetime.utcnow()).days
-        }
-        for content in content_items
-    ]
+    # Use safe query with fallback
+    return safe_table_query(
+        db=db,
+        table_name="content_logs",
+        query_func=query_upcoming_content,
+        fallback_value=[],
+        endpoint_name="get_upcoming_content"
+    )
 
 @router.get("/analytics/summary", response_model=ContentAnalytics)
 async def get_content_analytics(

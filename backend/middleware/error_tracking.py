@@ -38,6 +38,18 @@ async def error_tracking_middleware(request: Request, call_next: Callable) -> Re
         # Process request
         response = await call_next(request)
         
+        # Ensure we got a valid response
+        if response is None:
+            logger.error(f"No response returned from call_next for {request.method} {request.url.path}")
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "error": "Internal server error",
+                    "message": "No response generated",
+                    "path": request.url.path
+                }
+            )
+        
         # Log slow requests
         process_time = time.time() - start_time
         if process_time > 1.0:  # Log requests taking more than 1 second
@@ -47,12 +59,12 @@ async def error_tracking_middleware(request: Request, call_next: Callable) -> Re
                     "endpoint": request.url.path,
                     "method": request.method,
                     "duration": process_time,
-                    "status_code": response.status_code
+                    "status_code": getattr(response, 'status_code', 'unknown')
                 }
             )
         
         # Log errors (4xx and 5xx)
-        if response.status_code >= 400:
+        if hasattr(response, 'status_code') and response.status_code >= 400:
             logger.error(
                 f"Request failed: {request.method} {request.url.path} - Status {response.status_code}",
                 extra={
@@ -96,9 +108,32 @@ async def error_tracking_middleware(request: Request, call_next: Callable) -> Re
 
 async def log_404_errors(request: Request, call_next: Callable) -> Response:
     """Special middleware to log 404 errors with suggestions"""
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+        
+        # Ensure we got a valid response
+        if response is None:
+            logger.error(f"No response returned from call_next in 404 middleware for {request.method} {request.url.path}")
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "error": "Internal server error", 
+                    "message": "No response generated",
+                    "path": request.url.path
+                }
+            )
+    except Exception as e:
+        logger.error(f"Exception in 404 middleware for {request.method} {request.url.path}: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "Internal server error",
+                "message": "Error in 404 middleware", 
+                "path": request.url.path
+            }
+        )
     
-    if response.status_code == 404:
+    if hasattr(response, 'status_code') and response.status_code == 404:
         # Log 404 with helpful context
         from backend.api.system_logs import error_store
         

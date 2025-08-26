@@ -26,6 +26,7 @@ from . import (
     social_platforms,
     organizations,
     system_logs,  # System logging and error tracking
+    database_health,  # Database schema health checks
 )
 
 # All routers to be registered with the FastAPI app
@@ -54,4 +55,5 @@ ROUTERS = [
     social_platforms.router,  # Social media platform connections and posting
     organizations.router,  # Multi-tenant organization management
     system_logs.router,  # System logging and error tracking endpoints
+    database_health.router,  # Database schema health monitoring
 ]

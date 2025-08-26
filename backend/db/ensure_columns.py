@@ -11,93 +11,87 @@ logger = logging.getLogger(__name__)
 def ensure_user_columns():
     """
     Ensure all required columns exist in the users table.
+    Based on migration 016_convert_to_open_saas_auth.py
     This is a safety net for production where migrations might not run properly.
     """
+    required_columns = [
+        # Core auth columns
+        ('is_superuser', 'BOOLEAN DEFAULT FALSE'),
+        ('is_verified', 'BOOLEAN DEFAULT FALSE'), 
+        
+        # Email verification columns (CRITICAL - missing these causes 500 errors)
+        ('email_verified', 'BOOLEAN DEFAULT FALSE'),
+        ('email_verification_token', 'VARCHAR(255)'),
+        ('email_verification_sent_at', 'TIMESTAMP'),
+        
+        # Password reset columns
+        ('password_reset_token', 'VARCHAR(255)'),
+        ('password_reset_sent_at', 'TIMESTAMP'),
+        
+        # Subscription columns
+        ('tier', 'VARCHAR(50) DEFAULT \'free\''),
+        ('subscription_status', 'VARCHAR(50) DEFAULT \'free\''),
+        ('subscription_end_date', 'TIMESTAMP'),
+        ('stripe_customer_id', 'VARCHAR(255)'),
+        ('stripe_subscription_id', 'VARCHAR(255)'),
+    ]
+    
     try:
         with engine.connect() as conn:
-            # Check and add is_superuser column
-            result = conn.execute(text("""
+            logger.info("Checking for missing columns in users table...")
+            
+            # Get all existing columns
+            existing_columns = conn.execute(text("""
                 SELECT column_name 
                 FROM information_schema.columns 
-                WHERE table_name='users' AND column_name='is_superuser'
-            """))
+                WHERE table_name='users'
+            """)).fetchall()
             
-            if not result.fetchone():
-                logger.info("Adding missing is_superuser column to users table")
-                conn.execute(text("""
-                    ALTER TABLE users 
-                    ADD COLUMN is_superuser BOOLEAN DEFAULT FALSE
-                """))
-                conn.commit()
-                logger.info("Successfully added is_superuser column")
+            existing_column_names = {row[0] for row in existing_columns}
+            logger.info(f"Found {len(existing_column_names)} existing columns in users table")
             
-            # Check and add is_verified column
-            result = conn.execute(text("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name='users' AND column_name='is_verified'
-            """))
+            columns_added = 0
+            for column_name, column_type in required_columns:
+                if column_name not in existing_column_names:
+                    logger.info(f"Adding missing {column_name} column to users table")
+                    
+                    try:
+                        conn.execute(text(f"""
+                            ALTER TABLE users 
+                            ADD COLUMN {column_name} {column_type}
+                        """))
+                        conn.commit()
+                        columns_added += 1
+                        logger.info(f"✅ Successfully added {column_name} column")
+                    except Exception as col_error:
+                        logger.error(f"❌ Failed to add {column_name} column: {col_error}")
+                        conn.rollback()
             
-            if not result.fetchone():
-                logger.info("Adding missing is_verified column to users table")
-                conn.execute(text("""
-                    ALTER TABLE users 
-                    ADD COLUMN is_verified BOOLEAN DEFAULT FALSE
-                """))
-                conn.commit()
-                logger.info("Successfully added is_verified column")
-            
-            # Check and add email_verified column
-            result = conn.execute(text("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name='users' AND column_name='email_verified'
-            """))
-            
-            if not result.fetchone():
-                logger.info("Adding missing email_verified column to users table")
-                conn.execute(text("""
-                    ALTER TABLE users 
-                    ADD COLUMN email_verified BOOLEAN DEFAULT FALSE
-                """))
-                conn.commit()
-                logger.info("Successfully added email_verified column")
+            if columns_added > 0:
+                logger.info(f"✅ Added {columns_added} missing columns to users table")
+            else:
+                logger.info("✅ All required columns already exist in users table")
                 
-            # Check and add tier column
-            result = conn.execute(text("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name='users' AND column_name='tier'
-            """))
+            # Create indexes for new columns if they don't exist
+            indexes_to_create = [
+                ('ix_users_email_verification_token', 'email_verification_token'),
+                ('ix_users_password_reset_token', 'password_reset_token'), 
+                ('ix_users_stripe_customer_id', 'stripe_customer_id'),
+            ]
             
-            if not result.fetchone():
-                logger.info("Adding missing tier column to users table")
-                conn.execute(text("""
-                    ALTER TABLE users 
-                    ADD COLUMN tier VARCHAR(50) DEFAULT 'free'
-                """))
-                conn.commit()
-                logger.info("Successfully added tier column")
-                
-            # Check and add subscription_status column  
-            result = conn.execute(text("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name='users' AND column_name='subscription_status'
-            """))
+            for index_name, column_name in indexes_to_create:
+                try:
+                    conn.execute(text(f"""
+                        CREATE INDEX IF NOT EXISTS {index_name} ON users ({column_name})
+                    """))
+                    conn.commit()
+                except Exception as idx_error:
+                    logger.warning(f"Could not create index {index_name}: {idx_error}")
+                    conn.rollback()
             
-            if not result.fetchone():
-                logger.info("Adding missing subscription_status column to users table")
-                conn.execute(text("""
-                    ALTER TABLE users 
-                    ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'free'
-                """))
-                conn.commit()
-                logger.info("Successfully added subscription_status column")
-            
-            logger.info("Database column check complete")
+            logger.info("✅ Database column and index check complete")
             
     except Exception as e:
-        logger.error(f"Error ensuring database columns: {e}")
+        logger.error(f"❌ Error ensuring database columns: {e}")
         # Don't crash the app, just log the error
         pass

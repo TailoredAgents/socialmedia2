@@ -28,20 +28,26 @@ class Settings(BaseSettings):
     postgres_url: str = os.getenv("DATABASE_URL", "")  # PostgreSQL for production (same as database_url)
     
     def get_database_url(self) -> str:
-        """Get database URL with PostgreSQL preference and Render SSL support"""
-        # Force production PostgreSQL URL when environment is production
-        if self.environment == "production":
+        """Get database URL - POSTGRESQL ONLY, NO SQLITE"""
+        # ALWAYS use PostgreSQL in production
+        if self.environment == "production" or os.getenv("RENDER"):
             return "postgresql://socialmedia:BbsIYQtjBnhKwRL3F9kXbv1wrtsVxuTg@dpg-d2ln7eer433s739509lg-a/socialmedia_uq72?sslmode=require"
         
+        # Check for DATABASE_URL environment variable
         db_url = self.database_url or os.getenv("DATABASE_URL")
-        if not db_url:
-            # Fallback to SQLite only in development
-            if self.environment == "development":
-                return "sqlite:///./socialmedia.db"
-            else:
-                raise ValueError("DATABASE_URL must be set in production environment")
         
-        # Add SSL mode for Render PostgreSQL if not already present
+        # NO SQLITE FALLBACK - PostgreSQL only!
+        if not db_url:
+            # Default to PostgreSQL even in development
+            logger.warning("No DATABASE_URL set, using hardcoded PostgreSQL URL")
+            return "postgresql://socialmedia:BbsIYQtjBnhKwRL3F9kXbv1wrtsVxuTg@dpg-d2ln7eer433s739509lg-a/socialmedia_uq72?sslmode=require"
+        
+        # Reject SQLite URLs completely
+        if db_url.startswith("sqlite"):
+            logger.error("SQLite is not supported! Forcing PostgreSQL")
+            return "postgresql://socialmedia:BbsIYQtjBnhKwRL3F9kXbv1wrtsVxuTg@dpg-d2ln7eer433s739509lg-a/socialmedia_uq72?sslmode=require"
+        
+        # Add SSL mode for PostgreSQL if not already present
         if db_url.startswith("postgresql://") and "sslmode" not in db_url:
             db_url += "?sslmode=require"
         

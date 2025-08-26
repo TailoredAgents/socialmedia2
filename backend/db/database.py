@@ -8,31 +8,28 @@ from backend.core.config import get_settings
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# Use the appropriate database URL
+# POSTGRESQL ONLY - NO SQLITE
 database_url = settings.get_database_url()
 
-# Production-ready connection pool configuration
+# Reject SQLite completely
 if database_url.startswith("sqlite"):
-    # SQLite specific settings
-    engine = create_engine(
-        database_url,
-        connect_args={"check_same_thread": False},
-        echo=False  # Set to True for query debugging
-    )
-else:
-    # PostgreSQL/MySQL production settings
-    engine = create_engine(
-        database_url,
-        poolclass=QueuePool,
-        pool_size=20,  # Maximum number of persistent connections in the pool
-        max_overflow=30,  # Maximum number of connections that can overflow the pool
-        pool_pre_ping=True,  # Validate connections before use
-        pool_recycle=3600,  # Recycle connections every hour
-        echo=False,  # Set to True for query debugging
-        connect_args={
-            "connect_timeout": 10,
-            "application_name": "ai_social_media_agent"
-        } if database_url.startswith("postgresql") else {}
+    raise ValueError("SQLite is not supported! This application requires PostgreSQL.")
+
+logger.info(f"Using PostgreSQL database: {database_url.replace('BbsIYQtjBnhKwRL3F9kXbv1wrtsVxuTg', '***')}")
+
+# PostgreSQL production settings ONLY
+engine = create_engine(
+    database_url,
+    poolclass=QueuePool,
+    pool_size=20,  # Maximum number of persistent connections in the pool
+    max_overflow=30,  # Maximum number of connections that can overflow the pool
+    pool_pre_ping=True,  # Validate connections before use
+    pool_recycle=3600,  # Recycle connections every hour
+    echo=False,  # Set to True for query debugging
+    connect_args={
+        "connect_timeout": 10,
+        "application_name": "ai_social_media_agent"
+    }
     )
 
 # Add connection pool event listeners for monitoring

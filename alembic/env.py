@@ -31,13 +31,25 @@ target_metadata = Base.metadata
 # ... etc.
 
 def get_database_url():
-    """Get database URL from settings"""
-    # Force PostgreSQL in production to avoid SQLite fallback
-    if os.getenv('RENDER'):
-        return "postgresql://socialmedia:BbsIYQtjBnhKwRL3F9kXbv1wrtsVxuTg@dpg-d2ln7eer433s739509lg-a/socialmedia_uq72?sslmode=require"
+    """Get database URL - ALWAYS POSTGRESQL, NEVER SQLITE"""
+    # ALWAYS use PostgreSQL - no conditions, no fallbacks
+    postgresql_url = "postgresql://socialmedia:BbsIYQtjBnhKwRL3F9kXbv1wrtsVxuTg@dpg-d2ln7eer433s739509lg-a/socialmedia_uq72?sslmode=require"
     
-    settings = get_settings()
-    return settings.get_database_url()
+    # Try to get from environment or settings, but ALWAYS validate it's PostgreSQL
+    try:
+        settings = get_settings()
+        db_url = settings.get_database_url()
+        
+        # Reject SQLite completely
+        if "sqlite" in db_url.lower():
+            print("WARNING: SQLite detected in Alembic, forcing PostgreSQL")
+            return postgresql_url
+            
+        return db_url
+    except:
+        # Any error = use PostgreSQL
+        print("WARNING: Could not get database URL, using PostgreSQL")
+        return postgresql_url
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.

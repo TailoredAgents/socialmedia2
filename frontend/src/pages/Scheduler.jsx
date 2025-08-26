@@ -288,7 +288,7 @@ export default function Scheduler() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            {viewMode === 'week' ? `Week of ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}` : `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
+            {viewMode === 'week' ? `Week of ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}` : `Month of ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
           </h2>
           <p className="text-sm text-gray-600">
             {viewMode === 'week' ? 'Drag and drop to reschedule posts • Colored dots show optimal times' : 'Manage your content scheduler and scheduled posts'}
@@ -329,7 +329,7 @@ export default function Scheduler() {
               onClick={() => setCurrentDate(new Date())}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
             >
-              {viewMode === 'week' ? 'This Week' : 'Today'}
+              {viewMode === 'week' ? 'This Week' : 'This Month'}
             </button>
             <button
               onClick={() => navigateMonth(1)}

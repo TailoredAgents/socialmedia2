@@ -473,15 +473,7 @@ const DragDropCalendar = React.memo(function DragDropCalendar({ posts = [], onPo
     >
       <div className="space-y-6">
         {/* Enhanced Calendar Header with Bulk Actions */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              Week of {format(weekStart, 'MMMM d, yyyy')}
-            </h3>
-            <p className="text-sm text-gray-600">
-              Drag and drop to reschedule • Select posts for bulk actions • Colored dots show optimal times
-            </p>
-          </div>
+        <div className="flex items-center justify-end">
           <div className="flex items-center space-x-2">
             {/* Bulk Actions */}
             {selectedPosts.length > 0 && (

@@ -20,7 +20,7 @@ Enterprise AI Social Media Content Agent is a modular, scalable SaaS application
 - **Routing:** React Router v6
 
 ### Multi-Agent System (CrewAI)
-- **Research Sub-Agent:** Trend analysis using GPT-4o-mini + web scraping
+- **Research Sub-Agent:** Trend analysis using GPT-5 Mini + web scraping
 - **Content Generation Sub-Agent:** Text/image creation with OpenAI APIs
 - **Posting Sub-Agent:** Social platform integration and scheduling
 - **Optimizer Sub-Agent:** Performance analysis and iteration
@@ -49,7 +49,7 @@ Enterprise AI Social Media Content Agent is a modular, scalable SaaS application
 
 ## Technology Stack
 
-- **AI Models:** OpenAI GPT-4o-mini, gpt-image-1
+- **AI Models:** OpenAI GPT-5, GPT-5 Mini, gpt-image-1
 - **Search:** Serper API, BeautifulSoup, Tweepy
 - **Social APIs:** Twitter, , Instagram integration
 - **Monitoring:** Render metrics, structured logging

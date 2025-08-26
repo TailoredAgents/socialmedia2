@@ -30,7 +30,7 @@ Lily AI Social Media is a sophisticated, enterprise-grade platform that leverage
 
 ### 🚀 Key Features
 
-- **🤖 AI-Powered Content Generation**: OpenAI GPT with built-in web search and enhanced reasoning
+- **🤖 AI-Powered Content Generation**: OpenAI GPT-5 and GPT-5 Mini with built-in web search and enhanced reasoning
 - **📱 Multi-Platform Support**: Twitter/X, Instagram, Facebook
 - **📊 Advanced Analytics**: Real-time performance tracking and insights
 - **🔍 Enhanced Semantic Memory**: text-embedding-3-large with 3072-dimensional vectors for superior search accuracy
@@ -104,7 +104,7 @@ Before setting up the project, you'll need accounts and API access for the follo
 
 #### 🤖 AI Services
 - **OpenAI API** 
-  - GPT-4 access required for advanced content generation
+  - GPT-5 and GPT-5 Mini access required for advanced content generation
   - API key with sufficient credits
   - Pay-as-you-go pricing (see pricing section for details)
   - Source: https://openai.com/pricing
@@ -912,13 +912,13 @@ systemctl restart ai-social-media
 | **Total Estimated** | ~$0-20/month | ~$274-374/month** | ~$1,395+/month | |
 
 *OpenAI costs are usage-based and can vary significantly:
-- GPT-4 models: $0.01-0.06 per 1K tokens (varies by model)
-- GPT-3.5 Turbo: $0.0005-0.002 per 1K tokens
+- GPT-5 models: $0.02-0.08 per 1K tokens (varies by model)
+- GPT-5 Mini: $0.001-0.005 per 1K tokens
 - Text embeddings: $0.0001 per 1K tokens
 - Costs depend heavily on usage volume and model selection
 
 **Budget-Friendly Setup**: 
-- Start with X Free tier + OpenAI GPT-3.5 + local development = ~$20-50/month
+- Start with X Free tier + OpenAI GPT-5 Mini + local development = ~$20-50/month
 - Basic production setup with X Basic tier = ~$250-350/month
 
 **Note: X API pricing increased significantly in 2024. The Basic tier now costs $200/month (previously $100).
@@ -1056,7 +1056,7 @@ This software is protected under:
 
 ## 🙏 Acknowledgments
 
-- **OpenAI** for GPT-4 API and AI capabilities
+- **OpenAI** for GPT-5 and GPT-5 Mini API and AI capabilities
 - **Auth0** for authentication services
 - **FastAPI** for the high-performance backend framework
 - **React** for the modern frontend framework

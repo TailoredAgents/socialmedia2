@@ -417,7 +417,7 @@ class DeepResearchAgent:
             return None
     
     async def _analyze_content(self, content: str, topic: ResearchTopic, result: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """AI-powered content analysis using GPT-4o-Mini"""
+        """AI-powered content analysis using GPT-5 Mini"""
         prompt = f"""
         Analyze this content for relevance to the research topic and extract key insights.
         
@@ -733,7 +733,7 @@ class DeepResearchAgent:
         try:
             # Use the old method as fallback
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini",  # Fallback to older model if GPT-5 mini fails
+                model="gpt-5-mini",  # Fallback to GPT-5 mini model
                 messages=[
                     {"role": "system", "content": "You are an expert research analyst and industry intelligence specialist. Provide thorough, accurate, and actionable insights."},
                     {"role": "user", "content": prompt}

@@ -547,54 +547,54 @@ class ApiService {
         searchParams.append(key, params[key])
       }
     })
-    return this.request(`/api/social-inbox/interactions?${searchParams}`)
+    return this.request(`/api/inbox/interactions?${searchParams}`)
   }
 
   async updateInteractionStatus(interactionId, status) {
-    return this.request(`/api/social-inbox/interactions/${interactionId}/status`, {
+    return this.request(`/api/inbox/interactions/${interactionId}/status`, {
       method: 'PATCH',
       body: { status }
     })
   }
 
   async generateInteractionResponse(interactionId, personalityStyle = 'professional') {
-    return this.request(`/api/social-inbox/interactions/${interactionId}/generate-response`, {
+    return this.request(`/api/inbox/interactions/${interactionId}/generate-response`, {
       method: 'POST',
       body: { personality_style: personalityStyle }
     })
   }
 
   async sendInteractionResponse(interactionId, responseText) {
-    return this.request(`/api/social-inbox/interactions/${interactionId}/respond`, {
+    return this.request(`/api/inbox/interactions/${interactionId}/respond`, {
       method: 'POST',
       body: { response_text: responseText }
     })
   }
 
   async getInboxStats() {
-    return this.request('/api/social-inbox/stats')
+    return this.request('/api/inbox/stats')
   }
 
   async getResponseTemplates() {
-    return this.request('/api/social-inbox/templates')
+    return this.request('/api/inbox/templates')
   }
 
   async createResponseTemplate(templateData) {
-    return this.request('/api/social-inbox/templates', {
+    return this.request('/api/inbox/templates', {
       method: 'POST',
       body: templateData
     })
   }
 
   async updateResponseTemplate(templateId, templateData) {
-    return this.request(`/api/social-inbox/templates/${templateId}`, {
+    return this.request(`/api/inbox/templates/${templateId}`, {
       method: 'PUT',
       body: templateData
     })
   }
 
   async deleteResponseTemplate(templateId) {
-    return this.request(`/api/social-inbox/templates/${templateId}`, {
+    return this.request(`/api/inbox/templates/${templateId}`, {
       method: 'DELETE'
     })
   }
@@ -606,25 +606,25 @@ class ApiService {
         searchParams.append(key, params[key])
       }
     })
-    return this.request(`/api/social-inbox/knowledge?${searchParams}`)
+    return this.request(`/api/inbox/knowledge?${searchParams}`)
   }
 
   async createCompanyKnowledge(knowledgeData) {
-    return this.request('/api/social-inbox/knowledge', {
+    return this.request('/api/inbox/knowledge', {
       method: 'POST',
       body: knowledgeData
     })
   }
 
   async updateCompanyKnowledge(knowledgeId, knowledgeData) {
-    return this.request(`/api/social-inbox/knowledge/${knowledgeId}`, {
+    return this.request(`/api/inbox/knowledge/${knowledgeId}`, {
       method: 'PUT',
       body: knowledgeData
     })
   }
 
   async deleteCompanyKnowledge(knowledgeId) {
-    return this.request(`/api/social-inbox/knowledge/${knowledgeId}`, {
+    return this.request(`/api/inbox/knowledge/${knowledgeId}`, {
       method: 'DELETE'
     })
   }

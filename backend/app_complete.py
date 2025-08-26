@@ -98,9 +98,10 @@ except ImportError as e:
     logger.warning(f"⚠️ Could not import image streaming router: {e}")
 
 try:
-    # For now, skip social inbox due to complex dependencies
-    logger.info("⚠️ Social inbox router temporarily disabled due to import complexity")
-except Exception as e:
+    from backend.api.social_inbox import router as social_inbox_router
+    app.include_router(social_inbox_router)
+    logger.info("✅ Social inbox router included")
+except ImportError as e:
     logger.warning(f"⚠️ Could not import social inbox router: {e}")
 
 try:

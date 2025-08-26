@@ -16,11 +16,11 @@ from fastapi import APIRouter, Request, HTTPException, Query, Depends
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
-from db.database import get_db
-from db.models import User, SocialPlatformConnection
-from services.facebook_webhook_handler import FacebookWebhookHandler, InstagramWebhookHandler
-from services.twitter_webhook_handler import TwitterWebhookHandler, TwitterV2WebhookHandler
-from services.social_webhook_service import get_webhook_service
+from backend.db.database import get_db
+from backend.db.models import User, SocialPlatformConnection
+from backend.services.facebook_webhook_handler import FacebookWebhookHandler, InstagramWebhookHandler
+from backend.services.twitter_webhook_handler import TwitterWebhookHandler, TwitterV2WebhookHandler
+from backend.services.social_webhook_service import get_webhook_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])

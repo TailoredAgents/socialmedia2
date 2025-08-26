@@ -13,15 +13,15 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 
-from db.database import get_db
-from db.models import (
+from backend.db.database import get_db
+from backend.db.models import (
     SocialInteraction, InteractionResponse, ResponseTemplate, 
     CompanyKnowledge, User, SocialPlatformConnection
 )
-from auth.dependencies import get_current_active_user
-from services.social_webhook_service import get_webhook_service
-from services.personality_response_engine import get_personality_engine
-from services.websocket_manager import websocket_service
+from backend.auth.dependencies import get_current_active_user
+from backend.services.social_webhook_service import get_webhook_service
+from backend.services.personality_response_engine import get_personality_engine
+from backend.services.websocket_manager import websocket_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/inbox", tags=["social-inbox"])

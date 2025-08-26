@@ -335,5 +335,16 @@ logger.info("Failed to load {} routers".format(len(failed_routers)))
 logger.info("Total routes: {}".format(len(app.routes)))
 logger.info("=" * 50)
 
+# Ensure database columns exist (production safety net)
+if environment == "production":
+    try:
+        from backend.db.ensure_columns import ensure_user_columns
+        logger.info("Checking database columns for production...")
+        ensure_user_columns()
+        logger.info("Database column check complete")
+    except Exception as e:
+        logger.error(f"Failed to ensure database columns: {e}")
+        # Don't crash the app, continue anyway
+
 # Export the app
 __all__ = ["app"]

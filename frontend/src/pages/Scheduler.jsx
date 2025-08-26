@@ -93,6 +93,41 @@ export default function Scheduler() {
     setCurrentDate(newDate)
   }
 
+  const navigateWeek = (direction) => {
+    const newDate = new Date(currentDate)
+    newDate.setDate(newDate.getDate() + (direction * 7))
+    setCurrentDate(newDate)
+  }
+
+  const navigate = (direction) => {
+    if (viewMode === 'week') {
+      navigateWeek(direction)
+    } else {
+      navigateMonth(direction)
+    }
+  }
+
+  const getWeekDateRange = (date) => {
+    const startOfWeek = new Date(date)
+    const dayOfWeek = startOfWeek.getDay()
+    startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek)
+    
+    const endOfWeek = new Date(startOfWeek)
+    endOfWeek.setDate(startOfWeek.getDate() + 6)
+    
+    const startMonth = monthNames[startOfWeek.getMonth()]
+    const endMonth = monthNames[endOfWeek.getMonth()]
+    const startDay = startOfWeek.getDate()
+    const endDay = endOfWeek.getDate()
+    const year = startOfWeek.getFullYear()
+    
+    if (startOfWeek.getMonth() === endOfWeek.getMonth()) {
+      return `Week of ${startMonth} ${startDay}-${endDay}, ${year}`
+    } else {
+      return `Week of ${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`
+    }
+  }
+
   // Load content data on component mount
   useEffect(() => {
     const loadContent = async () => {
@@ -288,7 +323,7 @@ export default function Scheduler() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            {viewMode === 'week' ? `Week of ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}` : `Month of ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
+            {viewMode === 'week' ? getWeekDateRange(currentDate) : `Month of ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
           </h2>
           <p className="text-sm text-gray-600">
             {viewMode === 'week' ? 'Drag and drop to reschedule posts • Colored dots show optimal times' : 'Manage your content scheduler and scheduled posts'}
@@ -320,7 +355,7 @@ export default function Scheduler() {
           {/* Navigation */}
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => navigateMonth(-1)}
+              onClick={() => navigate(-1)}
               className="p-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50"
             >
               <ChevronLeftIcon className="h-5 w-5" />
@@ -332,7 +367,7 @@ export default function Scheduler() {
               {viewMode === 'week' ? 'This Week' : 'This Month'}
             </button>
             <button
-              onClick={() => navigateMonth(1)}
+              onClick={() => navigate(1)}
               className="p-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50"
             >
               <ChevronRightIcon className="h-5 w-5" />

@@ -527,26 +527,6 @@ const DragDropCalendar = React.memo(function DragDropCalendar({ posts = [], onPo
                 </div>
               </div>
             )}
-            
-            {/* Navigation */}
-            <button
-              onClick={() => navigateWeek(-1)}
-              className="p-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50"
-            >
-              <ChevronLeftIcon className="h-5 w-5" />
-            </button>
-            <button
-              onClick={() => setCurrentDate(new Date())}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              This Week
-            </button>
-            <button
-              onClick={() => navigateWeek(1)}
-              className="p-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50"
-            >
-              <ChevronRightIcon className="h-5 w-5" />
-            </button>
           </div>
         </div>
 

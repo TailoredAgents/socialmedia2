@@ -18,6 +18,8 @@ def ensure_user_columns():
         # Core auth columns
         ('is_superuser', 'BOOLEAN DEFAULT FALSE'),
         ('is_verified', 'BOOLEAN DEFAULT FALSE'), 
+        ('is_active', 'BOOLEAN DEFAULT TRUE'),
+        ('auth_provider', 'VARCHAR(50) DEFAULT \'local\''),
         
         # Email verification columns (CRITICAL - missing these causes 500 errors)
         ('email_verified', 'BOOLEAN DEFAULT FALSE'),
@@ -28,12 +30,24 @@ def ensure_user_columns():
         ('password_reset_token', 'VARCHAR(255)'),
         ('password_reset_sent_at', 'TIMESTAMP'),
         
+        # Two-factor authentication columns
+        ('two_factor_enabled', 'BOOLEAN DEFAULT FALSE'),
+        ('two_factor_secret', 'VARCHAR(255)'),
+        ('two_factor_backup_codes', 'JSON'),
+        
+        # Multi-tenancy columns (CRITICAL - missing causes registration failures)
+        ('default_organization_id', 'VARCHAR(255)'),
+        
         # Subscription columns
         ('tier', 'VARCHAR(50) DEFAULT \'free\''),
         ('subscription_status', 'VARCHAR(50) DEFAULT \'free\''),
         ('subscription_end_date', 'TIMESTAMP'),
         ('stripe_customer_id', 'VARCHAR(255)'),
         ('stripe_subscription_id', 'VARCHAR(255)'),
+        
+        # Timestamps (commonly missing)
+        ('created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+        ('updated_at', 'TIMESTAMP'),
     ]
     
     try:

@@ -68,7 +68,7 @@ class NotificationSummary(BaseModel):
 
 # WebSocket endpoint for real-time notifications
 @router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket, user_id: int):
+async def websocket_endpoint(websocket: WebSocket, user_id: int = Query(...)):
     """WebSocket endpoint for real-time notifications"""
     try:
         # In a real app, you'd validate the user_id through authentication

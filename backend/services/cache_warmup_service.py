@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 from backend.services.redis_cache import redis_cache
 from backend.db.database_optimized import get_db_connection
-from backend.db.models import User, ContentItem, UserSettings
+from backend.db.models import User, ContentItem
 
 logger = logging.getLogger(__name__)
 

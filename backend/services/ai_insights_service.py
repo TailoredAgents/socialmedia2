@@ -75,66 +75,58 @@ class AIInsightsService:
             return await self._get_fallback_insights()
     
     async def _search_with_gpt(self, query: str, date_filter: str) -> List[Dict[str, Any]]:
-        """Search using GPT-5's native web search capabilities"""
+        """Search using GPT-5 mini's web search via Responses API"""
         try:
-            # Use the OpenAI Responses API with web_search tool
-            params = get_openai_completion_params(
-                model="gpt-5-mini",  # Using mini for faster search
-                max_tokens=1000,
-                temperature=0.5,
-                messages=[
-                    {"role": "system", "content": "You are a web search assistant. Return search results as structured data."},
-                    {"role": "user", "content": f"Search for: {query} (focus on content from the last 7 days)"}
+            # Use GPT-5 mini with web search via Responses API
+            response = await self.async_client.responses.create(
+                model="gpt-5-mini",
+                input=f"Search for recent AI agent industry news: {query}. Focus on content from the last 7 days. Provide structured results with titles, URLs, and summaries.",
+                tools=[
+                    {
+                        "type": "web_search"
+                    }
                 ]
             )
             
-            # Web search tool not supported - removed to prevent API errors
-            # Using GPT's knowledge base for insights instead
-            
-            response = await self.async_client.chat.completions.create(**params)
-            
             results = []
             
-            # Parse tool calls and extract web search results
-            if hasattr(response.choices[0].message, 'tool_calls') and response.choices[0].message.tool_calls:
-                for tool_call in response.choices[0].message.tool_calls:
-                    if tool_call.function.name == 'web_search':
-                        # Parse the search results from the tool call
-                        try:
-                            search_data = json.loads(tool_call.function.arguments) if isinstance(tool_call.function.arguments, str) else tool_call.function.arguments
-                            for item in search_data.get('results', []):
+            # Parse web search results from Responses API
+            if hasattr(response, 'tool_calls') and response.tool_calls:
+                for tool_call in response.tool_calls:
+                    if tool_call.type == 'web_search':
+                        # Extract search results from web search tool response
+                        if hasattr(tool_call, 'web_search') and hasattr(tool_call.web_search, 'results'):
+                            search_results = tool_call.web_search.results
+                            for item in search_results:
                                 results.append({
                                     'title': item.get('title', ''),
                                     'snippet': item.get('snippet', ''),
-                                    'link': item.get('url', item.get('link', '')),
-                                    'source': item.get('source', ''),
-                                    'date': item.get('date', ''),
-                                    'relevance_score': 0.9  # High relevance from GPT-5 search
+                                    'link': item.get('url', ''),
+                                    'source': item.get('source', 'web'),
+                                    'date': item.get('published_date', date_filter),
+                                    'relevance_score': 0.9  # High relevance from GPT-5 web search
                                 })
-                        except (json.JSONDecodeError, AttributeError) as e:
-                            logger.warning(f"Error parsing search results: {e}")
             
-            # If no tool calls, try to parse content as fallback
-            if not results and response.choices[0].message.content:
-                # Try to extract structured data from the response
-                content = response.choices[0].message.content
+            # If no tool results, parse from output text as fallback
+            if not results and hasattr(response, 'output_text'):
+                content = response.output_text
+                # Try to parse JSON from response if possible
                 try:
-                    # Attempt to parse as JSON
-                    parsed_results = json.loads(content)
-                    if isinstance(parsed_results, list):
-                        results = parsed_results
-                    elif isinstance(parsed_results, dict) and 'results' in parsed_results:
-                        results = parsed_results['results']
-                except:
-                    # If not JSON, create a single result from the content
+                    parsed_data = json.loads(content)
+                    if isinstance(parsed_data, list):
+                        results = parsed_data
+                    elif isinstance(parsed_data, dict) and 'results' in parsed_data:
+                        results = parsed_data['results']
+                except json.JSONDecodeError:
+                    # Create a single structured result from the content
                     if content and len(content) > 50:
                         results.append({
-                            'title': query,
-                            'snippet': content[:500],
+                            'title': f"AI Agent Industry Update: {query}",
+                            'snippet': content[:500] + "..." if len(content) > 500 else content,
                             'link': '',
-                            'source': 'GPT-5 Analysis',
+                            'source': 'GPT-5 Web Search',
                             'date': date_filter,
-                            'relevance_score': 0.7
+                            'relevance_score': 0.8
                         })
             
             return results

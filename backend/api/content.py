@@ -582,22 +582,19 @@ async def generate_content_ideas(
         Return as a JSON array of objects with keys: "idea", "reason", "format"
         """
         
-        # Use GPT-5 mini with web search for current trends
-        response = await client.chat.completions.create(
+        # Use GPT-5 mini with web search for current trends via Responses API
+        response = await client.responses.create(
             model="gpt-5-mini",
-            messages=[
+            input=f"You are an expert social media strategist. Use web search to find current trends and generate content ideas. {prompt}",
+            tools=[
                 {
-                    "role": "system", 
-                    "content": "You are an expert social media strategist with access to current trends and best practices. Use web search to incorporate timely and relevant information."
-                },
-                {"role": "user", "content": prompt}
+                    "type": "web_search"
+                }
             ],
-            # tools=[{"type": "web_search"}], # Web search tool not supported - removed to prevent API errors
-            temperature=0.8,  # Higher creativity for idea generation
-            max_tokens=1000
+            text={"verbosity": "medium"}
         )
         
-        content = response.choices[0].message.content
+        content = response.output_text if hasattr(response, 'output_text') else str(response)
         
         # Try to parse JSON response
         try:

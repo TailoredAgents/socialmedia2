@@ -678,26 +678,31 @@ class DeepResearchAgent:
             logger.error(f"Failed to generate content opportunities: {e}")
     
     async def _call_gpt5_mini_with_search(self, prompt: str, temperature: float = 0.7, use_web_search: bool = True) -> str:
-        """Call GPT-5 mini with built-in web search for research"""
+        """Call GPT-5 mini with web search via Responses API for research"""
         try:
-            messages = [
-                {"role": "system", "content": "You are an expert research analyst and industry intelligence specialist. Use web search when needed to provide current, thorough, accurate, and actionable insights with proper citations."},
-                {"role": "user", "content": prompt}
-            ]
-            
-            # Web search tool not supported - removed to prevent API errors
-            # Using knowledge-based research instead
-            tools = None
-            
-            response = self.client.chat.completions.create(
-                model=self.routine_research_model,
-                messages=messages,
-                tools=tools,
-                temperature=temperature,
-                max_tokens=4000
-            )
-            
-            return response.choices[0].message.content
+            if use_web_search:
+                # Use Responses API with web search
+                response = self.client.responses.create(
+                    model=self.routine_research_model,
+                    input=f"You are an expert research analyst. Use web search to provide current, thorough research on: {prompt}",
+                    tools=[
+                        {
+                            "type": "web_search"
+                        }
+                    ]
+                )
+                return response.output_text if hasattr(response, 'output_text') else str(response)
+            else:
+                # Fallback to Chat Completions without web search
+                response = self.client.chat.completions.create(
+                    model=self.routine_research_model,
+                    messages=[
+                        {"role": "system", "content": "You are an expert research analyst and industry intelligence specialist. Provide thorough, accurate, and actionable insights based on your knowledge."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_completion_tokens=4000
+                )
+                return response.choices[0].message.content
             
         except Exception as e:
             logger.error(f"GPT-5 mini call failed: {e}")
@@ -705,22 +710,22 @@ class DeepResearchAgent:
             return await self._call_research_model_fallback(prompt, temperature)
     
     async def _call_gpt5_deep_research(self, prompt: str, temperature: float = 0.7) -> str:
-        """Call GPT-5 full model with enhanced reasoning for deep research"""
+        """Call GPT-5 full model with enhanced reasoning and web search for deep research"""
         try:
-            response = self.client.chat.completions.create(
+            # Use Responses API with web search for deep research
+            response = self.client.responses.create(
                 model=self.deep_research_model,
-                messages=[
-                    {"role": "system", "content": "You are an expert research analyst conducting deep industry analysis. Use web search and reasoning to provide comprehensive, well-cited insights with strategic implications."},
-                    {"role": "user", "content": prompt}
+                input=f"Conduct deep industry analysis with comprehensive web research on: {prompt}. Provide well-cited insights with strategic implications.",
+                tools=[
+                    {
+                        "type": "web_search"
+                    }
                 ],
-                # tools=[{"type": "web_search"}], # Web search tool not supported
-                # temperature=temperature, # Temperature not supported for GPT-5 models
-                max_completion_tokens=6000,  # GPT-5 uses max_completion_tokens
-                reasoning_effort="high",  # Use enhanced reasoning for deep dives
-                verbosity="high"  # Comprehensive responses for deep research
+                reasoning={"effort": "high"},  # Use enhanced reasoning for deep dives
+                text={"verbosity": "high"}  # Comprehensive responses for deep research
             )
             
-            return response.choices[0].message.content
+            return response.output_text if hasattr(response, 'output_text') else str(response)
             
         except Exception as e:
             logger.error(f"GPT-5 deep research call failed: {e}")

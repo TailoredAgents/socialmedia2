@@ -265,15 +265,27 @@ async def generate_content(request: ContentGenerationRequest):
         Return ONLY the final content text under {max_chars} characters. No explanations.
         """
         
-        response = await client.chat.completions.create(
-            model="gpt-5",
-            messages=[{"role": "user", "content": prompt}],
-            # temperature=0.7, # Temperature not supported for GPT-5 models
-            max_completion_tokens=400,  # GPT-5 uses max_completion_tokens instead of max_tokens
-            # tools=[{"type": "web_search"}] # Web search tool not supported - removed to prevent API errors
-        )
-        
-        generated_content = response.choices[0].message.content.strip()
+        # Use web search for research-heavy platforms like LinkedIn and Twitter
+        if request.platform in ['linkedin', 'twitter']:
+            response = await client.responses.create(
+                model="gpt-5",
+                input=f"Generate social media content with current trends and information. {prompt}",
+                tools=[
+                    {
+                        "type": "web_search"
+                    }
+                ],
+                text={"verbosity": "low"}
+            )
+            generated_content = response.output_text if hasattr(response, 'output_text') else str(response)
+        else:
+            # Use regular Chat Completions for other platforms
+            response = await client.chat.completions.create(
+                model="gpt-5",
+                messages=[{"role": "user", "content": prompt}],
+                max_completion_tokens=400
+            )
+            generated_content = response.choices[0].message.content.strip()
         
         # Check character limit compliance
         if len(generated_content) > max_chars:

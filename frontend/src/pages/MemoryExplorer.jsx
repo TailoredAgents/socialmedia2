@@ -48,6 +48,7 @@ const platforms = [
 export default function MemoryExplorer() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedType, setSelectedType] = useState('all')
+  const [selectedCategory, setSelectedCategory] = useState('all') // Added missing selectedCategory state
   const [selectedPlatform, setSelectedPlatform] = useState('all')
   const [sortBy, setSortBy] = useState('created_at')
   const [selectedContent, setSelectedContent] = useState(null)

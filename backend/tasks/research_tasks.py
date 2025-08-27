@@ -283,13 +283,13 @@ def research_web_content(urls=None):
         }
 
 # ============================================================================
-# NEW: Deep Research Tasks with GPT-4o-Mini
+# NEW: Deep Research Tasks with GPT-5-mini Web Search
 # ============================================================================
 
 @celery_app.task(bind=True, max_retries=3, default_retry_delay=300)
 def execute_weekly_deep_research_task(self, industry: str):
     """
-    Celery task for executing weekly deep research using GPT-4o-Mini
+    Celery task for executing weekly deep research using GPT-5-mini with web search
     
     Args:
         industry: Target industry for research

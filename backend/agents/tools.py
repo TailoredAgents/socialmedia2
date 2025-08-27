@@ -141,17 +141,32 @@ class OpenAITool:
     def __init__(self):
         self.client = OpenAI(api_key=settings.openai_api_key)
     
-    def generate_text(self, prompt: str, model: str = "gpt-5-mini", max_tokens: int = 500) -> str:
-        """Generate text using OpenAI"""
+    def generate_text(self, prompt: str, model: str = "gpt-5-mini", max_tokens: int = 500, use_web_search: bool = False) -> str:
+        """Generate text using OpenAI with optional web search"""
         try:
-            params = get_openai_completion_params(
-                model=model,
-                max_tokens=max_tokens,
-                temperature=0.7,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            response = self.client.chat.completions.create(**params)
-            return response.choices[0].message.content
+            if use_web_search and model.startswith("gpt-5"):
+                # Use Responses API with web search for GPT-5 models
+                response = self.client.responses.create(
+                    model=model,
+                    input=f"Use web search for current information: {prompt}",
+                    tools=[
+                        {
+                            "type": "web_search"
+                        }
+                    ],
+                    text={"verbosity": "medium"}
+                )
+                return response.output_text if hasattr(response, 'output_text') else str(response)
+            else:
+                # Use Chat Completions for non-web search requests
+                params = get_openai_completion_params(
+                    model=model,
+                    max_tokens=max_tokens,
+                    temperature=0.7,
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                response = self.client.chat.completions.create(**params)
+                return response.choices[0].message.content
         except Exception as e:
             return f"Error generating text: {str(e)}"
     

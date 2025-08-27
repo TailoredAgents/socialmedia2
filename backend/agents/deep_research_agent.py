@@ -172,7 +172,7 @@ class DeepResearchAgent:
         """
         
         try:
-            response = await self._call_gpt4o_mini(prompt)
+            response = await self._call_gpt5_mini_with_search(prompt, use_web_search=True)
             topics_data = json.loads(response)
             
             topics = []
@@ -449,7 +449,7 @@ class DeepResearchAgent:
         """
         
         try:
-            response = await self._call_gpt4o_mini(prompt)
+            response = await self._call_gpt5_mini_with_search(prompt, use_web_search=True)
             analysis = json.loads(response)
             return analysis
         except Exception as e:

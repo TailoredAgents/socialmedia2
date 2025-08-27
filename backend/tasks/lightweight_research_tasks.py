@@ -1,6 +1,6 @@
 """
-Memory-optimized research tasks without CrewAI
-Replaces heavy CrewAI agents with lightweight OpenAI calls
+Memory-optimized research tasks using GPT-5-mini with web search
+Replaces heavy CrewAI agents with lightweight GPT-5 Responses API calls with real-time web search
 """
 import logging
 import asyncio
@@ -77,30 +77,32 @@ def lightweight_daily_research(self, topics=None):
         }
 
 async def _lightweight_topic_research(topic: str) -> Dict[str, Any]:
-    """Simple topic research without heavy agents"""
+    """Research topic using GPT-5-mini with web search via Responses API"""
     try:
-        # Use a single OpenAI call instead of full CrewAI agents
+        # Use GPT-5-mini with web search for current information
         client = AsyncOpenAI(api_key=settings.openai_api_key)
         
-        prompt = f"""Provide 3-5 key insights about current {topic}. Focus on:
-        1. Recent developments
-        2. Best practices
-        3. Actionable tips
+        prompt = f"""Use web search to provide 3-5 current insights about {topic}. Focus on:
+        1. Recent developments (last 30 days)
+        2. Current best practices
+        3. Actionable tips from industry leaders
         
-        Keep each insight concise (1-2 sentences)."""
+        Base your response on real, current web information. Keep each insight concise (1-2 sentences)."""
         
-        params = get_openai_completion_params(
-            model="gpt-4o-mini",
-            max_tokens=300,
-            temperature=0.7
+        # Use Responses API with web search tool
+        response = await client.responses.create(
+            model="gpt-5-mini",
+            input=prompt,
+            tools=[
+                {
+                    "type": "web_search"
+                }
+            ],
+            text={"verbosity": "low"}  # Concise responses for Celery tasks
         )
         
-        response = await client.chat.completions.create(
-            messages=[{"role": "user", "content": prompt}],
-            **params
-        )
-        
-        insights_text = response.choices[0].message.content
+        # Extract insights from response
+        insights_text = response.output_text if hasattr(response, 'output_text') else str(response)
         insights = [line.strip() for line in insights_text.split('\n') if line.strip()]
         
         return {
@@ -153,33 +155,35 @@ def lightweight_content_generation(self, research_insights: List[str], platform:
         }
 
 async def _generate_simple_content(insights: List[str], platform: str) -> str:
-    """Simple content generation without heavy agents"""
+    """Content generation using GPT-5-mini with web search for trends"""
     try:
         client = AsyncOpenAI(api_key=settings.openai_api_key)
         
         insights_text = "\n".join(insights[:3])  # Use only first 3 insights
         
-        prompt = f"""Based on these insights, create a {platform} post:
+        prompt = f"""Use web search to find current {platform} trends, then create a post based on these insights:
         {insights_text}
         
         Requirements:
+        - Research current viral {platform} formats
         - Engaging and professional tone
-        - Include 1-2 relevant hashtags
+        - Include 1-2 trending hashtags
         - Keep within {platform} character limits
-        - Make it actionable"""
+        - Make it actionable and timely"""
         
-        params = get_openai_completion_params(
-            model="gpt-4o-mini",
-            max_tokens=150,
-            temperature=0.8
+        # Use Responses API with web search for trending content
+        response = await client.responses.create(
+            model="gpt-5-mini",
+            input=prompt,
+            tools=[
+                {
+                    "type": "web_search"
+                }
+            ],
+            text={"verbosity": "low"}  # Concise for social media
         )
         
-        response = await client.chat.completions.create(
-            messages=[{"role": "user", "content": prompt}],
-            **params
-        )
-        
-        return response.choices[0].message.content.strip()
+        return response.output_text.strip() if hasattr(response, 'output_text') else str(response).strip()
         
     except Exception as e:
         logger.error(f"Simple content generation failed: {e}")

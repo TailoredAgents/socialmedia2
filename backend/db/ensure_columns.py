@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def ensure_content_logs_table():
     """
-    Ensure content_logs table exists with all required columns
+    Ensure content_logs table exists with all required columns and proper foreign key constraints
     """
     try:
         with engine.connect() as conn:
@@ -24,21 +24,23 @@ def ensure_content_logs_table():
             if not result:
                 logger.info("Creating missing content_logs table...")
                 
-                # Create content_logs table based on models.py
+                # Create content_logs table based on models.py with explicit foreign key
                 conn.execute(text("""
                     CREATE TABLE content_logs (
                         id SERIAL PRIMARY KEY,
-                        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        user_id INTEGER NOT NULL,
                         platform VARCHAR NOT NULL,
                         content TEXT NOT NULL,
                         content_type VARCHAR NOT NULL,
-                        metadata JSON,
-                        scheduled_time TIMESTAMP,
-                        published_at TIMESTAMP,
                         status VARCHAR DEFAULT 'draft',
-                        engagement_score FLOAT DEFAULT 0.0,
+                        engagement_data JSON DEFAULT '{}',
+                        scheduled_for TIMESTAMP,
+                        published_at TIMESTAMP,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TIMESTAMP
+                        updated_at TIMESTAMP,
+                        platform_post_id VARCHAR,
+                        external_post_id VARCHAR,
+                        CONSTRAINT fk_content_logs_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                     )
                 """))
                 
@@ -47,11 +49,39 @@ def ensure_content_logs_table():
                 conn.execute(text("CREATE INDEX IF NOT EXISTS ix_content_logs_platform ON content_logs (platform)"))
                 conn.execute(text("CREATE INDEX IF NOT EXISTS ix_content_logs_status ON content_logs (status)"))
                 conn.execute(text("CREATE INDEX IF NOT EXISTS ix_content_logs_created_at ON content_logs (created_at)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_content_logs_external_post_id ON content_logs (external_post_id)"))
                 
                 conn.commit()
-                logger.info("✅ Successfully created content_logs table")
+                logger.info("✅ Successfully created content_logs table with foreign key constraints")
             else:
                 logger.info("✅ Content_logs table already exists")
+                
+                # Check if foreign key constraint exists
+                fk_check = conn.execute(text("""
+                    SELECT COUNT(*) 
+                    FROM information_schema.table_constraints tc
+                    JOIN information_schema.key_column_usage kcu 
+                        ON tc.constraint_name = kcu.constraint_name
+                    WHERE tc.constraint_type = 'FOREIGN KEY'
+                        AND tc.table_name = 'content_logs'
+                        AND kcu.column_name = 'user_id'
+                        AND kcu.referenced_table_name = 'users'
+                        AND kcu.referenced_column_name = 'id'
+                """)).scalar()
+                
+                if fk_check == 0:
+                    logger.info("Adding missing foreign key constraint to content_logs table...")
+                    try:
+                        conn.execute(text("""
+                            ALTER TABLE content_logs 
+                            ADD CONSTRAINT fk_content_logs_user_id 
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        """))
+                        conn.commit()
+                        logger.info("✅ Successfully added foreign key constraint to content_logs")
+                    except Exception as fk_error:
+                        logger.warning(f"Could not add foreign key constraint: {fk_error}")
+                        conn.rollback()
                 
     except Exception as e:
         logger.error(f"❌ Error ensuring content_logs table: {e}")

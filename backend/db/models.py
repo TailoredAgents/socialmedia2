@@ -51,13 +51,13 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    # Relationships
-    content_logs = relationship("ContentLog", back_populates="user")
-    metrics = relationship("Metric", back_populates="user")
-    user_settings = relationship("UserSetting", back_populates="user", uselist=False)
-    goals = relationship("Goal", back_populates="user")
-    workflow_executions = relationship("WorkflowExecution", back_populates="user")
-    notifications = relationship("Notification", back_populates="user")
+    # Relationships with explicit foreign keys
+    content_logs = relationship("ContentLog", back_populates="user", foreign_keys="ContentLog.user_id")
+    metrics = relationship("Metric", back_populates="user", foreign_keys="Metric.user_id")
+    user_settings = relationship("UserSetting", back_populates="user", uselist=False, foreign_keys="UserSetting.user_id")
+    goals = relationship("Goal", back_populates="user", foreign_keys="Goal.user_id")
+    workflow_executions = relationship("WorkflowExecution", back_populates="user", foreign_keys="WorkflowExecution.user_id")
+    notifications = relationship("Notification", back_populates="user", foreign_keys="Notification.user_id")
     
     # Multi-tenancy relationships
     default_organization = relationship("Organization", foreign_keys=[default_organization_id])

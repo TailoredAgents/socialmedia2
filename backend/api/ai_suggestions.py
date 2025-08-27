@@ -61,35 +61,57 @@ async def analyze_user_context(user: User, db: Session, suggestion_type: str) ->
     }
     
     try:
-        # Get user settings for personalization
-        user_settings = db.query(UserSetting).filter(UserSetting.user_id == user.id).first()
-        if user_settings:
-            context["preferred_platforms"] = user_settings.preferred_platforms or ["twitter", "instagram"]
-            context["brand_voice"] = user_settings.brand_voice or "professional"
-            context["creativity_level"] = user_settings.creativity_level or 0.7
+        # Get user settings for personalization (with fallback if table doesn't exist)
+        try:
+            user_settings = db.query(UserSetting).filter(UserSetting.user_id == user.id).first()
+            if user_settings:
+                context["preferred_platforms"] = user_settings.preferred_platforms or ["twitter", "instagram"]
+                context["brand_voice"] = user_settings.brand_voice or "professional"
+                context["creativity_level"] = user_settings.creativity_level or 0.7
+        except Exception as settings_error:
+            # Handle case where user_settings table doesn't exist yet
+            logger.warning(f"UserSettings table not accessible, using defaults: {settings_error}")
+            context["preferred_platforms"] = ["twitter", "instagram"]
+            context["brand_voice"] = "professional"
+            context["creativity_level"] = 0.7
         
-        # Analyze content history (with limits for performance)
-        content_count = db.query(Content).filter(Content.user_id == user.id).limit(1000).count()
-        context["content_count"] = min(content_count, 999)  # Cap at 999 for display
-        context["has_content"] = content_count > 0
+        # Analyze content history (with limits for performance and error handling)
+        try:
+            content_count = db.query(Content).filter(Content.user_id == user.id).limit(1000).count()
+            context["content_count"] = min(content_count, 999)  # Cap at 999 for display
+            context["has_content"] = content_count > 0
+        except Exception:
+            context["content_count"] = 0
+            context["has_content"] = False
         
         # Check for recent content (last 7 days, limited query)
-        week_ago = datetime.utcnow() - timedelta(days=7)
-        recent_content = db.query(Content).filter(
-            Content.user_id == user.id,
-            Content.created_at >= week_ago
-        ).limit(100).count()
-        context["recent_activity"] = recent_content > 0
+        try:
+            week_ago = datetime.utcnow() - timedelta(days=7)
+            recent_content = db.query(Content).filter(
+                Content.user_id == user.id,
+                Content.created_at >= week_ago
+            ).limit(100).count()
+            context["recent_activity"] = recent_content > 0
+        except Exception:
+            context["recent_activity"] = False
         
         # Analyze goals (limited for performance)
-        goal_count = db.query(Goal).filter(Goal.user_id == user.id).limit(50).count()
-        context["goal_count"] = min(goal_count, 50)
-        context["has_goals"] = goal_count > 0
+        try:
+            goal_count = db.query(Goal).filter(Goal.user_id == user.id).limit(50).count()
+            context["goal_count"] = min(goal_count, 50)
+            context["has_goals"] = goal_count > 0
+        except Exception:
+            context["goal_count"] = 0
+            context["has_goals"] = False
         
         # Analyze memories/brand brain (limited for performance) 
-        memory_count = db.query(Memory).filter(Memory.user_id == user.id).limit(100).count()
-        context["memory_count"] = min(memory_count, 100)
-        context["has_memories"] = memory_count > 0
+        try:
+            memory_count = db.query(Memory).filter(Memory.user_id == user.id).limit(100).count()
+            context["memory_count"] = min(memory_count, 100)
+            context["has_memories"] = memory_count > 0
+        except Exception:
+            context["memory_count"] = 0
+            context["has_memories"] = False
         
     except Exception as e:
         logger.warning(f"Error analyzing user context: {e}")
@@ -157,11 +179,40 @@ Make suggestions specific to their experience level and current situation. For n
         
         ai_response = response.choices[0].message.content
         
-        # Parse AI response
+        # Parse AI response with robust error handling
         import json
-        suggestions_data = json.loads(ai_response.strip())
+        import re
         
-        return suggestions_data
+        if not ai_response or not ai_response.strip():
+            logger.warning("Empty AI response received")
+            return []
+            
+        try:
+            # Clean the response - sometimes AI returns text before/after JSON
+            cleaned_response = ai_response.strip()
+            
+            # Try to extract JSON array from the response
+            json_match = re.search(r'\[.*\]', cleaned_response, re.DOTALL)
+            if json_match:
+                json_text = json_match.group(0)
+                suggestions_data = json.loads(json_text)
+                
+                # Validate that it's a list
+                if isinstance(suggestions_data, list):
+                    return suggestions_data
+                else:
+                    logger.warning(f"AI returned non-list JSON: {type(suggestions_data)}")
+                    return []
+            else:
+                logger.warning(f"No JSON array found in AI response: {cleaned_response[:200]}...")
+                return []
+                
+        except json.JSONDecodeError as e:
+            logger.warning(f"Failed to parse AI suggestions JSON: {e}. Response: {ai_response[:200]}...")
+            return []
+        except Exception as e:
+            logger.warning(f"Unexpected error parsing AI response: {e}")
+            return []
         
     except Exception as e:
         logger.error(f"Error generating AI suggestions (timeout or API issue): {e}")

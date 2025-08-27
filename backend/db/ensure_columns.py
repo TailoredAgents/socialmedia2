@@ -239,7 +239,7 @@ def ensure_social_inbox_tables():
                 logger.info("Creating social_interactions table...")
                 conn.execute(text("""
                     CREATE TABLE social_interactions (
-                        id SERIAL PRIMARY KEY,
+                        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid()::text,
                         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                         connection_id INTEGER REFERENCES social_platform_connections(id),
                         platform VARCHAR NOT NULL,
@@ -290,7 +290,7 @@ def ensure_social_inbox_tables():
                 logger.info("Creating response_templates table...")
                 conn.execute(text("""
                     CREATE TABLE response_templates (
-                        id SERIAL PRIMARY KEY,
+                        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid()::text,
                         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                         name VARCHAR NOT NULL,
                         description TEXT,
@@ -330,13 +330,13 @@ def ensure_social_inbox_tables():
                 logger.info("Creating interaction_responses table...")
                 conn.execute(text("""
                     CREATE TABLE interaction_responses (
-                        id SERIAL PRIMARY KEY,
-                        interaction_id INTEGER NOT NULL REFERENCES social_interactions(id) ON DELETE CASCADE,
+                        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid()::text,
+                        interaction_id VARCHAR NOT NULL REFERENCES social_interactions(id) ON DELETE CASCADE,
                         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                         response_text TEXT NOT NULL,
                         media_urls JSON DEFAULT '[]',
                         response_type VARCHAR DEFAULT 'manual',
-                        template_id INTEGER REFERENCES response_templates(id),
+                        template_id VARCHAR REFERENCES response_templates(id),
                         ai_confidence_score FLOAT DEFAULT 0.0,
                         platform VARCHAR NOT NULL,
                         platform_response_id VARCHAR,
@@ -512,10 +512,10 @@ def _fix_existing_social_inbox_schemas(conn):
     try:
         # Check if tables exist with wrong schema and drop them
         tables_to_check = [
-            ('response_templates', 'id', 'character varying'),  # Should be integer
-            ('social_interactions', 'id', 'character varying'),  # Should be integer  
-            ('interaction_responses', 'id', 'character varying'),  # Should be integer
-            ('interaction_responses', 'template_id', 'character varying'),  # Should be integer
+            ('response_templates', 'id', 'integer'),  # Should be VARCHAR (UUID)
+            ('social_interactions', 'id', 'integer'),  # Should be VARCHAR (UUID)
+            ('interaction_responses', 'id', 'integer'),  # Should be VARCHAR (UUID)
+            ('interaction_responses', 'template_id', 'integer'),  # Should be VARCHAR (UUID)
         ]
         
         for table_name, column_name, wrong_type in tables_to_check:

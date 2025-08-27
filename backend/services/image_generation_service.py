@@ -25,12 +25,14 @@ class ImageGenerationService:
     """
     
     def __init__(self):
-        # Use OpenAI for enhanced image generation with Responses API
+        # Use xAI Grok for image generation
         self.client = OpenAI(
-            api_key=settings.openai_api_key
+            api_key=settings.xai_api_key,
+            base_url="https://api.x.ai/v1"
         )
         self.async_client = AsyncOpenAI(
-            api_key=settings.openai_api_key
+            api_key=settings.xai_api_key,
+            base_url="https://api.x.ai/v1"
         )
         
         # Platform-specific optimization prompts
@@ -132,40 +134,36 @@ class ImageGenerationService:
             if custom_options:
                 tool_options.update(custom_options)
             
-            # Use xAI Grok-2 for image generation via OpenAI-compatible API
-            response = await self.async_client.responses.create(
-                model="grok-2-image",  # Use Grok-2 image model exclusively
-                messages=[
-                    {
-                        "role": "user",
-                        "content": f"Generate an image for social media with this description: {enhanced_prompt}"
-                    }
-                ],
-                tools=[
-                    {
-                        "type": "image_generation",
-                        "image_generation": {
-                            "size": "1024x1024",
-                            "quality": "standard"
-                        }
-                    }
-                ],
-                stream=False  # Can be set to True for real-time streaming in future
+            # Use xAI for image generation - trying the correct API format
+            response = await self.async_client.images.generate(
+                model="grok-2-image",
+                prompt=enhanced_prompt,
+                size=tool_options.get("size", "1024x1024"),
+                quality=tool_options.get("quality", "standard"),
+                n=1
             )
             
-            # Extract base64 image data from Responses API
-            if not response.content or not response.content.tool_calls:
-                raise Exception("No tool calls returned from OpenAI Responses API")
+            # Extract image data from xAI response
+            if not response.data or len(response.data) == 0:
+                raise Exception("No image data returned from xAI Grok image generation")
             
-            # Find the image generation tool call result
-            image_base64 = None
-            for tool_call in response.content.tool_calls:
-                if tool_call.type == "image_generation":
-                    image_base64 = tool_call.image_generation.b64_json
-                    break
+            # Get the generated image
+            image_data = response.data[0]
             
-            if not image_base64:
-                raise Exception("No image data returned from OpenAI image generation tool")
+            # Check if we get a URL or base64 data
+            if hasattr(image_data, 'b64_json') and image_data.b64_json:
+                image_base64 = image_data.b64_json
+            elif hasattr(image_data, 'url') and image_data.url:
+                # Download image and convert to base64
+                import httpx
+                async with httpx.AsyncClient() as client:
+                    img_response = await client.get(image_data.url)
+                    if img_response.status_code == 200:
+                        image_base64 = base64.b64encode(img_response.content).decode('utf-8')
+                    else:
+                        raise Exception(f"Failed to download generated image: {img_response.status_code}")
+            else:
+                raise Exception("No valid image data format returned from xAI")
             
             # Generate unique filename and ID
             image_id = str(uuid.uuid4())
@@ -175,7 +173,7 @@ class ImageGenerationService:
             return {
                 "status": "success",
                 "image_id": image_id,
-                "response_id": image_id,  # Use our generated ID since DALL-E doesn't provide one
+                "response_id": image_id,  # Use our generated ID
                 "image_base64": image_base64,
                 "image_data_url": f"data:image/png;base64,{image_base64}",
                 "filename": filename,

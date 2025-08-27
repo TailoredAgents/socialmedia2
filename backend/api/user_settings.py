@@ -12,6 +12,7 @@ import logging
 from backend.db.database import get_db
 from backend.db.models import User, UserSetting
 from backend.core.security import JWTHandler
+from backend.auth.dependencies import get_current_active_user
 
 logger = logging.getLogger(__name__)
 

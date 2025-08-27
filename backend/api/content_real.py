@@ -5,9 +5,10 @@ IMPORTANT: This file contains ONLY real AI-powered functionality.
 NO MOCK DATA OR FALLBACKS ARE ALLOWED IN THIS FILE.
 All responses must be genuine AI-generated content or proper error handling with Lily messages.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
+from sqlalchemy.orm import Session
 import logging
 from datetime import datetime
 import uuid
@@ -15,6 +16,9 @@ import uuid
 from backend.services.image_generation_service import ImageGenerationService
 from backend.services.ai_insights_service import ai_insights_service
 from backend.services.twitter_service import twitter_service
+from backend.auth.dependencies import get_current_active_user
+from backend.db.database import get_db
+from backend.db.models import User
 
 router = APIRouter(prefix="/api/content", tags=["content"])
 logger = logging.getLogger(__name__)

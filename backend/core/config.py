@@ -16,10 +16,28 @@ def get_utc_now() -> datetime:
 # Load environment variables from .env file
 load_dotenv()
 
+def _detect_environment() -> str:
+    """Detect environment with proper logic and clear fallbacks"""
+    # 1. Check explicit ENVIRONMENT variable first
+    explicit_env = os.getenv("ENVIRONMENT", "").lower().strip()
+    if explicit_env in ["production", "staging", "development"]:
+        return explicit_env
+    
+    # 2. Check for Render deployment (production indicator)
+    if os.getenv("RENDER"):
+        return "production"
+    
+    # 3. Check for other production indicators
+    if any(os.getenv(var) for var in ["RAILWAY_ENVIRONMENT", "HEROKU_APP_NAME", "FLY_APP_NAME"]):
+        return "production"
+    
+    # 4. Default to development for local/unknown environments
+    return "development"
+
 class Settings(BaseSettings):
-    # Environment - Auto-detect production on Render
-    environment: str = os.getenv("ENVIRONMENT", os.getenv("RENDER", "development") and "production" or "development")
-    debug: bool = os.getenv("ENVIRONMENT", "").lower() != "production"
+    # Environment - Proper detection with clear fallbacks
+    environment: str = Field(default_factory=lambda: _detect_environment())
+    debug: bool = Field(default_factory=lambda: _detect_environment() != "production")
     
     # API Keys
     openai_api_key: str = ""

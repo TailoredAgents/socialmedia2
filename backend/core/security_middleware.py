@@ -64,7 +64,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             )
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Simple in-memory rate limiting middleware"""
+    """Redis-backed rate limiting middleware for production scalability"""
     
     def __init__(self, app, 
                  requests_per_minute: int = 60, 
@@ -75,10 +75,24 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.requests_per_hour = requests_per_hour
         self.burst_limit = burst_limit
         
-        # In-memory storage (for production, use Redis)
-        self.minute_counts: Dict[str, deque] = defaultdict(deque)
-        self.hour_counts: Dict[str, deque] = defaultdict(deque)
-        self.burst_counts: Dict[str, List[float]] = defaultdict(list)
+        # Try to use Redis for distributed rate limiting
+        self.use_redis = False
+        self.redis_client = None
+        
+        try:
+            import redis
+            redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+            self.redis_client = redis.Redis.from_url(redis_url, decode_responses=True)
+            # Test connection
+            self.redis_client.ping()
+            self.use_redis = True
+            logger.info("Rate limiting using Redis for distributed storage")
+        except Exception as e:
+            logger.warning(f"Redis unavailable, falling back to in-memory rate limiting: {e}")
+            # Fallback to in-memory storage
+            self.minute_counts: Dict[str, deque] = defaultdict(deque)
+            self.hour_counts: Dict[str, deque] = defaultdict(deque)
+            self.burst_counts: Dict[str, List[float]] = defaultdict(list)
         
     def _get_limit_for_type(self, limit_type: str) -> int:
         """Get the limit value for a given limit type"""
@@ -106,8 +120,74 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Fallback to direct connection
         return request.client.host if request.client else "unknown"
     
-    def is_rate_limited(self, client_ip: str) -> Optional[Dict[str, Any]]:
-        """Check if client is rate limited"""
+    def _redis_rate_check(self, client_ip: str) -> Optional[Dict[str, Any]]:
+        """Redis-based rate limiting check"""
+        if not self.use_redis:
+            return self._memory_rate_check(client_ip)
+        
+        try:
+            now = time.time()
+            current_minute = int(now // 60)
+            current_hour = int(now // 3600)
+            
+            # Redis keys for different time windows
+            burst_key = f"rate_limit:{client_ip}:burst"
+            minute_key = f"rate_limit:{client_ip}:minute:{current_minute}"
+            hour_key = f"rate_limit:{client_ip}:hour:{current_hour}"
+            
+            # Check burst limit (sliding window of 10 seconds)
+            burst_count = self.redis_client.zcard(burst_key)
+            if burst_count >= self.burst_limit:
+                return {
+                    "limit_type": "burst", 
+                    "retry_after": 10,
+                    "message": f"Burst limit exceeded: max {self.burst_limit} requests per 10 seconds"
+                }
+            
+            # Check minute limit
+            minute_count = self.redis_client.get(minute_key) or 0
+            if int(minute_count) >= self.requests_per_minute:
+                return {
+                    "limit_type": "minute",
+                    "retry_after": 60,
+                    "message": f"Rate limit exceeded: max {self.requests_per_minute} requests per minute"
+                }
+            
+            # Check hour limit
+            hour_count = self.redis_client.get(hour_key) or 0
+            if int(hour_count) >= self.requests_per_hour:
+                return {
+                    "limit_type": "hour",
+                    "retry_after": 3600,
+                    "message": f"Rate limit exceeded: max {self.requests_per_hour} requests per hour"
+                }
+            
+            # Record this request in Redis
+            pipe = self.redis_client.pipeline()
+            
+            # Burst counter (sliding window)
+            pipe.zadd(burst_key, {str(now): now})
+            pipe.zremrangebyscore(burst_key, 0, now - 10)  # Remove entries older than 10 seconds
+            pipe.expire(burst_key, 15)  # Expire key after 15 seconds
+            
+            # Minute counter
+            pipe.incr(minute_key)
+            pipe.expire(minute_key, 70)  # Expire after 70 seconds
+            
+            # Hour counter  
+            pipe.incr(hour_key)
+            pipe.expire(hour_key, 3700)  # Expire after ~1 hour
+            
+            pipe.execute()
+            
+            return None  # Not rate limited
+            
+        except Exception as e:
+            logger.warning(f"Redis rate limiting failed, falling back to memory: {e}")
+            return self._memory_rate_check(client_ip)
+    
+    def _memory_rate_check(self, client_ip: str) -> Optional[Dict[str, Any]]:
+        """Memory-based rate limiting fallback"""
         now = time.time()
         current_minute = int(now // 60)
         current_hour = int(now // 3600)
@@ -162,8 +242,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             
             client_ip = self.get_client_ip(request)
             
-            # Check rate limits
-            limit_info = self.is_rate_limited(client_ip)
+            # Check rate limits (uses Redis if available, falls back to memory)
+            limit_info = self._redis_rate_check(client_ip)
             if limit_info:
                 logger.warning(f"Rate limit exceeded for {client_ip}: {limit_info['message']}")
                 

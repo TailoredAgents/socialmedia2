@@ -7,6 +7,7 @@ from . import (
     admin,
     two_factor,
     user_credentials,
+    user_settings,  # User preferences and configuration
     content,
     goals,
     memory,
@@ -37,6 +38,7 @@ ROUTERS = [
     two_factor.router,  # Two-Factor Authentication endpoints
     admin.router,  # Admin authentication and management system
     user_credentials.router,  # User social media credentials management
+    user_settings.router,  # User preferences and configuration
     content.router,
     goals.router,
     memory.router,

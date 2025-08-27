@@ -347,37 +347,22 @@ logger.info("Failed to load {} routers".format(len(failed_routers)))
 logger.info("Total routes: {}".format(len(app.routes)))
 logger.info("=" * 50)
 
-# Run database migrations and ensure schema (production safety net)
-if environment == "production":
-    try:
-        # Run Alembic migrations first
-        import subprocess
-        import sys
-        import os
-        
-        logger.info("Running database migrations...")
-        result = subprocess.run([
-            sys.executable, "-m", "alembic", "upgrade", "head"
-        ], capture_output=True, text=True, cwd=os.getcwd())
-        
-        if result.returncode == 0:
-            logger.info("✅ Database migrations completed successfully")
-        else:
-            logger.warning(f"⚠️ Migration warnings/errors: {result.stderr}")
-            logger.info("Continuing with schema safety net...")
-        
-        # Safety net for any missing columns/tables
-        from backend.db.ensure_columns import ensure_user_columns, ensure_notifications_table, ensure_content_logs_table, ensure_social_inbox_tables
-        logger.info("Checking database schema safety net...")
-        ensure_user_columns()
-        ensure_notifications_table()
-        ensure_content_logs_table()
-        ensure_social_inbox_tables()
-        logger.info("Database schema validation complete")
-        
-    except Exception as e:
-        logger.error(f"Failed to run migrations/ensure schema: {e}")
-        # Don't crash the app, continue anyway
+# Database schema safety net (migrations should be run separately)
+try:
+    from backend.db.ensure_columns import ensure_user_columns, ensure_notifications_table, ensure_content_logs_table, ensure_social_inbox_tables
+    logger.info("Running database schema safety net...")
+    
+    # Only run safety net for critical tables
+    ensure_user_columns()
+    ensure_notifications_table() 
+    ensure_content_logs_table()
+    ensure_social_inbox_tables()
+    
+    logger.info("✅ Database schema safety net completed")
+    
+except Exception as e:
+    logger.warning(f"⚠️ Schema safety net warnings: {e}")
+    logger.info("App will continue - database tables may need manual creation")
 
 # Export the app
 __all__ = ["app"]

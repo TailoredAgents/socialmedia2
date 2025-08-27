@@ -126,6 +126,12 @@ def setup_logging(
         file_handler.addFilter(context_filter)
         root_logger.addHandler(file_handler)
     
+    # Add monitoring handler for production error tracking
+    if os.getenv("ENVIRONMENT", "development") == "production":
+        monitoring_handler = MonitoringLogHandler()
+        monitoring_handler.setLevel(logging.ERROR)  # Only ERROR and above
+        root_logger.addHandler(monitoring_handler)
+    
     # Setup specific loggers
     setup_application_loggers(level)
     
@@ -366,3 +372,86 @@ def log_health_check(
             "type": "health_check"
         }
     )
+
+def _send_to_monitoring(log_record: Dict[str, Any]) -> None:
+    """
+    Send log records to external monitoring systems (Sentry, DataDog, etc.)
+    
+    This function integrates with monitoring services to provide centralized
+    log aggregation and alerting for production deployments.
+    """
+    try:
+        # Sentry integration for error tracking
+        if log_record.get("level") in ["ERROR", "CRITICAL"] and log_record.get("exception"):
+            try:
+                import sentry_sdk
+                sentry_sdk.capture_exception(
+                    Exception(log_record["message"]),
+                    extra={
+                        "logger": log_record.get("logger"),
+                        "module": log_record.get("module"),
+                        "function": log_record.get("function"),
+                        "user_id": log_record.get("user_id"),
+                        "request_id": log_record.get("request_id")
+                    }
+                )
+            except ImportError:
+                pass  # Sentry not configured
+        
+        # DataDog logs integration (example)
+        try:
+            import os
+            if os.getenv("DATADOG_API_KEY"):
+                # Would integrate with DataDog logs API here
+                pass
+        except ImportError:
+            pass
+        
+        # Custom webhook integration
+        webhook_url = os.getenv("LOG_MONITORING_WEBHOOK")
+        if webhook_url and log_record.get("level") in ["ERROR", "CRITICAL"]:
+            try:
+                import requests
+                requests.post(webhook_url, json=log_record, timeout=5)
+            except Exception:
+                pass  # Don't fail on monitoring errors
+        
+    except Exception:
+        # Never let monitoring interfere with application logging
+        pass
+
+class MonitoringLogHandler(logging.Handler):
+    """Custom log handler that sends critical logs to monitoring systems"""
+    
+    def emit(self, record: logging.LogRecord):
+        """Send log record to monitoring systems"""
+        try:
+            # Convert LogRecord to dict
+            log_data = {
+                "timestamp": datetime.utcfromtimestamp(record.created).isoformat() + "Z",
+                "level": record.levelname,
+                "logger": record.name,
+                "message": record.getMessage(),
+                "module": record.module,
+                "function": record.funcName,
+                "line": record.lineno,
+                "thread": record.thread,
+                "process": record.process
+            }
+            
+            # Add exception info if present
+            if record.exc_info:
+                log_data["exception"] = self.format(record)
+            
+            # Add extra fields
+            for attr in ['user_id', 'request_id', 'duration', 'status_code', 'endpoint']:
+                if hasattr(record, attr):
+                    log_data[attr] = getattr(record, attr)
+            
+            # Send to monitoring if it's a critical log
+            if record.levelno >= logging.ERROR:
+                _send_to_monitoring(log_data)
+                
+        except Exception:
+            # Never let monitoring interfere with logging
+            pass

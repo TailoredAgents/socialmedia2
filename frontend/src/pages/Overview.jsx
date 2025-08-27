@@ -134,15 +134,38 @@ export default function Overview() {
   const { data: userSettings } = useQuery({
     queryKey: ['user-settings'],
     queryFn: async () => {
-      // TODO: Replace with actual API call to get user settings
-      // For now, return default settings structure
-      return {
-        enable_autonomous_mode: false,
-        content_frequency: 3,
-        auto_response_enabled: false
+      try {
+        // Use the generic request method from apiService
+        const response = await fetch(`${api.baseURL}/api/user-settings/`, {
+          headers: {
+            'Authorization': `Bearer ${api.token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Failed to fetch user settings:', error);
+        // Return default settings as fallback
+        return {
+          enable_autonomous_mode: false,
+          content_frequency: 3,
+          auto_response_enabled: false,
+          brand_voice: 'professional',
+          creativity_level: 0.7,
+          enable_images: true,
+          preferred_platforms: ['twitter', 'instagram']
+        };
       }
     },
-    retry: 2
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000 // 10 minutes
   })
 
 

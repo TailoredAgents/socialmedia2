@@ -232,23 +232,42 @@ Format your response as JSON with keys: content, title, hashtags"""
     
     def create_image(self, prompt: str, size: str = "1024x1024") -> Dict[str, Any]:
         """
-        Generate image using GPT Image 1
+        Generate image using OpenAI Responses API with image_generation tool
         
-        GPT Image 1 is OpenAI's latest and most advanced image generation model
-        with superior instruction following and social media optimization.
+        Uses the enhanced Responses API for real-time streaming and multi-turn editing capabilities,
+        providing superior social media content creation with iterative refinement.
         """
         try:
-            response = self.client.images.generate(
-                model="gpt-image-1",
-                prompt=prompt,
-                size=size,
-                quality="standard",
-                response_format="b64_json",
-                n=1,
+            response = self.client.responses.create(
+                model="gpt-4o",  # GPT-4o supports image generation tool
+                messages=[
+                    {
+                        "role": "user", 
+                        "content": f"Generate an image with this description: {prompt}"
+                    }
+                ],
+                tools=[
+                    {
+                        "type": "image_generation",
+                        "image_generation": {
+                            "size": size,
+                            "quality": "standard"
+                        }
+                    }
+                ],
+                stream=False
             )
             
-            # GPT Image 1 returns base64 data, convert to data URL for frontend
-            image_b64 = response.data[0].b64_json
+            # Extract base64 image data from Responses API tool call result
+            image_b64 = None
+            if response.content and response.content.tool_calls:
+                for tool_call in response.content.tool_calls:
+                    if tool_call.type == "image_generation":
+                        image_b64 = tool_call.image_generation.b64_json
+                        break
+            
+            if not image_b64:
+                raise Exception("No image data returned from OpenAI Responses API")
             image_data_url = f"data:image/png;base64,{image_b64}"
             
             return {

@@ -20,19 +20,17 @@ logger = logging.getLogger(__name__)
 
 class ImageGenerationService:
     """
-    Enhanced image generation service using xAI Grok 2 Vision model
-    for superior social media content creation and editing capabilities.
+    Enhanced image generation service using OpenAI's Responses API with image_generation tool
+    for superior social media content creation with real-time streaming and multi-turn editing capabilities.
     """
     
     def __init__(self):
-        # Use xAI Grok for image generation
+        # Use OpenAI for enhanced image generation with Responses API
         self.client = OpenAI(
-            api_key=settings.xai_api_key,
-            base_url="https://api.x.ai/v1"
+            api_key=settings.openai_api_key
         )
         self.async_client = AsyncOpenAI(
-            api_key=settings.xai_api_key,
-            base_url="https://api.x.ai/v1"
+            api_key=settings.openai_api_key
         )
         
         # Platform-specific optimization prompts
@@ -97,11 +95,10 @@ class ImageGenerationService:
                            tone: str = "professional",
                            custom_options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Generate a single image using the OpenAI Image Generation API.
+        Generate a single image using the OpenAI Responses API with image_generation tool.
         
-        NOTE: This implementation uses the currently available OpenAI API (images.generate).
-        TODO: Update to use client.responses.create with image_generation tool when available,
-        as specified in /Users/jeffreyhacker/AI social media content agent/docs/api-references/openai-image-generation.md
+        This uses the new Responses API which supports real-time streaming and multi-turn edits,
+        making it ideal for social media content creation with iterative refinement capabilities.
         
         Args:
             prompt: Base image description
@@ -135,22 +132,40 @@ class ImageGenerationService:
             if custom_options:
                 tool_options.update(custom_options)
             
-            # Use Grok 2 Image Generation via xAI API
-            response = await asyncio.to_thread(
-                self.client.images.generate,
-                model="grok-2-image",
-                prompt=enhanced_prompt,
-                n=1,
-                response_format="b64_json"  # Get base64 directly from Grok 2
+            # Use OpenAI Responses API with image_generation tool for enhanced capabilities
+            response = await self.async_client.responses.create(
+                model="gpt-4o",  # GPT-4o supports image generation tool
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Generate an image for social media with this description: {enhanced_prompt}"
+                    }
+                ],
+                tools=[
+                    {
+                        "type": "image_generation",
+                        "image_generation": {
+                            "size": "1024x1024",
+                            "quality": "standard"
+                        }
+                    }
+                ],
+                stream=False  # Can be set to True for real-time streaming in future
             )
             
-            # Extract base64 image data from response  
-            if not response.data or len(response.data) == 0:
-                raise Exception("No image data returned from Grok 2")
+            # Extract base64 image data from Responses API
+            if not response.content or not response.content.tool_calls:
+                raise Exception("No tool calls returned from OpenAI Responses API")
             
-            image_base64 = response.data[0].b64_json
+            # Find the image generation tool call result
+            image_base64 = None
+            for tool_call in response.content.tool_calls:
+                if tool_call.type == "image_generation":
+                    image_base64 = tool_call.image_generation.b64_json
+                    break
+            
             if not image_base64:
-                raise Exception("No base64 image data in Grok 2 response")
+                raise Exception("No image data returned from OpenAI image generation tool")
             
             # Generate unique filename and ID
             image_id = str(uuid.uuid4())

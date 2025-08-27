@@ -12,7 +12,10 @@ from datetime import datetime, timedelta
 from backend.db.database import get_db
 from backend.db.models import User, UserSetting, Content, Goal, Memory
 from backend.auth.dependencies import get_current_active_user
-from backend.agents.tools import OpenAITool
+from openai import AsyncOpenAI
+from backend.core.config import get_settings
+
+settings = get_settings()
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/ai", tags=["ai-suggestions"])
@@ -65,27 +68,27 @@ async def analyze_user_context(user: User, db: Session, suggestion_type: str) ->
             context["brand_voice"] = user_settings.brand_voice or "professional"
             context["creativity_level"] = user_settings.creativity_level or 0.7
         
-        # Analyze content history
-        content_count = db.query(Content).filter(Content.user_id == user.id).count()
-        context["content_count"] = content_count
+        # Analyze content history (with limits for performance)
+        content_count = db.query(Content).filter(Content.user_id == user.id).limit(1000).count()
+        context["content_count"] = min(content_count, 999)  # Cap at 999 for display
         context["has_content"] = content_count > 0
         
-        # Check for recent content (last 7 days)
+        # Check for recent content (last 7 days, limited query)
         week_ago = datetime.utcnow() - timedelta(days=7)
         recent_content = db.query(Content).filter(
             Content.user_id == user.id,
             Content.created_at >= week_ago
-        ).count()
+        ).limit(100).count()
         context["recent_activity"] = recent_content > 0
         
-        # Analyze goals
-        goal_count = db.query(Goal).filter(Goal.user_id == user.id).count()
-        context["goal_count"] = goal_count
+        # Analyze goals (limited for performance)
+        goal_count = db.query(Goal).filter(Goal.user_id == user.id).limit(50).count()
+        context["goal_count"] = min(goal_count, 50)
         context["has_goals"] = goal_count > 0
         
-        # Analyze memories/brand brain
-        memory_count = db.query(Memory).filter(Memory.user_id == user.id).count()
-        context["memory_count"] = memory_count
+        # Analyze memories/brand brain (limited for performance) 
+        memory_count = db.query(Memory).filter(Memory.user_id == user.id).limit(100).count()
+        context["memory_count"] = min(memory_count, 100)
         context["has_memories"] = memory_count > 0
         
     except Exception as e:
@@ -113,10 +116,19 @@ async def generate_contextual_suggestions(user_context: Dict[str, Any], suggesti
     """
     
     try:
-        # Generate contextual suggestions using AI
-        openai_tool = OpenAITool()
-        ai_response = openai_tool.generate_text(
-            prompt=f"""You are an AI social media assistant. Based on the user context below, generate 4 specific, actionable suggestions for {suggestion_type}.
+        # Generate contextual suggestions using OpenAI directly with timeout
+        client = AsyncOpenAI(api_key=settings.openai_api_key)
+        
+        response = await client.chat.completions.create(
+            model="gpt-4o-mini",  # Use fast, cost-effective model
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an AI social media assistant. Generate specific, actionable suggestions in JSON format."
+                },
+                {
+                    "role": "user", 
+                    "content": f"""Based on the user context below, generate 4 specific, actionable suggestions for {suggestion_type}.
 
 {context_info}
 
@@ -135,10 +147,15 @@ Return suggestions as JSON array with this format:
   }}
 ]
 
-Make suggestions specific to their experience level and current situation. For new users, focus on getting started. For experienced users, focus on optimization and growth.""",
-            model="gpt-5-mini",  # Use GPT-5 mini for better contextual understanding
-            max_tokens=2000
+Make suggestions specific to their experience level and current situation. For new users, focus on getting started. For experienced users, focus on optimization and growth."""
+                }
+            ],
+            max_tokens=1500,
+            temperature=0.7,
+            timeout=10.0  # 10 second timeout to prevent long waits
         )
+        
+        ai_response = response.choices[0].message.content
         
         # Parse AI response
         import json
@@ -147,7 +164,8 @@ Make suggestions specific to their experience level and current situation. For n
         return suggestions_data
         
     except Exception as e:
-        logger.error(f"Error generating AI suggestions: {e}")
+        logger.error(f"Error generating AI suggestions (timeout or API issue): {e}")
+        # Return empty to trigger fast fallback suggestions
         return []
 
 def get_fallback_suggestions(suggestion_type: str, context: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -188,11 +206,71 @@ def get_fallback_suggestions(suggestion_type: str, context: Dict[str, Any]) -> L
                 "estimated_time": "30 seconds",
                 "priority": 1,
                 "personalization_score": 0.8
+            },
+            {
+                "id": "brand-voice",
+                "title": "Optimize brand voice",
+                "description": "Refine your content tone and messaging consistency",
+                "action": "Optimize Voice",
+                "color": "orange",
+                "ai_prompt": "Analyze and optimize brand voice consistency across posts",
+                "estimated_time": "1 minute",
+                "priority": 4,
+                "personalization_score": 0.5
+            },
+            {
+                "id": "hashtag-research",
+                "title": "Research trending hashtags",
+                "description": "Find the best hashtags for your niche and audience",
+                "action": "Research Tags",
+                "color": "green",
+                "ai_prompt": "Research and suggest trending hashtags for better reach",
+                "estimated_time": "45 seconds",
+                "priority": 5,
+                "personalization_score": 0.4
+            }
+        ],
+        "goals": [
+            {
+                "id": "growth-goals",
+                "title": "Set growth targets",
+                "description": "AI-recommended goals based on your current performance",
+                "action": "Create Goals",
+                "color": "green",
+                "ai_prompt": "Suggest realistic growth goals based on current metrics",
+                "estimated_time": "30 seconds",
+                "priority": 1,
+                "personalization_score": 0.8
+            },
+            {
+                "id": "engagement-goals",
+                "title": "Boost engagement rates",
+                "description": "Set targets to increase likes, comments, and shares",
+                "action": "Set Targets",
+                "color": "blue",
+                "ai_prompt": "Create engagement improvement goals and strategies",
+                "estimated_time": "1 minute",
+                "priority": 2,
+                "personalization_score": 0.7
+            }
+        ],
+        "inbox": [
+            {
+                "id": "inbox-cleanup",
+                "title": "Organize social inbox",
+                "description": "Sort and prioritize your social media messages and mentions",
+                "action": "Clean Inbox",
+                "color": "purple",
+                "ai_prompt": "Organize and prioritize social media inbox items",
+                "estimated_time": "2 minutes",
+                "priority": 3,
+                "personalization_score": 0.6
             }
         ]
     }
     
-    return fallbacks.get(suggestion_type, fallbacks["content"])
+    # Return suggestions for the requested type, or default to content
+    return fallbacks.get(suggestion_type, fallbacks["content"])[:4]  # Limit to 4 suggestions
 
 @router.post("/suggestions", response_model=SuggestionsResponse)
 async def get_contextual_suggestions(
@@ -209,10 +287,10 @@ async def get_contextual_suggestions(
         # Generate AI suggestions
         ai_suggestions = await generate_contextual_suggestions(user_context, request.type)
         
-        # Fallback to static suggestions if AI fails
+        # Fallback to fast static suggestions if AI fails or is slow
         if not ai_suggestions:
             ai_suggestions = get_fallback_suggestions(request.type, user_context)
-            logger.warning(f"Using fallback suggestions for user {current_user.id}")
+            logger.info(f"Using fast fallback suggestions for user {current_user.id} (type: {request.type})")
         
         # Limit results
         ai_suggestions = ai_suggestions[:request.limit]

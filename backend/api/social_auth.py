@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 import logging
 
 from backend.db.database import get_db
-from backend.auth.dependencies import get_current_user
+from backend.auth.dependencies import get_current_active_user
 from backend.auth.social_oauth import oauth_manager
 from backend.db.models import User, UserSetting
 from backend.core.config import get_settings
@@ -61,7 +61,7 @@ class PlatformStatusResponse(BaseModel):
 @router.post("/connect", response_model=ConnectPlatformResponse)
 async def initiate_platform_connection(
     request: ConnectPlatformRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_active_user)
 ) -> ConnectPlatformResponse:
     """
     Initiate OAuth connection to a social media platform
@@ -202,7 +202,7 @@ async def oauth_callback_redirect(
 
 @router.get("/connected", response_model=List[ConnectedAccountResponse])
 async def get_connected_accounts(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> List[ConnectedAccountResponse]:
     """
@@ -245,7 +245,7 @@ async def get_connected_accounts(
 @router.get("/status/{platform}", response_model=PlatformStatusResponse)
 async def get_platform_status(
     platform: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> PlatformStatusResponse:
     """
@@ -299,7 +299,7 @@ async def get_platform_status(
 @router.post("/disconnect/{platform}")
 async def disconnect_platform(
     platform: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
@@ -332,7 +332,7 @@ async def disconnect_platform(
 @router.post("/refresh/{platform}")
 async def refresh_platform_token(
     platform: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
@@ -370,7 +370,7 @@ async def refresh_platform_token(
 @router.get("/test/{platform}")
 async def test_platform_connection(
     platform: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """

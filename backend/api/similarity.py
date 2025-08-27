@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 import logging
 
 from backend.db.database import get_db
-from backend.auth.dependencies import get_current_user
+from backend.auth.dependencies import get_current_active_user
 from backend.services.similarity_service import similarity_service, SimilarityResult, ContentRecommendation
 from backend.api.validation import validate_text_length, clean_text_input
 from backend.db.models import User, ContentItem, Memory
@@ -69,7 +69,7 @@ class ContentRecommendationResponse(BaseModel):
 @router.post("/search", response_model=SimilaritySearchResponse)
 async def advanced_similarity_search(
     request: SimilaritySearchRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> SimilaritySearchResponse:
     """
@@ -151,7 +151,7 @@ async def advanced_similarity_search(
 @router.post("/recommend", response_model=ContentRecommendationResponse)
 async def get_content_recommendations(
     request: ContentRecommendationRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> ContentRecommendationResponse:
     """
@@ -239,7 +239,7 @@ async def get_content_recommendations(
 @router.post("/repurpose")
 async def repurpose_content(
     request: RepurposingRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
@@ -336,7 +336,7 @@ async def repurpose_content(
 @router.post("/analyze")
 async def analyze_content_similarity(
     request: ContentAnalysisRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
@@ -398,7 +398,7 @@ async def get_trending_content(
     content_type: Optional[str] = Query(None, description="Filter by content type"),
     days_back: int = Query(7, ge=1, le=30, description="Days to look back for trending content"),
     limit: int = Query(20, ge=5, le=100, description="Number of trending items to return"),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """

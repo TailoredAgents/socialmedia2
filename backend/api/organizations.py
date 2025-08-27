@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime, timedelta
 
 from backend.db.database import get_db
-from backend.auth.dependencies import get_current_user
+from backend.auth.dependencies import get_current_active_user
 from backend.db.models import User
 from backend.db.multi_tenant_models import (
     Organization, Team, Role, Permission, UserOrganizationRole, 
@@ -153,7 +153,7 @@ class InvitationResponse(BaseModel):
 
 @router.get("/", response_model=List[OrganizationResponse])
 async def list_user_organizations(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -205,7 +205,7 @@ async def list_user_organizations(
 @router.post("/", response_model=OrganizationResponse)
 async def create_organization(
     organization_data: OrganizationCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -302,7 +302,7 @@ async def create_organization(
 async def get_organization(
     organization_id: str,
     request: Request,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -360,7 +360,7 @@ async def update_organization(
     organization_id: str,
     update_data: OrganizationUpdate,
     request: Request,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -432,7 +432,7 @@ async def update_organization(
 async def list_organization_teams(
     organization_id: str,
     request: Request,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -483,7 +483,7 @@ async def create_team(
     organization_id: str,
     team_data: TeamCreate,
     request: Request,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -550,7 +550,7 @@ async def invite_user_to_organization(
     invite_data: InviteUserRequest,
     background_tasks: BackgroundTasks,
     request: Request,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -669,7 +669,7 @@ async def invite_user_to_organization(
 async def list_organization_invitations(
     organization_id: str,
     request: Request,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """

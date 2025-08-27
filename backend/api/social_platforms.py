@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from backend.db.database import get_db
 from backend.db.models import User, SocialPlatformConnection, SocialPost
-from backend.auth.dependencies import get_current_user
+from backend.auth.dependencies import get_current_active_user
 from backend.core.token_encryption import get_token_manager
 from backend.core.audit_logger import log_content_event, AuditEventType
 from backend.integrations.twitter_client import twitter_client, TwitterAPIError
@@ -72,7 +72,7 @@ class ConnectionMetricsResponse(BaseModel):
 @router.get("/connect/{platform}")
 async def initiate_oauth_connection(
     platform: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -270,7 +270,7 @@ async def oauth_callback(
 
 @router.get("/connections", response_model=List[SocialPlatformConnectionResponse])
 async def get_user_connections(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -293,7 +293,7 @@ async def get_user_connections(
 @router.delete("/connections/{connection_id}")
 async def disconnect_platform(
     connection_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -340,7 +340,7 @@ async def disconnect_platform(
 @router.post("/validate/{platform}")
 async def validate_platform_connection(
     platform: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -431,7 +431,7 @@ async def validate_platform_connection(
 async def post_to_platforms(
     post_request: PostContentRequest,
     background_tasks: BackgroundTasks,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -589,7 +589,7 @@ async def get_user_posts(
     platform: Optional[str] = None,
     limit: int = 20,
     offset: int = 0,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -623,7 +623,7 @@ async def get_user_posts(
 @router.get("/metrics/{platform}")
 async def get_platform_metrics(
     platform: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -663,7 +663,7 @@ async def get_platform_metrics(
 
 @router.get("/analytics/overview")
 async def get_analytics_overview(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """

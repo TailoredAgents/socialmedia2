@@ -405,12 +405,33 @@ class RequestValidationMiddleware(BaseHTTPMiddleware):
                 except Exception as e:
                     logger.error(f"Error checking request body: {e}")
             
-            return await call_next(request)
+            # Process request normally
+            response = await call_next(request)
+            
+            # Check if response is None (indicates endpoint didn't return anything)
+            if response is None:
+                logger.error(f"No response returned from endpoint: {request.method} {request.url.path}")
+                return JSONResponse(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    content={"error": "Internal server error", "message": "No response returned."}
+                )
+            return response
+            
         except Exception as e:
             logger.error(f"Request validation middleware error: {e}")
             # Fail open - allow request to continue if validation fails
             try:
-                return await call_next(request)
+                response = await call_next(request)
+                
+                # Check fallback response too
+                if response is None:
+                    logger.error(f"No response returned from fallback endpoint: {request.method} {request.url.path}")
+                    return JSONResponse(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        content={"error": "Internal server error", "message": "No response returned."}
+                    )
+                return response
+                
             except Exception as inner_e:
                 logger.error(f"Fallback request processing failed: {inner_e}")
                 return JSONResponse(

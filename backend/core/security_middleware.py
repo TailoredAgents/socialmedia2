@@ -85,16 +85,25 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.redis_client = None
         
         try:
-            import redis
+            import redis.asyncio as redis
             redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
             self.redis_client = redis.Redis.from_url(redis_url, decode_responses=True)
-            # Test connection
-            self.redis_client.ping()
             self.use_redis = True
-            logger.info("Rate limiting using Redis for distributed storage with memory fallback")
+            logger.info("Rate limiting using async Redis for distributed storage with memory fallback")
         except Exception as e:
             logger.warning(f"Redis unavailable, using in-memory rate limiting only: {e}")
             self.use_redis = False
+    
+    async def _test_redis_connection(self) -> bool:
+        """Test Redis connection health"""
+        if not self.use_redis or not self.redis_client:
+            return False
+        try:
+            await self.redis_client.ping()
+            return True
+        except Exception as e:
+            logger.warning(f"Redis connection test failed: {e}")
+            return False
         
     def _get_limit_for_type(self, limit_type: str) -> int:
         """Get the limit value for a given limit type"""
@@ -122,9 +131,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Fallback to direct connection
         return request.client.host if request.client else "unknown"
     
-    def _redis_rate_check(self, client_ip: str) -> Optional[Dict[str, Any]]:
-        """Redis-based rate limiting check"""
-        if not self.use_redis:
+    async def _redis_rate_check(self, client_ip: str) -> Optional[Dict[str, Any]]:
+        """Redis-based rate limiting check using async operations"""
+        if not self.use_redis or not await self._test_redis_connection():
             return self._memory_rate_check(client_ip)
         
         try:
@@ -138,7 +147,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             hour_key = f"rate_limit:{client_ip}:hour:{current_hour}"
             
             # Check burst limit (sliding window of 10 seconds)
-            burst_count = self.redis_client.zcard(burst_key)
+            burst_count = await self.redis_client.zcard(burst_key)
             if burst_count >= self.burst_limit:
                 return {
                     "limit_type": "burst", 
@@ -147,7 +156,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 }
             
             # Check minute limit
-            minute_count = self.redis_client.get(minute_key) or 0
+            minute_count = await self.redis_client.get(minute_key) or 0
             if int(minute_count) >= self.requests_per_minute:
                 return {
                     "limit_type": "minute",
@@ -156,7 +165,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 }
             
             # Check hour limit
-            hour_count = self.redis_client.get(hour_key) or 0
+            hour_count = await self.redis_client.get(hour_key) or 0
             if int(hour_count) >= self.requests_per_hour:
                 return {
                     "limit_type": "hour",
@@ -164,7 +173,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     "message": f"Rate limit exceeded: max {self.requests_per_hour} requests per hour"
                 }
             
-            # Record this request in Redis
+            # Record this request in Redis using async pipeline
             pipe = self.redis_client.pipeline()
             
             # Burst counter (sliding window)
@@ -180,7 +189,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             pipe.incr(hour_key)
             pipe.expire(hour_key, 3700)  # Expire after ~1 hour
             
-            pipe.execute()
+            await pipe.execute()
             
             return None  # Not rate limited
             
@@ -244,8 +253,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             
             client_ip = self.get_client_ip(request)
             
-            # Check rate limits (uses Redis if available, falls back to memory)
-            limit_info = self._redis_rate_check(client_ip)
+            # Check rate limits (uses async Redis if available, falls back to memory)
+            limit_info = await self._redis_rate_check(client_ip)
             if limit_info:
                 logger.warning(f"Rate limit exceeded for {client_ip}: {limit_info['message']}")
                 

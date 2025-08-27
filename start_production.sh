@@ -92,10 +92,14 @@ main() {
     # Step 2: Run database migrations
     run_migrations
     
-    # Step 3: Verify critical tables exist
+    # Step 3: Force fix social inbox schema
+    log "🔧 Fixing social inbox schema..."
+    python force_schema_fix.py || log "⚠️ Schema fix had issues but continuing..."
+    
+    # Step 4: Verify critical tables exist
     verify_tables
     
-    # Step 4: Start the application
+    # Step 5: Start the application
     start_app
 }
 

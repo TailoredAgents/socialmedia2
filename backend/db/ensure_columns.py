@@ -510,29 +510,22 @@ def _fix_existing_social_inbox_schemas(conn):
     Drop and recreate tables with wrong data types
     """
     try:
-        # Check if tables exist with wrong schema and drop them
-        tables_to_check = [
-            ('response_templates', 'id', 'integer'),  # Should be VARCHAR (UUID)
-            ('social_interactions', 'id', 'integer'),  # Should be VARCHAR (UUID)
-            ('interaction_responses', 'id', 'integer'),  # Should be VARCHAR (UUID)
-            ('interaction_responses', 'template_id', 'integer'),  # Should be VARCHAR (UUID)
-        ]
+        logger.info("🔧 Checking for social inbox schema mismatches...")
         
-        for table_name, column_name, wrong_type in tables_to_check:
-            # Check if table exists with wrong column type
+        # Check if any social inbox tables exist and drop them all to recreate with correct schema
+        tables_to_check = ['interaction_responses', 'response_templates', 'social_interactions', 'social_platform_connections']
+        
+        for table_name in tables_to_check:
             result = conn.execute(text("""
-                SELECT data_type 
-                FROM information_schema.columns 
-                WHERE table_name = :table_name AND column_name = :column_name
-            """), {"table_name": table_name, "column_name": column_name}).fetchone()
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_name = :table_name
+            """), {"table_name": table_name}).fetchone()
             
-            if result and wrong_type in result[0]:
-                logger.warning(f"Table {table_name} has {column_name} as {result[0]}, need to recreate...")
-                
-                # Drop the problematic table (cascade will handle dependencies)
+            if result:
+                logger.info(f"Dropping existing {table_name} table to recreate with correct schema...")
                 conn.execute(text(f"DROP TABLE IF EXISTS {table_name} CASCADE"))
                 conn.commit()
-                logger.info(f"✅ Dropped {table_name} table with wrong schema")
+                logger.info(f"✅ Dropped {table_name}")
                 
     except Exception as e:
         logger.warning(f"Error checking existing schemas: {e}")

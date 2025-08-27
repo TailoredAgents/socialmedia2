@@ -602,5 +602,20 @@ class ContentCategorizer:
             "most_common_tone": max(tone_counts, key=tone_counts.get)
         }
 
-# Global content categorizer instance
-content_categorizer = ContentCategorizer()
+# Global content categorizer instance - lazy loaded
+_content_categorizer = None
+
+def get_content_categorizer():
+    """Get the global content categorizer instance (lazy initialization)"""
+    global _content_categorizer
+    if _content_categorizer is None:
+        _content_categorizer = ContentCategorizer()
+    return _content_categorizer
+
+# For backward compatibility, create a property-like access
+class ContentCategorizerProxy:
+    """Proxy object that provides lazy access to content categorizer"""
+    def __getattr__(self, name):
+        return getattr(get_content_categorizer(), name)
+
+content_categorizer = ContentCategorizerProxy()

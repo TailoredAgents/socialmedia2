@@ -19,7 +19,8 @@ try:
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
-    logging.warning("FAISS not available, install faiss-cpu for better performance")
+    # Suppress the warning at import time - it will be shown only when actually used
+    pass
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -438,5 +439,20 @@ class VectorStore:
         except:
             pass  # Ignore errors during cleanup
 
-# Global instance
-vector_store = VectorStore()
+# Global instance - lazy loaded
+_vector_store = None
+
+def get_vector_store():
+    """Get the global vector store instance (lazy initialization)"""
+    global _vector_store
+    if _vector_store is None:
+        _vector_store = VectorStore()
+    return _vector_store
+
+# For backward compatibility, create a property-like access
+class VectorStoreProxy:
+    """Proxy object that provides lazy access to vector store"""
+    def __getattr__(self, name):
+        return getattr(get_vector_store(), name)
+
+vector_store = VectorStoreProxy()

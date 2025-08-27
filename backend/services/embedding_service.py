@@ -606,5 +606,20 @@ class EmbeddingService:
         """
         return vector_store.rebuild_index()
 
-# Global embedding service instance
-embedding_service = EmbeddingService()
+# Global embedding service instance - lazy loaded
+_embedding_service = None
+
+def get_embedding_service():
+    """Get the global embedding service instance (lazy initialization)"""
+    global _embedding_service
+    if _embedding_service is None:
+        _embedding_service = EmbeddingService()
+    return _embedding_service
+
+# For backward compatibility, create a property-like access
+class EmbeddingServiceProxy:
+    """Proxy object that provides lazy access to embedding service"""
+    def __getattr__(self, name):
+        return getattr(get_embedding_service(), name)
+
+embedding_service = EmbeddingServiceProxy()

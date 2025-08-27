@@ -54,6 +54,10 @@ def suppress_third_party_warnings():
     warnings.filterwarnings("ignore", message=".*error reading bcrypt version.*")
     warnings.filterwarnings("ignore", message=".*bcrypt.*has no attribute '__about__'.*")
     
+    # FAISS availability warnings - shown only when vector store is used
+    warnings.filterwarnings("ignore", message=".*FAISS not available.*")
+    warnings.filterwarnings("ignore", message=".*faiss-cpu for better performance.*")
+    
     # Suppress import-time SyntaxWarnings if running Python 3.12+
     if sys.version_info >= (3, 12):
         warnings.filterwarnings("ignore", category=SyntaxWarning)

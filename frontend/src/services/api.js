@@ -645,6 +645,22 @@ class ApiService {
   async getGoalsSummary() {
     return this.request('/api/goals/summary')
   }
+
+  // User Settings endpoints
+  async getUserSettings() {
+    return this.request('/api/user-settings/')
+  }
+
+  async updateUserSettings(settings) {
+    return this.request('/api/user-settings/', {
+      method: 'PUT',
+      body: settings
+    })
+  }
+
+  async getDefaultSettings() {
+    return this.request('/api/user-settings/defaults')
+  }
 }
 
 // Create singleton instance

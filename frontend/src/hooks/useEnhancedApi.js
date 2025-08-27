@@ -395,6 +395,32 @@ export const useEnhancedApi = () => {
         () => apiService.researchCompany(companyName),
         { retries: 2, retryDelay: 2000 }
       )
+    },
+
+    // User Settings operations
+    settings: {
+      get: () => makeEnhancedRequest(
+        apiService.getUserSettings.bind(apiService),
+        { cache: true, cacheKey: 'user_settings', cacheTTL: 300000 }
+      ),
+      
+      update: (settings) => makeEnhancedRequest(
+        apiService.updateUserSettings.bind(apiService),
+        { 
+          requestArgs: [settings], 
+          retries: 2,
+          onSuccess: () => {
+            // Clear settings cache after update
+            cache.current.delete('user_settings')
+            showSuccess('Settings updated successfully!')
+          }
+        }
+      ),
+      
+      getDefaults: () => makeEnhancedRequest(
+        apiService.getDefaultSettings.bind(apiService),
+        { cache: true, cacheKey: 'default_settings', cacheTTL: 3600000 }
+      )
     }
   }), [makeEnhancedRequest, showSuccess]) // Only recreate when dependencies change
 

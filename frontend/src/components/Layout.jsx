@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
@@ -44,6 +44,7 @@ function Layout({ children }) {
   // Autonomous mode state
   const [autopilotMode, setAutopilotMode] = useState(false)
   const [loadingAutopilot, setLoadingAutopilot] = useState(false)
+  const [settingsLoaded, setSettingsLoaded] = useState(false)
 
   // Memoize navigation items to prevent re-creation on every render
   const navigationItems = useMemo(() => navigation, [])
@@ -70,6 +71,24 @@ function Layout({ children }) {
     logout()
   }, [logout])
 
+  // Load user settings on component mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      if (!isAuthenticated || !api) return
+      
+      try {
+        const settings = await api.settings.get()
+        setAutopilotMode(settings.enable_autonomous_mode || false)
+        setSettingsLoaded(true)
+      } catch (error) {
+        console.error('Failed to load user settings:', error)
+        setSettingsLoaded(true) // Still mark as loaded to prevent blocking UI
+      }
+    }
+    
+    loadSettings()
+  }, [api, isAuthenticated])
+
   // Handle autonomous mode toggle
   const handleAutopilotToggle = useCallback(async () => {
     if (loadingAutopilot) return
@@ -78,9 +97,7 @@ function Layout({ children }) {
     const newMode = !autopilotMode
     
     try {
-      // TODO: Call API to update user settings
-      // await api.settings.updateUserSettings({ enable_autonomous_mode: newMode })
-      
+      await api.settings.update({ enable_autonomous_mode: newMode })
       setAutopilotMode(newMode)
       showSuccess(
         newMode 
@@ -93,7 +110,7 @@ function Layout({ children }) {
     } finally {
       setLoadingAutopilot(false)
     }
-  }, [autopilotMode, loadingAutopilot, showSuccess, showError])
+  }, [api, autopilotMode, loadingAutopilot, showSuccess, showError])
 
   return (
     <div>

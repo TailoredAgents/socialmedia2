@@ -53,7 +53,7 @@ sys.path.insert(0, '.')
 from backend.db.database import engine
 from sqlalchemy import text
 
-critical_tables = ['users', 'content_logs', 'notifications', 'refresh_token_blacklist']
+critical_tables = ['users', 'user_settings', 'content_logs', 'notifications', 'refresh_token_blacklist']
 missing_tables = []
 
 try:
@@ -95,6 +95,10 @@ main() {
     # Step 3: Force fix social inbox schema
     log "🔧 Fixing social inbox schema..."
     python force_schema_fix.py || log "⚠️ Schema fix had issues but continuing..."
+    
+    # Step 3.5: Ensure user_settings table exists
+    log "🔧 Ensuring user_settings table exists..."
+    python fix_user_settings_table.py || log "⚠️ User settings table fix had issues but continuing..."
     
     # Step 4: Verify critical tables exist
     verify_tables

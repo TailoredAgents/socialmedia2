@@ -100,7 +100,7 @@ def run_migrations(reset_db=False):
         with engine.connect() as conn:
             # Check if key tables exist
             tables_to_check = [
-                'users', 'goals', 'goal_progress', 'milestones',
+                'users', 'user_settings', 'goals', 'goal_progress', 'milestones',
                 'memory_content', 'memories', 'notifications',
                 'content_items', 'content_performance_snapshots',
                 'content_logs', 'metrics', 'refresh_token_blacklist'

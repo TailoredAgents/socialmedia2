@@ -78,7 +78,7 @@ class VectorStore:
     def _create_or_load_index(self):
         """Create new FAISS index or load existing one."""
         if not FAISS_AVAILABLE:
-            logger.warning("FAISS not available, using fallback implementation")
+            logger.info("FAISS not available, using fallback implementation")
             return None
             
         # Try to load existing index

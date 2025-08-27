@@ -393,8 +393,22 @@ async def refresh_token(
         )
         
     except HTTPException:
+        # Clear invalid refresh token cookie on any authentication error
+        response.delete_cookie(
+            key="refresh_token",
+            secure=True,
+            samesite="none",
+            httponly=True
+        )
         raise
     except Exception as e:
+        # Clear invalid refresh token cookie on any error
+        response.delete_cookie(
+            key="refresh_token",
+            secure=True,
+            samesite="none",
+            httponly=True
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token"

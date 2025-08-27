@@ -288,7 +288,32 @@ async def get_user_connections(
         SocialPlatformConnection.is_active == True
     ).order_by(SocialPlatformConnection.connected_at.desc()).all()
     
-    return connections
+    # Always return a list, even if empty
+    return connections or []
+
+@router.get("/connections/status")
+async def get_connection_status(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get social platform connection status for the current user
+    Returns summary info about connected platforms
+    """
+    connections = db.query(SocialPlatformConnection).filter(
+        SocialPlatformConnection.user_id == current_user.id,
+        SocialPlatformConnection.is_active == True
+    ).all()
+    
+    connected_platforms = [conn.platform for conn in connections]
+    
+    return {
+        "has_connections": len(connections) > 0,
+        "connection_count": len(connections),
+        "connected_platforms": connected_platforms,
+        "available_platforms": ["twitter", "instagram", "facebook", "linkedin", "tiktok"],
+        "needs_setup": len(connections) == 0
+    }
 
 @router.delete("/connections/{connection_id}")
 async def disconnect_platform(

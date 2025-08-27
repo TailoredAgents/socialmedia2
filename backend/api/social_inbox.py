@@ -394,7 +394,32 @@ async def get_company_knowledge(
         CompanyKnowledge.usage_count.desc()
     ).all()
     
-    return {"knowledge_entries": knowledge_entries}
+    return {"knowledge_entries": knowledge_entries or []}
+
+@router.get("/knowledge-base/status")
+async def get_knowledge_base_status(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get knowledge base status and setup info"""
+    total_entries = db.query(CompanyKnowledge).filter(
+        CompanyKnowledge.user_id == current_user.id,
+        CompanyKnowledge.is_active == True
+    ).count()
+    
+    return {
+        "has_knowledge": total_entries > 0,
+        "entry_count": total_entries,
+        "needs_setup": total_entries == 0,
+        "suggested_topics": [
+            "company_info",
+            "faq", 
+            "product_info",
+            "contact_info",
+            "policies"
+        ],
+        "setup_message": "Add company knowledge entries to help AI generate better responses."
+    }
 
 @router.post("/knowledge-base")
 async def create_knowledge_entry(

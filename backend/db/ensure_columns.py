@@ -34,10 +34,10 @@ def ensure_content_logs_table():
                         content_type VARCHAR NOT NULL,
                         status VARCHAR DEFAULT 'draft',
                         engagement_data JSON DEFAULT '{}',
-                        scheduled_for TIMESTAMP,
-                        published_at TIMESTAMP,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TIMESTAMP,
+                        scheduled_for TIMESTAMP WITH TIME ZONE,
+                        published_at TIMESTAMP WITH TIME ZONE,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP WITH TIME ZONE,
                         platform_post_id VARCHAR,
                         external_post_id VARCHAR,
                         CONSTRAINT fk_content_logs_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -81,6 +81,45 @@ def ensure_content_logs_table():
                         logger.info("✅ Successfully added foreign key constraint to content_logs")
                     except Exception as fk_error:
                         logger.warning(f"Could not add foreign key constraint: {fk_error}")
+                        conn.rollback()
+                
+                # Check and add missing columns to existing content_logs table
+                missing_columns = [
+                    ('scheduled_for', 'TIMESTAMP WITH TIME ZONE'),
+                    ('platform_post_id', 'VARCHAR'),
+                    ('external_post_id', 'VARCHAR'),
+                ]
+                
+                # Get existing columns
+                existing_columns = conn.execute(text("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'content_logs'
+                """)).fetchall()
+                
+                existing_column_names = {row[0] for row in existing_columns}
+                
+                for column_name, column_type in missing_columns:
+                    if column_name not in existing_column_names:
+                        logger.info(f"Adding missing {column_name} column to content_logs table")
+                        try:
+                            conn.execute(text(f"""
+                                ALTER TABLE content_logs 
+                                ADD COLUMN {column_name} {column_type}
+                            """))
+                            conn.commit()
+                            logger.info(f"✅ Successfully added {column_name} column to content_logs")
+                        except Exception as col_error:
+                            logger.warning(f"Could not add {column_name} column: {col_error}")
+                            conn.rollback()
+                
+                # Create missing indexes
+                if 'external_post_id' not in existing_column_names:
+                    try:
+                        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_content_logs_external_post_id ON content_logs (external_post_id)"))
+                        conn.commit()
+                    except Exception as idx_error:
+                        logger.warning(f"Could not create external_post_id index: {idx_error}")
                         conn.rollback()
                 
     except Exception as e:
@@ -223,6 +262,8 @@ def ensure_user_columns():
                 ('ix_users_email_verification_token', 'email_verification_token'),
                 ('ix_users_password_reset_token', 'password_reset_token'), 
                 ('ix_users_stripe_customer_id', 'stripe_customer_id'),
+                ('ix_users_email_username', '(email, username)'),  # Composite index for login queries
+                ('ix_users_tier_status', '(tier, subscription_status)'),  # Index for subscription queries
             ]
             
             for index_name, column_name in indexes_to_create:

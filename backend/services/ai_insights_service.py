@@ -17,6 +17,7 @@ import requests
 
 from openai import AsyncOpenAI
 from backend.core.config import get_settings
+from backend.core.openai_utils import get_openai_completion_params
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -128,11 +129,13 @@ class AIInsightsService:
             Return as JSON array with: title, snippet, source, relevance_score
             """
             
-            response = await self.async_client.chat.completions.create(
+            params = get_openai_completion_params(
                 model="gpt-5",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7
+                max_tokens=1000,  # Adding reasonable default
+                temperature=0.7,
+                messages=[{"role": "user", "content": prompt}]
             )
+            response = await self.async_client.chat.completions.create(**params)
             
             content = response.choices[0].message.content
             # Try to parse JSON, fallback to structured format
@@ -207,12 +210,13 @@ class AIInsightsService:
             Be specific about companies, technologies, and market movements.
             """
             
-            response = await self.async_client.chat.completions.create(
+            params = get_openai_completion_params(
                 model="gpt-5",
-                messages=[{"role": "user", "content": insight_prompt}],
+                max_tokens=2000,
                 temperature=0.7,
-                max_tokens=2000
+                messages=[{"role": "user", "content": insight_prompt}]
             )
+            response = await self.async_client.chat.completions.create(**params)
             
             insights_content = response.choices[0].message.content
             
@@ -225,12 +229,13 @@ class AIInsightsService:
             Return only hashtags in this format: #AIAgents #MultiAgent #CrewAI #LangChain #AutonomousAI
             """
             
-            trending_response = await self.async_client.chat.completions.create(
+            trending_params = get_openai_completion_params(
                 model="gpt-5-mini",
-                messages=[{"role": "user", "content": trending_prompt}],
+                max_tokens=100,
                 temperature=0.5,
-                max_tokens=100
+                messages=[{"role": "user", "content": trending_prompt}]
             )
+            trending_response = await self.async_client.chat.completions.create(**trending_params)
             
             trending_topics = trending_response.choices[0].message.content.strip()
             

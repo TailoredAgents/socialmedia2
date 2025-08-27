@@ -6,6 +6,7 @@ import json
 import logging
 from typing import Dict, List, Any
 from backend.core.config import get_settings
+from backend.core.openai_utils import get_openai_completion_params
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -143,12 +144,13 @@ class OpenAITool:
     def generate_text(self, prompt: str, model: str = "gpt-5-mini", max_tokens: int = 500) -> str:
         """Generate text using OpenAI"""
         try:
-            response = self.client.chat.completions.create(
+            params = get_openai_completion_params(
                 model=model,
-                messages=[{"role": "user", "content": prompt}],
                 max_tokens=max_tokens,
-                temperature=0.7
+                temperature=0.7,
+                messages=[{"role": "user", "content": prompt}]
             )
+            response = self.client.chat.completions.create(**params)
             return response.choices[0].message.content
         except Exception as e:
             return f"Error generating text: {str(e)}"
@@ -179,12 +181,13 @@ Please provide:
 
 Format your response as JSON with keys: content, title, hashtags"""
 
-            response = self.client.chat.completions.create(
+            params = get_openai_completion_params(
                 model="gpt-5-mini",
-                messages=[{"role": "user", "content": context_prompt}],
                 max_tokens=800,
-                temperature=0.7
+                temperature=0.7,
+                messages=[{"role": "user", "content": context_prompt}]
             )
+            response = self.client.chat.completions.create(**params)
             
             content_text = response.choices[0].message.content.strip()
             

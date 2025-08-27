@@ -12,6 +12,7 @@ import logging
 import json
 
 from backend.db.database import get_db
+from backend.core.datetime_utils import utc_now_iso
 from backend.db.models import Notification, User
 from backend.auth.dependencies import get_current_active_user
 from backend.services.notification_service import (
@@ -88,7 +89,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: int = Query(...)):
                 if message.get("type") == "ping":
                     await websocket.send_text(json.dumps({
                         "type": "pong",
-                        "timestamp": datetime.utcnow().isoformat()
+                        "timestamp": utc_now_iso()
                     }))
                 elif message.get("type") == "mark_read":
                     # Handle marking notifications as read via WebSocket
@@ -98,7 +99,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: int = Query(...)):
                         await websocket.send_text(json.dumps({
                             "type": "marked_read",
                             "notification_id": notification_id,
-                            "timestamp": datetime.utcnow().isoformat()
+                            "timestamp": utc_now_iso()
                         }))
                         
             except WebSocketDisconnect:

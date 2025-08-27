@@ -125,19 +125,29 @@ async def trigger_research(
 
 @router.get("/research/latest")
 async def get_latest_research():
-    """Get latest research results"""
+    """Get latest research results with caching to improve performance"""
     
     try:
-        # Use AI insights service for research data
+        # Use AI insights service for research data with caching
         from backend.services.ai_insights_service import ai_insights_service
+        from backend.services.redis_cache import redis_cache_service
         
+        # Check cache first (cache for 1 hour)
+        cache_key = "autonomous_research_latest"
+        cached_result = await redis_cache_service.get(cache_key, "research")
+        
+        if cached_result:
+            logger.info("Returning cached research results for performance")
+            return cached_result
+        
+        # Generate new insights if not cached
         insights = await ai_insights_service.generate_weekly_insights()
         
         if insights.get("status") == "success":
             # Convert AI insights format to frontend expected format
             insights_data = insights.get("insights", {})
             
-            return {
+            result = {
                 "industry": "AI Agent Products", 
                 "research_date": insights.get("generated_at"),
                 "trends": insights_data.get("trending_topics", []),
@@ -154,6 +164,11 @@ async def get_latest_research():
                     "Showcase multi-platform capabilities"
                 ]
             }
+            
+            # Cache result for 1 hour to improve performance
+            await redis_cache_service.set(cache_key, "research", result, ttl_minutes=60)
+            
+            return result
         else:
             raise HTTPException(
                 status_code=500,

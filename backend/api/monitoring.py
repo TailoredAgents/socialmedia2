@@ -8,7 +8,7 @@ import psutil
 import time
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 import json
@@ -483,10 +483,11 @@ class FrontendLogEntry(BaseModel):
     url: Optional[str] = Field(None)
     user_agent: Optional[str] = Field(None)
 
-@router.post("/frontend-logs")
+@router.post("/frontend-logs", response_model=None)
 async def receive_frontend_logs(
     log_entry: FrontendLogEntry,
-    current_user: Optional[User] = None  # Allow anonymous logging for errors
+    request: Request,
+    db: Session = Depends(get_db)
 ):
     """
     Receive and process frontend logs for monitoring and debugging.
@@ -496,6 +497,17 @@ async def receive_frontend_logs(
     """
     try:
         # Create standardized log entry
+        # Try to extract user information from request headers if available
+        user_id = None
+        try:
+            auth_header = request.headers.get("Authorization")
+            if auth_header and auth_header.startswith("Bearer "):
+                # We could decode the JWT here, but for logging purposes
+                # we'll just note that an authenticated request was made
+                user_id = "authenticated_user"
+        except:
+            pass  # Anonymous logging is allowed
+        
         log_data = {
             "source": "frontend",
             "level": log_entry.level,
@@ -505,7 +517,7 @@ async def receive_frontend_logs(
             "session_id": log_entry.session_id,
             "url": log_entry.url,
             "user_agent": log_entry.user_agent,
-            "user_id": current_user.id if current_user else None
+            "user_id": user_id
         }
         
         # Log to backend logger with appropriate level

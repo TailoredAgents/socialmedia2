@@ -214,11 +214,17 @@ def ensure_social_inbox_tables():
                         access_token TEXT NOT NULL,
                         refresh_token TEXT,
                         token_expires_at TIMESTAMP WITH TIME ZONE,
-                        token_scopes JSON DEFAULT '[]',
+                        token_type VARCHAR DEFAULT 'Bearer',
+                        scope VARCHAR,
                         is_active BOOLEAN DEFAULT TRUE,
-                        last_sync_at TIMESTAMP WITH TIME ZONE,
+                        is_verified BOOLEAN DEFAULT FALSE,
+                        connection_status VARCHAR DEFAULT 'connected',
+                        platform_metadata JSON DEFAULT '{}',
+                        connected_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        last_used_at TIMESTAMP WITH TIME ZONE,
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TIMESTAMP WITH TIME ZONE
+                        updated_at TIMESTAMP WITH TIME ZONE,
+                        UNIQUE(user_id, platform)
                     )
                 """))
                 
@@ -513,8 +519,9 @@ def _fix_existing_social_inbox_schemas(conn):
     try:
         logger.info("🔧 Checking for social inbox schema mismatches...")
         
-        # Check if any social inbox tables exist and drop them all to recreate with correct schema
-        tables_to_check = ['interaction_responses', 'response_templates', 'social_interactions', 'social_platform_connections']
+        # Check if any social inbox tables exist and drop them all to recreate with correct schema  
+        # Drop in dependency order: child tables first, then parent tables
+        tables_to_check = ['interaction_responses', 'social_interactions', 'response_templates', 'social_platform_connections']
         
         for table_name in tables_to_check:
             result = conn.execute(text("""

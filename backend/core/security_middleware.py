@@ -75,6 +75,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.requests_per_hour = requests_per_hour
         self.burst_limit = burst_limit
         
+        # Always initialize in-memory storage as fallback
+        self.minute_counts: Dict[str, deque] = defaultdict(deque)
+        self.hour_counts: Dict[str, deque] = defaultdict(deque)
+        self.burst_counts: Dict[str, List[float]] = defaultdict(list)
+        
         # Try to use Redis for distributed rate limiting
         self.use_redis = False
         self.redis_client = None
@@ -86,13 +91,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             # Test connection
             self.redis_client.ping()
             self.use_redis = True
-            logger.info("Rate limiting using Redis for distributed storage")
+            logger.info("Rate limiting using Redis for distributed storage with memory fallback")
         except Exception as e:
-            logger.warning(f"Redis unavailable, falling back to in-memory rate limiting: {e}")
-            # Fallback to in-memory storage
-            self.minute_counts: Dict[str, deque] = defaultdict(deque)
-            self.hour_counts: Dict[str, deque] = defaultdict(deque)
-            self.burst_counts: Dict[str, List[float]] = defaultdict(list)
+            logger.warning(f"Redis unavailable, using in-memory rate limiting only: {e}")
+            self.use_redis = False
         
     def _get_limit_for_type(self, limit_type: str) -> int:
         """Get the limit value for a given limit type"""

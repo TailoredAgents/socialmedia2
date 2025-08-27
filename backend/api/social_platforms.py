@@ -268,7 +268,7 @@ async def oauth_callback(
 
 # Connection management endpoints
 
-@router.get("/connections", response_model=List[SocialPlatformConnectionResponse])
+@router.get("/connections")
 async def get_user_connections(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
@@ -283,13 +283,22 @@ async def get_user_connections(
     Returns:
         List of user's social platform connections
     """
-    connections = db.query(SocialPlatformConnection).filter(
-        SocialPlatformConnection.user_id == current_user.id,
-        SocialPlatformConnection.is_active == True
-    ).order_by(SocialPlatformConnection.connected_at.desc()).all()
-    
-    # Always return a list, even if empty
-    return connections or []
+    try:
+        connections = db.query(SocialPlatformConnection).filter(
+            SocialPlatformConnection.user_id == current_user.id,
+            SocialPlatformConnection.is_active == True
+        ).order_by(SocialPlatformConnection.connected_at.desc()).all()
+        
+        logger.info(f"Found {len(connections)} social connections for user {current_user.id}")
+        
+        # Always return a list, even if empty
+        return connections or []
+        
+    except Exception as e:
+        logger.error(f"Error retrieving social connections for user {current_user.id}: {e}")
+        logger.error(f"Error type: {type(e)}")
+        # Return empty list on error to prevent 500
+        return []
 
 @router.get("/connections/status")
 async def get_connection_status(

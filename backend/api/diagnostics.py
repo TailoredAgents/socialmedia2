@@ -67,7 +67,7 @@ async def diagnose_ai_features():
                 response = await client.chat.completions.create(
                     model="gpt-5",
                     messages=[{"role": "user", "content": "Test connection - respond with 'OK'"}],
-                    max_tokens=5
+                    max_completion_tokens=5  # GPT-5 uses max_completion_tokens
                 )
                 openai_test = {"status": "connected", "response": response.choices[0].message.content}
             except Exception as e:
@@ -149,7 +149,7 @@ async def diagnose_industry_research():
                 response = await client.chat.completions.create(
                     model="gpt-5",
                     messages=[{"role": "user", "content": "Test research analysis: What are AI agents? One sentence."}],
-                    max_tokens=50
+                    max_completion_tokens=50  # GPT-5 uses max_completion_tokens
                 )
                 openai_test = {"status": "working", "sample_response": response.choices[0].message.content}
             except Exception as e:

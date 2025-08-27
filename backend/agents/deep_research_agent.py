@@ -685,10 +685,9 @@ class DeepResearchAgent:
                 {"role": "user", "content": prompt}
             ]
             
-            # Configure tools - include web search for current information
+            # Web search tool not supported - removed to prevent API errors
+            # Using knowledge-based research instead
             tools = None
-            if use_web_search:
-                tools = [{"type": "web_search"}]
             
             response = self.client.chat.completions.create(
                 model=self.routine_research_model,
@@ -714,9 +713,9 @@ class DeepResearchAgent:
                     {"role": "system", "content": "You are an expert research analyst conducting deep industry analysis. Use web search and reasoning to provide comprehensive, well-cited insights with strategic implications."},
                     {"role": "user", "content": prompt}
                 ],
-                tools=[{"type": "web_search"}],
-                temperature=temperature,
-                max_tokens=6000,
+                # tools=[{"type": "web_search"}], # Web search tool not supported
+                # temperature=temperature, # Temperature not supported for GPT-5 models
+                max_completion_tokens=6000,  # GPT-5 uses max_completion_tokens
                 reasoning_effort="high",  # Use enhanced reasoning for deep dives
                 verbosity="high"  # Comprehensive responses for deep research
             )

@@ -220,8 +220,19 @@ def ensure_social_inbox_tables():
                         is_verified BOOLEAN DEFAULT FALSE,
                         connection_status VARCHAR DEFAULT 'connected',
                         platform_metadata JSON DEFAULT '{}',
+                        rate_limit_remaining INTEGER,
+                        rate_limit_reset TIMESTAMP WITH TIME ZONE,
+                        daily_post_count INTEGER DEFAULT 0,
+                        daily_post_limit INTEGER,
+                        last_error TEXT,
+                        error_count INTEGER DEFAULT 0,
+                        last_error_at TIMESTAMP WITH TIME ZONE,
+                        auto_post_enabled BOOLEAN DEFAULT TRUE,
+                        preferred_posting_times JSON DEFAULT '{}',
+                        content_filters JSON DEFAULT '{}',
                         connected_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                         last_used_at TIMESTAMP WITH TIME ZONE,
+                        last_refreshed_at TIMESTAMP WITH TIME ZONE,
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP WITH TIME ZONE,
                         UNIQUE(user_id, platform)
@@ -234,6 +245,53 @@ def ensure_social_inbox_tables():
                 conn.execute(text("CREATE INDEX IF NOT EXISTS ix_social_platform_connections_platform_user_id ON social_platform_connections (platform_user_id)"))
                 conn.commit()
                 logger.info("✅ Successfully created social_platform_connections table")
+            else:
+                logger.info("✅ Social_platform_connections table already exists, checking for missing columns...")
+                
+                # Check and add missing columns to existing table
+                missing_columns = [
+                    ('rate_limit_remaining', 'INTEGER'),
+                    ('rate_limit_reset', 'TIMESTAMP WITH TIME ZONE'),
+                    ('daily_post_count', 'INTEGER DEFAULT 0'),
+                    ('daily_post_limit', 'INTEGER'),
+                    ('last_error', 'TEXT'),
+                    ('error_count', 'INTEGER DEFAULT 0'),
+                    ('last_error_at', 'TIMESTAMP WITH TIME ZONE'),
+                    ('auto_post_enabled', 'BOOLEAN DEFAULT TRUE'),
+                    ('preferred_posting_times', 'JSON DEFAULT \'{}\''),
+                    ('content_filters', 'JSON DEFAULT \'{}\''),
+                    ('last_refreshed_at', 'TIMESTAMP WITH TIME ZONE'),
+                ]
+                
+                # Get existing columns
+                existing_columns = conn.execute(text("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'social_platform_connections'
+                """)).fetchall()
+                
+                existing_column_names = {row[0] for row in existing_columns}
+                
+                columns_added = 0
+                for column_name, column_type in missing_columns:
+                    if column_name not in existing_column_names:
+                        logger.info(f"Adding missing {column_name} column to social_platform_connections table")
+                        try:
+                            conn.execute(text(f"""
+                                ALTER TABLE social_platform_connections 
+                                ADD COLUMN {column_name} {column_type}
+                            """))
+                            conn.commit()
+                            columns_added += 1
+                            logger.info(f"✅ Successfully added {column_name} column")
+                        except Exception as col_error:
+                            logger.warning(f"Could not add {column_name} column: {col_error}")
+                            conn.rollback()
+                
+                if columns_added > 0:
+                    logger.info(f"✅ Added {columns_added} missing columns to social_platform_connections table")
+                else:
+                    logger.info("✅ All required columns already exist in social_platform_connections table")
             
             # 2. Social Interactions table
             result = conn.execute(text("""

@@ -592,7 +592,7 @@ async def generate_content_ideas(
                 },
                 {"role": "user", "content": prompt}
             ],
-            tools=[{"type": "web_search"}],  # Enable web search for current trends
+            # tools=[{"type": "web_search"}], # Web search tool not supported - removed to prevent API errors
             temperature=0.8,  # Higher creativity for idea generation
             max_tokens=1000
         )

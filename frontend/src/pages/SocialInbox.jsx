@@ -460,9 +460,9 @@ function SocialInbox() {
             <AIEmptyStateSuggestions 
               type="inbox"
               context={{ 
-                hasFilters: selectedPriority !== 'all' || selectedPlatform !== 'all',
-                selectedPriority,
-                selectedPlatform
+                hasFilters: platformFilter !== 'all' || statusFilter !== 'all' || intentFilter !== 'all',
+                selectedPriority: null, // Priority filter not implemented yet
+                selectedPlatform: platformFilter
               }}
               onSuggestionClick={(suggestion) => {
                 switch(suggestion.id) {
@@ -470,7 +470,7 @@ function SocialInbox() {
                     window.location.href = '/settings#social-inbox'
                     break
                   case 'template-setup':
-                    setShowTemplates(true)
+                    setActiveTab('templates') // Fix: use setActiveTab instead of undefined setShowTemplates
                     break
                   default:
                     window.location.href = '/settings'

@@ -11,7 +11,7 @@ def get_openai_completion_params(model: str, max_tokens: int, temperature: float
     Args:
         model: The OpenAI model name
         max_tokens: Maximum number of tokens to generate
-        temperature: Sampling temperature
+        temperature: Sampling temperature (ignored for GPT-5 models)
         **kwargs: Additional parameters
     
     Returns:
@@ -19,16 +19,20 @@ def get_openai_completion_params(model: str, max_tokens: int, temperature: float
     """
     base_params = {
         "model": model,
-        "temperature": temperature,
         **kwargs
     }
     
-    # GPT-5 series models use max_completion_tokens (reasoning models)
-    if model.startswith("gpt-5") or model.startswith("o1"):
+    # GPT-5 series models don't support temperature parameter and use max_completion_tokens
+    if model.startswith("gpt-5"):
         base_params["max_completion_tokens"] = max_tokens
+        # Temperature parameter is not supported for GPT-5 models
+    elif model.startswith("o1"):
+        base_params["max_completion_tokens"] = max_tokens
+        # Temperature parameter is not supported for o1 reasoning models
     else:
-        # GPT-4, GPT-3.5, and other traditional models use max_tokens
+        # GPT-4, GPT-3.5, and other traditional models support temperature and use max_tokens
         base_params["max_tokens"] = max_tokens
+        base_params["temperature"] = temperature
     
     return base_params
 

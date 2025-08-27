@@ -455,13 +455,12 @@ class ContentGenerationAutomation:
             params = {
                 "model": "gpt-5",
                 "messages": messages,
-                "max_tokens": min(max_chars // 3, 500),
-                "temperature": 0.7
+                "max_completion_tokens": min(max_chars // 3, 500),  # GPT-5 uses max_completion_tokens
+                # "temperature": 0.7  # Temperature not supported for GPT-5 models
             }
             
-            # Add tools if research context is available
-            if research_context:
-                params["tools"] = [{"type": "web_search"}]
+            # Web search tool not supported - removed to prevent API errors
+            # Using research context in prompts instead
             
             response = await client.chat.completions.create(**params)
             

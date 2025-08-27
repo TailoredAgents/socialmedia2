@@ -88,17 +88,8 @@ class AIInsightsService:
                 ]
             )
             
-            # Add web_search tool to the parameters
-            params["tools"] = [
-                {
-                    "type": "web_search",
-                    "web_search": {
-                        "enabled": True,
-                        "max_results": 10
-                    }
-                }
-            ]
-            params["tool_choice"] = "auto"  # Let the model decide when to use web search
+            # Web search tool not supported - removed to prevent API errors
+            # Using GPT's knowledge base for insights instead
             
             response = await self.async_client.chat.completions.create(**params)
             

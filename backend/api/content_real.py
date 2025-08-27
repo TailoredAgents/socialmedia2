@@ -268,9 +268,9 @@ async def generate_content(request: ContentGenerationRequest):
         response = await client.chat.completions.create(
             model="gpt-5",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-            max_tokens=400,
-            tools=[{"type": "web_search"}] if request.platform in ['linkedin', 'twitter'] else None  # Enable web search for research-heavy platforms
+            # temperature=0.7, # Temperature not supported for GPT-5 models
+            max_completion_tokens=400,  # GPT-5 uses max_completion_tokens instead of max_tokens
+            # tools=[{"type": "web_search"}] # Web search tool not supported - removed to prevent API errors
         )
         
         generated_content = response.choices[0].message.content.strip()
@@ -297,8 +297,8 @@ async def generate_content(request: ContentGenerationRequest):
             retry_response = await client.chat.completions.create(
                 model="gpt-5",
                 messages=[{"role": "user", "content": stricter_prompt}],
-                temperature=0.5,
-                max_tokens=200  # Reduced tokens for shorter content
+                # temperature=0.5,  # Temperature not supported for GPT-5 models
+                max_completion_tokens=200  # GPT-5 uses max_completion_tokens
             )
             
             generated_content = retry_response.choices[0].message.content.strip()

@@ -3,7 +3,7 @@ API validation utilities and common validators
 Enhanced with security features and comprehensive input validation
 """
 from typing import List, Dict, Any, Optional
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from datetime import datetime, date
 from fastapi import HTTPException, status, Request
 import re
@@ -30,13 +30,15 @@ class PaginationParams(BaseModel):
     limit: int = 50
     offset: Optional[int] = None
     
-    @validator('page')
+    @field_validator('page')
+    @classmethod
     def page_must_be_positive(cls, v):
         if v < 1:
             raise ValueError('Page must be positive')
         return v
     
-    @validator('limit')
+    @field_validator('limit')
+    @classmethod
     def limit_must_be_reasonable(cls, v):
         if v < 1 or v > 100:
             raise ValueError('Limit must be between 1 and 100')
@@ -54,13 +56,15 @@ class DateRangeParams(BaseModel):
     end_date: Optional[date] = None
     days: Optional[int] = None
     
-    @validator('end_date')
-    def end_date_after_start(cls, v, values):
-        if v and values.get('start_date') and v < values['start_date']:
+    @field_validator('end_date')
+    @classmethod
+    def end_date_after_start(cls, v, info):
+        if v and info.data.get('start_date') and v < info.data['start_date']:
             raise ValueError('End date must be after start date')
         return v
     
-    @validator('days')
+    @field_validator('days')
+    @classmethod  
     def days_must_be_positive(cls, v):
         if v is not None and v < 1:
             raise ValueError('Days must be positive')

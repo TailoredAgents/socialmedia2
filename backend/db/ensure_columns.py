@@ -56,17 +56,19 @@ def ensure_content_logs_table():
             else:
                 logger.info("✅ Content_logs table already exists")
                 
-                # Check if foreign key constraint exists
+                # Check if foreign key constraint exists (PostgreSQL specific)
                 fk_check = conn.execute(text("""
                     SELECT COUNT(*) 
                     FROM information_schema.table_constraints tc
                     JOIN information_schema.key_column_usage kcu 
                         ON tc.constraint_name = kcu.constraint_name
+                    JOIN information_schema.constraint_column_usage ccu 
+                        ON ccu.constraint_name = tc.constraint_name
                     WHERE tc.constraint_type = 'FOREIGN KEY'
                         AND tc.table_name = 'content_logs'
                         AND kcu.column_name = 'user_id'
-                        AND kcu.referenced_table_name = 'users'
-                        AND kcu.referenced_column_name = 'id'
+                        AND ccu.table_name = 'users'
+                        AND ccu.column_name = 'id'
                 """)).scalar()
                 
                 if fk_check == 0:
@@ -233,7 +235,7 @@ def ensure_social_inbox_tables():
                 logger.info("Creating social_interactions table...")
                 conn.execute(text("""
                     CREATE TABLE social_interactions (
-                        id VARCHAR PRIMARY KEY,
+                        id SERIAL PRIMARY KEY,
                         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                         connection_id INTEGER REFERENCES social_platform_connections(id),
                         platform VARCHAR NOT NULL,
@@ -284,7 +286,7 @@ def ensure_social_inbox_tables():
                 logger.info("Creating response_templates table...")
                 conn.execute(text("""
                     CREATE TABLE response_templates (
-                        id VARCHAR PRIMARY KEY,
+                        id SERIAL PRIMARY KEY,
                         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                         name VARCHAR NOT NULL,
                         description TEXT,
@@ -324,8 +326,8 @@ def ensure_social_inbox_tables():
                 logger.info("Creating interaction_responses table...")
                 conn.execute(text("""
                     CREATE TABLE interaction_responses (
-                        id VARCHAR PRIMARY KEY,
-                        interaction_id VARCHAR NOT NULL REFERENCES social_interactions(id) ON DELETE CASCADE,
+                        id SERIAL PRIMARY KEY,
+                        interaction_id INTEGER NOT NULL REFERENCES social_interactions(id) ON DELETE CASCADE,
                         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                         response_text TEXT NOT NULL,
                         media_urls JSON DEFAULT '[]',
@@ -361,7 +363,7 @@ def ensure_social_inbox_tables():
                 logger.info("Creating company_knowledge table...")
                 conn.execute(text("""
                     CREATE TABLE company_knowledge (
-                        id VARCHAR PRIMARY KEY,
+                        id SERIAL PRIMARY KEY,
                         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                         title VARCHAR NOT NULL,
                         topic VARCHAR NOT NULL,
@@ -477,8 +479,8 @@ def ensure_user_columns():
                 ('ix_users_email_verification_token', 'email_verification_token'),
                 ('ix_users_password_reset_token', 'password_reset_token'), 
                 ('ix_users_stripe_customer_id', 'stripe_customer_id'),
-                ('ix_users_email_username', '(email, username)'),  # Composite index for login queries
-                ('ix_users_tier_status', '(tier, subscription_status)'),  # Index for subscription queries
+                ('ix_users_email_username', 'email, username'),  # Composite index for login queries  
+                ('ix_users_tier_status', 'tier, subscription_status'),  # Index for subscription queries
             ]
             
             for index_name, column_name in indexes_to_create:

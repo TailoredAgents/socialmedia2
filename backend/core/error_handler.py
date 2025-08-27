@@ -6,7 +6,7 @@ and HTTP response formatting across all API endpoints and services.
 """
 import logging
 from typing import Dict, Any, Optional, Union, Type
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 from fastapi import HTTPException, status
@@ -87,7 +87,7 @@ class ErrorDetail(BaseModel):
     message: str
     field: Optional[str] = None
     context: Optional[Dict[str, Any]] = None
-    timestamp: datetime = datetime.utcnow()
+    timestamp: datetime = datetime.now(timezone.utc)
 
 
 class APIError(Exception):
@@ -348,7 +348,7 @@ class CircuitBreaker:
         """Check if circuit breaker should attempt reset"""
         return (
             self.last_failure_time and
-            (datetime.utcnow().timestamp() - self.last_failure_time) > self.recovery_timeout
+            (datetime.now(timezone.utc).timestamp() - self.last_failure_time) > self.recovery_timeout
         )
     
     def _on_success(self):
@@ -359,7 +359,7 @@ class CircuitBreaker:
     def _on_failure(self):
         """Handle failed call"""
         self.failure_count += 1
-        self.last_failure_time = datetime.utcnow().timestamp()
+        self.last_failure_time = datetime.now(timezone.utc).timestamp()
         
         if self.failure_count >= self.failure_threshold:
             self.state = CircuitBreakerState.OPEN

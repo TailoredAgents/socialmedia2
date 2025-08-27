@@ -50,6 +50,10 @@ def suppress_third_party_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning, module="billiard")
     warnings.filterwarnings("ignore", message=".*multi-threaded.*fork.*deadlocks.*")
     
+    # bcrypt version reading errors - library compatibility issue
+    warnings.filterwarnings("ignore", message=".*error reading bcrypt version.*")
+    warnings.filterwarnings("ignore", message=".*bcrypt.*has no attribute '__about__'.*")
+    
     # Suppress import-time SyntaxWarnings if running Python 3.12+
     if sys.version_info >= (3, 12):
         warnings.filterwarnings("ignore", category=SyntaxWarning)

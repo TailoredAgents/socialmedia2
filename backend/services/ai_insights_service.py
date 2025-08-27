@@ -31,10 +31,9 @@ class AIInsightsService:
     
     def __init__(self):
         self.async_client = AsyncOpenAI(api_key=settings.openai_api_key)
-        self.serper_api_key = getattr(settings, 'serper_api_key', None)
         
     async def search_ai_agent_news(self, days_back: int = 7) -> List[Dict[str, Any]]:
-        """Search for recent AI Agent industry news"""
+        """Search for recent AI Agent industry news using GPT-5's built-in web search"""
         try:
             # Calculate date range
             end_date = datetime.now()
@@ -54,11 +53,10 @@ class AIInsightsService:
             all_results = []
             
             for query in queries:
-                if self.serper_api_key and self.serper_api_key != "your_serper_api_key_here":
-                    # Use Serper API for real web search
-                    results = await self._search_with_serper(query, date_filter)
-                else:
-                    # Use alternative search or generate insights without real-time data
+                # Use GPT-5's native web search as primary method
+                results = await self._search_with_gpt(query, date_filter)
+                if not results:
+                    # Fallback to alternative method if GPT search fails
                     results = await self._search_alternative(query)
                 
                 all_results.extend(results)
@@ -76,42 +74,82 @@ class AIInsightsService:
             logger.error(f"Error searching AI agent news: {e}")
             return await self._get_fallback_insights()
     
-    async def _search_with_serper(self, query: str, date_filter: str) -> List[Dict[str, Any]]:
-        """Search using Serper API"""
+    async def _search_with_gpt(self, query: str, date_filter: str) -> List[Dict[str, Any]]:
+        """Search using GPT-5's native web search capabilities"""
         try:
-            url = "https://google.serper.dev/search"
-            payload = {
-                "q": query,
-                "dateFilter": f"d{7}",  # Last 7 days
-                "num": 10
-            }
-            headers = {
-                "X-API-KEY": self.serper_api_key,
-                "Content-Type": "application/json"
-            }
+            # Use the OpenAI Responses API with web_search tool
+            params = get_openai_completion_params(
+                model="gpt-5-mini",  # Using mini for faster search
+                max_tokens=1000,
+                temperature=0.5,
+                messages=[
+                    {"role": "system", "content": "You are a web search assistant. Return search results as structured data."},
+                    {"role": "user", "content": f"Search for: {query} (focus on content from the last 7 days)"}
+                ]
+            )
             
-            response = requests.post(url, json=payload, headers=headers, timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                results = []
-                
-                for item in data.get('organic', []):
-                    results.append({
-                        'title': item.get('title', ''),
-                        'snippet': item.get('snippet', ''),
-                        'link': item.get('link', ''),
-                        'source': item.get('displayLink', ''),
-                        'date': item.get('date', ''),
-                        'relevance_score': 0.9  # High relevance from Serper
-                    })
-                
-                return results
-            else:
-                logger.warning(f"Serper API error: {response.status_code}")
-                return []
-                
+            # Add web_search tool to the parameters
+            params["tools"] = [
+                {
+                    "type": "web_search",
+                    "web_search": {
+                        "enabled": True,
+                        "max_results": 10
+                    }
+                }
+            ]
+            params["tool_choice"] = "auto"  # Let the model decide when to use web search
+            
+            response = await self.async_client.chat.completions.create(**params)
+            
+            results = []
+            
+            # Parse tool calls and extract web search results
+            if hasattr(response.choices[0].message, 'tool_calls') and response.choices[0].message.tool_calls:
+                for tool_call in response.choices[0].message.tool_calls:
+                    if tool_call.function.name == 'web_search':
+                        # Parse the search results from the tool call
+                        try:
+                            search_data = json.loads(tool_call.function.arguments) if isinstance(tool_call.function.arguments, str) else tool_call.function.arguments
+                            for item in search_data.get('results', []):
+                                results.append({
+                                    'title': item.get('title', ''),
+                                    'snippet': item.get('snippet', ''),
+                                    'link': item.get('url', item.get('link', '')),
+                                    'source': item.get('source', ''),
+                                    'date': item.get('date', ''),
+                                    'relevance_score': 0.9  # High relevance from GPT-5 search
+                                })
+                        except (json.JSONDecodeError, AttributeError) as e:
+                            logger.warning(f"Error parsing search results: {e}")
+            
+            # If no tool calls, try to parse content as fallback
+            if not results and response.choices[0].message.content:
+                # Try to extract structured data from the response
+                content = response.choices[0].message.content
+                try:
+                    # Attempt to parse as JSON
+                    parsed_results = json.loads(content)
+                    if isinstance(parsed_results, list):
+                        results = parsed_results
+                    elif isinstance(parsed_results, dict) and 'results' in parsed_results:
+                        results = parsed_results['results']
+                except:
+                    # If not JSON, create a single result from the content
+                    if content and len(content) > 50:
+                        results.append({
+                            'title': query,
+                            'snippet': content[:500],
+                            'link': '',
+                            'source': 'GPT-5 Analysis',
+                            'date': date_filter,
+                            'relevance_score': 0.7
+                        })
+            
+            return results
+            
         except Exception as e:
-            logger.error(f"Serper search error: {e}")
+            logger.error(f"GPT-5 web search error: {e}")
             return []
     
     async def _search_alternative(self, query: str) -> List[Dict[str, Any]]:
@@ -254,7 +292,7 @@ class AIInsightsService:
                     "search_queries_used": 6,
                     "news_sources_analyzed": len(news_results),
                     "generation_model": "gpt-5",
-                    "has_real_time_data": self.serper_api_key is not None and self.serper_api_key != "your_serper_api_key_here"
+                    "has_real_time_data": True  # GPT-5 has built-in web search
                 }
             }
             

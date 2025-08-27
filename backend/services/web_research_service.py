@@ -154,33 +154,37 @@ class WebResearchService:
         return await self._perform_search(query, max_results=3)
     
     async def _perform_search(self, query: str, max_results: int = 5) -> List[WebSearchResult]:
-        """Perform web search using available search engines - NO FALLBACK TO MOCK DATA"""
+        """Perform web search using GPT-5's native web search capabilities"""
         
         search_errors = []
         
-        # Try GPT-based web search first (if OpenAI key available)
-        if hasattr(settings, 'openai_api_key') and settings.openai_api_key:
+        # PRIMARY METHOD: GPT-5's built-in web search (if OpenAI key available)
+        if hasattr(settings, 'openai_api_key') and settings.openai_api_key and settings.openai_api_key != "sk-your_openai_api_key_here":
             try:
-                logger.info(f"Attempting GPT-based web search for: {query}")
+                logger.info(f"Using GPT-5's native web search for: {query}")
                 return await self._search_with_gpt(query, max_results)
             except Exception as e:
-                search_errors.append(f"GPT web search: {e}")
-                logger.warning(f"GPT web search failed: {e}")
+                search_errors.append(f"GPT-5 web search: {e}")
+                logger.warning(f"GPT-5 web search failed (will retry with fallbacks): {e}")
+        else:
+            logger.warning("OpenAI API key not configured - GPT-5 web search unavailable")
         
-        # Try Serper API (if available)
-        if hasattr(settings, 'serper_api_key') and settings.serper_api_key:
+        # OPTIONAL FALLBACK: Serper API (only if configured and GPT-5 fails)
+        # Note: Serper is no longer needed with GPT-5's built-in search
+        if hasattr(settings, 'serper_api_key') and settings.serper_api_key and settings.serper_api_key != "your_serper_api_key_here":
             try:
-                logger.info(f"Attempting Serper API search for: {query}")
+                logger.info(f"Falling back to Serper API search for: {query}")
                 return await self._search_serper(query, max_results)
             except Exception as e:
                 search_errors.append(f"Serper API: {e}")
                 logger.warning(f"Serper search failed: {e}")
         
-        # Try DuckDuckGo as last resort
+        # LAST RESORT: DuckDuckGo (free but limited)
         try:
-            logger.info(f"Attempting DuckDuckGo search for: {query}")
+            logger.info(f"Attempting DuckDuckGo search as last resort for: {query}")
             results = await self._search_duckduckgo(query, max_results)
             if results:  # Only return if we got actual results
+                logger.info(f"DuckDuckGo returned {len(results)} results")
                 return results
             else:
                 search_errors.append("DuckDuckGo: No results returned")
@@ -188,68 +192,85 @@ class WebResearchService:
             search_errors.append(f"DuckDuckGo: {e}")
             logger.warning(f"DuckDuckGo search failed: {e}")
         
-        # ALL METHODS FAILED - NO FALLBACK TO MOCK DATA
+        # ALL METHODS FAILED - Return graceful error
         error_summary = "; ".join(search_errors)
-        raise Exception(f"All web search methods failed for query '{query}': {error_summary}")
+        raise WebSearchException(
+            f"Web search unavailable for query '{query}': {error_summary}",
+            "Oopsie! 🔍 I'm having trouble searching the web right now. Let me try again in a moment! - Lily"
+        )
     
     async def _search_with_gpt(self, query: str, max_results: int) -> List[WebSearchResult]:
-        """Search using GPT to simulate web research (requires OpenAI API)"""
+        """Search using GPT-5's native web search capabilities through Responses API"""
         try:
-            from openai import OpenAI
-            client = OpenAI(api_key=settings.openai_api_key)
+            from openai import AsyncOpenAI
+            client = AsyncOpenAI(api_key=settings.openai_api_key)
             
-            # Create a prompt for GPT to search for company information
-            search_prompt = f"""
-            As a web research assistant, provide specific, factual information about the following query: "{query}"
-            
-            Please provide {max_results} realistic search results in the following JSON format:
-            [
-                {{
-                    "title": "Specific article/page title",
-                    "url": "Realistic website URL",
-                    "snippet": "Factual description or excerpt (2-3 sentences max)",
-                    "date": "YYYY-MM-DD or null",
-                    "source": "gpt_web_search"
-                }}
-            ]
-            
-            IMPORTANT: Only provide information if you have high confidence it's accurate. If you're unsure about specific details, indicate that in the snippet. Focus on well-known, verifiable information.
-            
-            Return only the JSON array, no other text.
-            """
-            
-            response = client.chat.completions.create(
-                model="gpt-5-mini",  # Use GPT-5 mini with built-in web search
+            # Use GPT-5's built-in web search tool through Responses API
+            # This provides real-time web search without external services
+            response = await client.responses.create(
+                model="gpt-5-mini",  # GPT-5-mini has built-in web search
                 messages=[
-                    {"role": "system", "content": "You are a web research assistant with real-time web search capabilities. Provide current, accurate information with proper citations."},
-                    {"role": "user", "content": search_prompt}
+                    {
+                        "role": "system", 
+                        "content": "You are a web research assistant. Use your built-in web search tool to find current, accurate information."
+                    },
+                    {
+                        "role": "user", 
+                        "content": f"Search the web for: {query}\n\nProvide {max_results} relevant search results with titles, URLs, and snippets."
+                    }
                 ],
-                tools=[{"type": "web_search"}],  # Enable built-in web search
+                tools=[
+                    {
+                        "type": "web_search",
+                        "web_search": {
+                            "enabled": True,
+                            "max_results": max_results
+                        }
+                    }
+                ],
+                tool_choice="required",  # Force use of web search tool
                 temperature=0.1,  # Low temperature for factual responses
-                max_tokens=1500
+                max_completion_tokens=2000
             )
             
-            # Parse the JSON response
-            import json
-            try:
-                search_results_data = json.loads(response.choices[0].message.content)
-                results = []
+            # Parse the web search results from tool calls
+            results = []
+            
+            # Check for tool call results in the response
+            if response.content and response.content.tool_calls:
+                for tool_call in response.content.tool_calls:
+                    if tool_call.type == "web_search":
+                        # Extract search results from the web search tool response
+                        search_results = tool_call.web_search.results
+                        
+                        for item in search_results[:max_results]:
+                            results.append(WebSearchResult(
+                                title=item.get('title', ''),
+                                url=item.get('url', ''),
+                                snippet=item.get('snippet', ''),
+                                date=item.get('published_date'),
+                                source='gpt_5_web_search'
+                            ))
+            
+            # If no tool results, parse from message content as fallback
+            if not results and response.content and response.content.text:
+                import json
+                try:
+                    # Try to parse structured results from the response
+                    search_results_data = json.loads(response.content.text)
+                    for item in search_results_data[:max_results]:
+                        results.append(WebSearchResult(
+                            title=item.get('title', ''),
+                            url=item.get('url', ''),
+                            snippet=item.get('snippet', ''),
+                            date=item.get('date'),
+                            source='gpt_5_web_search'
+                        ))
+                except json.JSONDecodeError:
+                    logger.warning("Could not parse JSON from GPT-5 response")
                 
-                for item in search_results_data:
-                    results.append(WebSearchResult(
-                        title=item.get('title', ''),
-                        url=item.get('url', ''),
-                        snippet=item.get('snippet', ''),
-                        date=item.get('date'),
-                        source='gpt_web_search'
-                    ))
-                
-                logger.info(f"GPT web search returned {len(results)} results for: {query}")
-                return results
-                
-            except json.JSONDecodeError as e:
-                raise Exception(f"Failed to parse GPT response as JSON: {e}")
-                
+            logger.info(f"GPT-5 web search returned {len(results)} results for: {query}")
+            return results
         except Exception as e:
             raise Exception(f"GPT web search failed: {str(e)}")
     

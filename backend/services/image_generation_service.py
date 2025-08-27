@@ -44,7 +44,8 @@ class ImageGenerationService:
             "youtube": "professional thumbnail design with bold text and engaging visuals"
         }
         
-        # Quality presets
+        # Quality presets (Note: xAI ignores size/quality, these are for metadata only)
+        # xAI always generates 1024x768 images regardless of requested size
         self.quality_presets = {
             "draft": {"quality": "low", "size": "1024x1024"},
             "standard": {"quality": "medium", "size": "1024x1024"},
@@ -134,13 +135,14 @@ class ImageGenerationService:
             if custom_options:
                 tool_options.update(custom_options)
             
-            # Use xAI for image generation - trying the correct API format
+            # Use xAI for image generation
+            # xAI API only supports: model, prompt, n, response_format
+            # Does NOT support: size (defaults to 1024x768), quality, or other parameters
             response = await self.async_client.images.generate(
                 model="grok-2-image",
                 prompt=enhanced_prompt,
-                size=tool_options.get("size", "1024x1024"),
-                quality=tool_options.get("quality", "standard"),
-                n=1
+                n=1,
+                response_format="b64_json"  # Get base64 directly to avoid extra download step
             )
             
             # Extract image data from xAI response
@@ -187,7 +189,9 @@ class ImageGenerationService:
                     "quality_preset": quality_preset,
                     "tool_options": tool_options,
                     "model": "grok-2-image",
-                    "generated_at": datetime.utcnow().isoformat(),
+                    "generated_at": datetime.now().isoformat(),
+                    "actual_size": "1024x768",  # xAI fixed output size
+                    "requested_size": tool_options.get("size", "1024x1024"),  # What was requested
                     "content_context": content_context,
                     "industry_context": industry_context,
                     "tone": tone

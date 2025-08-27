@@ -28,10 +28,11 @@ celery_app.conf.update(
     enable_utc=True,
     result_expires=3600,
     task_track_started=True,
-    task_time_limit=30 * 60,  # 30 minutes
-    task_soft_time_limit=25 * 60,  # 25 minutes
+    task_time_limit=10 * 60,  # 10 minutes (reduced from 30)
+    task_soft_time_limit=8 * 60,  # 8 minutes (reduced from 25)
     worker_prefetch_multiplier=1,
-    worker_max_tasks_per_child=1000,
+    worker_max_tasks_per_child=50,  # Reduced from 1000 to prevent memory accumulation
+    worker_max_memory_per_child=500000,  # 500MB limit per worker process
 )
 
 # Production autonomous schedule for fully automated operation

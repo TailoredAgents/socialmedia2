@@ -121,7 +121,7 @@ class ImageGenerationService:
             # Get quality preset settings
             preset_config = self.quality_presets.get(quality_preset, self.quality_presets["standard"])
             
-            # Prepare GPT Image 1 parameters
+            # Prepare Grok-2 Image parameters
             tool_options = {
                 "type": "image_generation",
                 "size": preset_config.get("size", "1024x1024"),
@@ -132,9 +132,9 @@ class ImageGenerationService:
             if custom_options:
                 tool_options.update(custom_options)
             
-            # Use OpenAI Responses API with image_generation tool for enhanced capabilities
+            # Use xAI Grok-2 for image generation via OpenAI-compatible API
             response = await self.async_client.responses.create(
-                model="gpt-4o",  # GPT-4o supports image generation tool
+                model="grok-2-image",  # Use Grok-2 image model exclusively
                 messages=[
                     {
                         "role": "user",
@@ -232,7 +232,7 @@ class ImageGenerationService:
                 # Continue from previous response
                 response = await asyncio.to_thread(
                     self.client.responses.create,
-                    model="gpt-image-1",
+                    model="grok-2-image",
                     previous_response_id=previous_response_id,
                     input=f"Edit the image: {edit_prompt}",
                     tools=[{
@@ -244,7 +244,7 @@ class ImageGenerationService:
                 # Edit specific image by ID
                 response = await asyncio.to_thread(
                     self.client.responses.create,
-                    model="gpt-image-1",
+                    model="grok-2-image",
                     input=[
                         {
                             "role": "user",
@@ -331,7 +331,7 @@ class ImageGenerationService:
             # Use Responses API with streaming as per OpenAI documentation
             stream = await asyncio.to_thread(
                 self.client.responses.create,
-                model="gpt-image-1",
+                model="grok-2-image",
                 input=enhanced_prompt,
                 tools=[{
                     "type": "image_generation",

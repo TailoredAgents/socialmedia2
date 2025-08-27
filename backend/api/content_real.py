@@ -396,7 +396,7 @@ async def generate_content(request: ContentGenerationRequest):
 
 @router.post("/generate-image")
 async def generate_image(request: ImageGenerationRequest):
-    """Generate AI-powered images using GPT Image 1"""
+    """Generate AI-powered images using Grok-2 Image"""
     try:
         result = await image_service.generate_image(
             prompt=request.prompt,

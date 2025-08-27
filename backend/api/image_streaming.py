@@ -86,7 +86,7 @@ async def get_streaming_status(
         "max_partial_images": 3,
         "supported_platforms": ["twitter", "linkedin", "instagram", "facebook", "tiktok"],
         "quality_presets": ["draft", "standard", "premium", "story", "banner"],
-        "model": "gpt-image-1",
+        "model": "grok-2-image",
         "features": [
             "Real-time partial image streaming",
             "Platform-specific optimization",

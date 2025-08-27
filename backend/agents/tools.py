@@ -239,7 +239,7 @@ Format your response as JSON with keys: content, title, hashtags"""
         """
         try:
             response = self.client.responses.create(
-                model="gpt-4o",  # GPT-4o supports image generation tool
+                model="grok-2-image",  # Use Grok-2 image model exclusively
                 messages=[
                     {
                         "role": "user", 
@@ -274,13 +274,13 @@ Format your response as JSON with keys: content, title, hashtags"""
                 "status": "success",
                 "image_url": image_data_url,
                 "prompt": prompt,
-                "model": "gpt-image-1"
+                "model": "grok-2-image"
             }
         except Exception as e:
             logger.error(f"Image generation failed: {e}")
             return {
                 "status": "error",
-                "error": f"Failed to generate image with GPT Image 1: {str(e)}"
+                "error": f"Failed to generate image with Grok-2: {str(e)}"
             }
     
     def analyze_sentiment(self, text: str) -> Dict[str, Any]:

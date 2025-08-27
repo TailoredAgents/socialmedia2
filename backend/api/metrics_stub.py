@@ -62,7 +62,7 @@ async def get_metrics():
             },
             "capabilities": {
                 "content_generation": "Active (OpenAI GPT-4)",
-                "image_generation": "Active (GPT Image 1)",
+                "image_generation": "Active (Grok-2 Image)",
                 "ai_insights": "Active (Industry Analysis)",
                 "social_posting": "Twitter Ready" if twitter_connected else "Setup Required"
             }

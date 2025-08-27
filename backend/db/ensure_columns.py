@@ -184,10 +184,14 @@ def ensure_notifications_table():
 def ensure_social_inbox_tables():
     """
     Ensure all social inbox tables exist with proper structure
+    Handle data type mismatches by dropping and recreating tables if needed
     """
     try:
         with engine.connect() as conn:
             logger.info("Checking social inbox tables...")
+            
+            # First, check for and fix any existing tables with wrong schema
+            _fix_existing_social_inbox_schemas(conn)
             
             # 1. Social Platform Connections table
             result = conn.execute(text("""
@@ -332,7 +336,7 @@ def ensure_social_inbox_tables():
                         response_text TEXT NOT NULL,
                         media_urls JSON DEFAULT '[]',
                         response_type VARCHAR DEFAULT 'manual',
-                        template_id VARCHAR REFERENCES response_templates(id),
+                        template_id INTEGER REFERENCES response_templates(id),
                         ai_confidence_score FLOAT DEFAULT 0.0,
                         platform VARCHAR NOT NULL,
                         platform_response_id VARCHAR,
@@ -499,3 +503,37 @@ def ensure_user_columns():
         logger.error(f"❌ Error ensuring database columns: {e}")
         # Don't crash the app, just log the error
         pass
+
+def _fix_existing_social_inbox_schemas(conn):
+    """
+    Fix existing social inbox tables that have schema mismatches
+    Drop and recreate tables with wrong data types
+    """
+    try:
+        # Check if tables exist with wrong schema and drop them
+        tables_to_check = [
+            ('response_templates', 'id', 'character varying'),  # Should be integer
+            ('social_interactions', 'id', 'character varying'),  # Should be integer  
+            ('interaction_responses', 'id', 'character varying'),  # Should be integer
+            ('interaction_responses', 'template_id', 'character varying'),  # Should be integer
+        ]
+        
+        for table_name, column_name, wrong_type in tables_to_check:
+            # Check if table exists with wrong column type
+            result = conn.execute(text("""
+                SELECT data_type 
+                FROM information_schema.columns 
+                WHERE table_name = :table_name AND column_name = :column_name
+            """), {"table_name": table_name, "column_name": column_name}).fetchone()
+            
+            if result and wrong_type in result[0]:
+                logger.warning(f"Table {table_name} has {column_name} as {result[0]}, need to recreate...")
+                
+                # Drop the problematic table (cascade will handle dependencies)
+                conn.execute(text(f"DROP TABLE IF EXISTS {table_name} CASCADE"))
+                conn.commit()
+                logger.info(f"✅ Dropped {table_name} table with wrong schema")
+                
+    except Exception as e:
+        logger.warning(f"Error checking existing schemas: {e}")
+        # Continue anyway - the table creation will handle it

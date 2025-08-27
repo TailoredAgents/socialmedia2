@@ -1,5 +1,5 @@
-// Production-ready logging utility
-// Only logs in development mode, sends to monitoring service in production
+// Production-ready logging utility with backend monitoring integration
+// Console logs in development, forwards all logs to backend monitoring service in production
 
 const isDevelopment = import.meta.env.MODE === 'development'
 const isTest = import.meta.env.MODE === 'test'
@@ -13,23 +13,24 @@ class Logger {
     if (this.isEnabled) {
       console.log(`[INFO] ${message}`, ...args)
     }
-    // In production, could send to monitoring service
-    this._sendToMonitoring('info', message, args)
+    // Send to monitoring service in production (fire and forget)
+    this._sendToMonitoring('info', message, args).catch(() => {})
   }
 
   warn(message, ...args) {
     if (this.isEnabled) {
       console.warn(`[WARN] ${message}`, ...args)
     }
-    this._sendToMonitoring('warn', message, args)
+    // Send to monitoring service (fire and forget)
+    this._sendToMonitoring('warn', message, args).catch(() => {})
   }
 
   error(message, error, ...args) {
     if (this.isEnabled) {
       console.error(`[ERROR] ${message}`, error, ...args)
     }
-    // Always log errors for monitoring in production
-    this._sendToMonitoring('error', message, { error, args })
+    // Always log errors for monitoring in production (fire and forget)
+    this._sendToMonitoring('error', message, { error, args }).catch(() => {})
   }
 
   debug(message, ...args) {
@@ -39,10 +40,40 @@ class Logger {
     // Debug logs only in development
   }
 
-  _sendToMonitoring(level, message, data) {
-    // Temporarily disabled to prevent 404 spam
-    // TODO: Implement proper monitoring endpoint in backend
-    return
+  async _sendToMonitoring(level, message, data) {
+    // Send logs to backend monitoring service in production
+    if (isDevelopment) {
+      return // Only send in production
+    }
+    
+    try {
+      const logEntry = {
+        level,
+        message: typeof message === 'string' ? message : JSON.stringify(message),
+        data: data || {},
+        timestamp: new Date().toISOString(),
+        session_id: this._getSessionId(),
+        url: typeof window !== 'undefined' ? window.location.href : '',
+        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : ''
+      }
+      
+      // Send to backend monitoring endpoint
+      const response = await fetch('/api/monitoring/frontend-logs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(logEntry)
+      })
+      
+      if (!response.ok) {
+        // Silently fail - don't create log loops
+        console.warn(`Failed to send log to backend: ${response.status}`)
+      }
+    } catch (error) {
+      // Silently fail to prevent infinite loops
+      console.warn('Failed to send log to monitoring service:', error.message)
+    }
   }
 
   _mapLevelToSentryLevel(level) {
@@ -56,7 +87,8 @@ class Logger {
   }
 
   _sendToCustomEndpoint(level, message, data) {
-    // Temporarily disabled - no logging endpoint available
+    // Alternative endpoint for custom monitoring services (if needed)
+    // Currently using _sendToMonitoring for backend integration
     return
   }
 

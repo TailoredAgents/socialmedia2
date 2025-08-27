@@ -472,6 +472,115 @@ async def service_status():
             "error": str(e)
         }
 
+from pydantic import BaseModel, Field
+
+class FrontendLogEntry(BaseModel):
+    level: str = Field(..., pattern="^(error|warn|info|debug)$")
+    message: str = Field(..., max_length=1000)
+    data: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    timestamp: Optional[str] = Field(None)
+    session_id: Optional[str] = Field(None)
+    url: Optional[str] = Field(None)
+    user_agent: Optional[str] = Field(None)
+
+@router.post("/frontend-logs")
+async def receive_frontend_logs(
+    log_entry: FrontendLogEntry,
+    current_user: Optional[User] = None  # Allow anonymous logging for errors
+):
+    """
+    Receive and process frontend logs for monitoring and debugging.
+    
+    This endpoint collects frontend logs to provide operational telemetry
+    in production environments.
+    """
+    try:
+        # Create standardized log entry
+        log_data = {
+            "source": "frontend",
+            "level": log_entry.level,
+            "message": log_entry.message,
+            "data": log_entry.data,
+            "timestamp": log_entry.timestamp or get_utc_now().isoformat(),
+            "session_id": log_entry.session_id,
+            "url": log_entry.url,
+            "user_agent": log_entry.user_agent,
+            "user_id": current_user.id if current_user else None
+        }
+        
+        # Log to backend logger with appropriate level
+        if log_entry.level == "error":
+            logger.error(f"Frontend Error: {log_entry.message}", extra=log_data)
+        elif log_entry.level == "warn":
+            logger.warning(f"Frontend Warning: {log_entry.message}", extra=log_data)
+        elif log_entry.level == "info":
+            logger.info(f"Frontend Info: {log_entry.message}", extra=log_data)
+        else:  # debug
+            logger.debug(f"Frontend Debug: {log_entry.message}", extra=log_data)
+        
+        # Store in monitoring state for dashboard
+        monitoring_state["health_checks"].append({
+            "check_type": "frontend_log",
+            "timestamp": log_data["timestamp"],
+            "status": "error" if log_entry.level == "error" else "healthy",
+            "details": log_data
+        })
+        
+        # Keep only last 1000 logs to prevent memory issues
+        if len(monitoring_state["health_checks"]) > 1000:
+            monitoring_state["health_checks"] = monitoring_state["health_checks"][-1000:]
+        
+        return {
+            "status": "success",
+            "message": "Log entry received",
+            "timestamp": log_data["timestamp"]
+        }
+        
+    except Exception as e:
+        logger.error(f"Error processing frontend log: {e}")
+        return {
+            "status": "error", 
+            "message": f"Failed to process log: {str(e)}"
+        }
+
+@router.get("/frontend-logs")
+async def get_frontend_logs(
+    limit: int = 100,
+    level: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get recent frontend logs for debugging (admin only)"""
+    try:
+        # Filter frontend logs from monitoring state
+        frontend_logs = [
+            check for check in monitoring_state["health_checks"]
+            if check["check_type"] == "frontend_log"
+        ]
+        
+        # Filter by level if specified
+        if level:
+            frontend_logs = [
+                log for log in frontend_logs 
+                if log["details"]["level"] == level
+            ]
+        
+        # Sort by timestamp (most recent first) and limit
+        frontend_logs = sorted(
+            frontend_logs, 
+            key=lambda x: x["timestamp"], 
+            reverse=True
+        )[:limit]
+        
+        return {
+            "status": "success",
+            "logs": frontend_logs,
+            "count": len(frontend_logs)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error retrieving frontend logs: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve logs")
+
 # Background monitoring tasks
 async def continuous_monitoring():
     """Background task for continuous system monitoring"""

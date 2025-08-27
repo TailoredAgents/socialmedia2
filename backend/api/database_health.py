@@ -8,7 +8,7 @@ import logging
 
 from backend.db.database import get_db
 from backend.utils.db_checks import check_critical_tables_exist, get_table_row_count
-from backend.auth.dependencies import get_current_user
+from backend.auth.dependencies import get_current_active_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/database", tags=["database-health"])
@@ -65,7 +65,7 @@ async def check_database_health(db: Session = Depends(get_db)) -> Dict[str, Any]
 @router.get("/schema/verify") 
 async def verify_schema_integrity(
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_current_active_user)
 ) -> Dict[str, Any]:
     """
     Detailed schema verification for admin users
@@ -111,7 +111,7 @@ async def verify_schema_integrity(
 @router.post("/migrate")
 async def trigger_migration(
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_current_active_user)
 ) -> Dict[str, Any]:
     """
     Trigger database migration (admin only)

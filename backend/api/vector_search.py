@@ -5,14 +5,14 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from backend.db.database import get_db
-from backend.auth.dependencies import get_current_user
+from backend.auth.dependencies import get_current_active_user
 from backend.services.memory_service import memory_service
 from backend.api.validation import validate_text_length, clean_text_input
 
 router = APIRouter(
     prefix="/api/vector",
     tags=["vector-search"],
-    dependencies=[Depends(get_current_user)]
+    dependencies=[Depends(get_current_active_user)]
 )
 
 class VectorSearchRequest(BaseModel):

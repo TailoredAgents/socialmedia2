@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(
     prefix="/api/similarity",
     tags=["similarity-search"],
-    dependencies=[Depends(get_current_user)]
+    dependencies=[Depends(get_current_active_user)]
 )
 
 # Request models

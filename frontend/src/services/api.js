@@ -661,6 +661,18 @@ class ApiService {
   async getDefaultSettings() {
     return this.request('/api/user-settings/defaults')
   }
+
+  // AI Suggestions endpoints
+  async getContextualSuggestions(request) {
+    return this.request('/api/ai/suggestions', {
+      method: 'POST',
+      body: request
+    })
+  }
+
+  async getSuggestionTypes() {
+    return this.request('/api/ai/suggestion-types')
+  }
 }
 
 // Create singleton instance

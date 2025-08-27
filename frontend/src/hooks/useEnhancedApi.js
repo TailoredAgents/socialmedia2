@@ -421,6 +421,24 @@ export const useEnhancedApi = () => {
         apiService.getDefaultSettings.bind(apiService),
         { cache: true, cacheKey: 'default_settings', cacheTTL: 3600000 }
       )
+    },
+
+    // AI Suggestions operations
+    ai: {
+      getContextualSuggestions: (request) => makeEnhancedRequest(
+        apiService.getContextualSuggestions.bind(apiService),
+        { 
+          requestArgs: [request], 
+          cache: true, 
+          cacheKey: `ai_suggestions_${request.type}_${JSON.stringify(request.context).slice(0, 50)}`,
+          cacheTTL: 300000  // 5 minutes cache for AI suggestions
+        }
+      ),
+      
+      getSuggestionTypes: () => makeEnhancedRequest(
+        apiService.getSuggestionTypes.bind(apiService),
+        { cache: true, cacheKey: 'ai_suggestion_types', cacheTTL: 3600000 }
+      )
     }
   }), [makeEnhancedRequest, showSuccess]) // Only recreate when dependencies change
 

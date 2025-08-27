@@ -8,6 +8,7 @@ from . import (
     two_factor,
     user_credentials,
     user_settings,  # User preferences and configuration
+    ai_suggestions,  # AI contextual suggestions
     content,
     goals,
     memory,
@@ -39,6 +40,7 @@ ROUTERS = [
     admin.router,  # Admin authentication and management system
     user_credentials.router,  # User social media credentials management
     user_settings.router,  # User preferences and configuration
+    ai_suggestions.router,  # AI contextual suggestions
     content.router,
     goals.router,
     memory.router,

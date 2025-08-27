@@ -24,6 +24,33 @@ const AIEmptyStateSuggestions = ({
   const [loading, setLoading] = useState(true)
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0)
 
+  // Helper function to get appropriate icon for suggestion
+  const getIconForSuggestion = (suggestionId, suggestionType) => {
+    const iconMap = {
+      // Content-related
+      'trending-content': SparklesIcon,
+      'content-calendar': CalendarDaysIcon,
+      'weekly-content': CalendarDaysIcon,
+      'hashtag-research': HashtagIcon,
+      'visual-content': PhotoIcon,
+      'content-ideas': LightBulbIcon,
+      
+      // Goals-related  
+      'growth-goals': SparklesIcon,
+      'engagement-goals': LightBulbIcon,
+      'performance-goals': SparklesIcon,
+      
+      // General fallback by type
+      'content': DocumentTextIcon,
+      'goals': SparklesIcon,
+      'inbox': SparklesIcon,
+      'memory': PlusIcon,
+      'scheduler': CalendarDaysIcon
+    }
+    
+    return iconMap[suggestionId] || iconMap[suggestionType] || SparklesIcon
+  }
+
   // Define suggestion templates based on type
   const getSuggestionsForType = (type, context) => {
     const baseUrls = {
@@ -132,30 +159,68 @@ const AIEmptyStateSuggestions = ({
     const loadSuggestions = async () => {
       setLoading(true)
       try {
-        // Get base suggestions for the type
-        const baseSuggestions = getSuggestionsForType(type, context)
+        // Fetch real-time AI suggestions from backend
+        const aiResponse = await api.ai.getContextualSuggestions({ 
+          type, 
+          context,
+          limit: 4 
+        })
         
-        // TODO: Enhance with real-time AI suggestions based on user context
-        // const aiSuggestions = await api.ai.getContextualSuggestions({ type, context })
+        if (aiResponse && aiResponse.suggestions && aiResponse.suggestions.length > 0) {
+          // Transform API response to component format
+          const transformedSuggestions = aiResponse.suggestions.map(suggestion => ({
+            id: suggestion.id,
+            icon: getIconForSuggestion(suggestion.id, type),
+            title: suggestion.title,
+            description: suggestion.description,
+            action: suggestion.action,
+            color: suggestion.color,
+            aiPrompt: suggestion.ai_prompt,
+            estimatedTime: suggestion.estimated_time,
+            priority: suggestion.priority,
+            personalizationScore: suggestion.personalization_score
+          }))
+          
+          // Sort by priority (lower number = higher priority)
+          transformedSuggestions.sort((a, b) => a.priority - b.priority)
+          
+          setSuggestions(transformedSuggestions)
+          
+          // Show personalization level to user
+          if (aiResponse.personalization_level === 'high') {
+            console.log('🎯 Highly personalized suggestions loaded based on your activity')
+          }
+        } else {
+          // Fallback to static suggestions if API fails
+          const baseSuggestions = getSuggestionsForType(type, context)
+          setSuggestions(baseSuggestions)
+        }
         
-        setSuggestions(baseSuggestions)
-        
-        // Rotate suggestions every 8 seconds
+        // Rotate suggestions every 10 seconds (slightly slower for AI-generated content)
         const interval = setInterval(() => {
-          setCurrentSuggestionIndex(prev => (prev + 1) % baseSuggestions.length)
-        }, 8000)
+          setSuggestions(current => {
+            if (current.length > 0) {
+              setCurrentSuggestionIndex(prev => (prev + 1) % current.length)
+            }
+            return current
+          })
+        }, 10000)
         
         return () => clearInterval(interval)
       } catch (error) {
         console.error('Failed to load AI suggestions:', error)
-        setSuggestions(getSuggestionsForType(type, context))
+        showError && showError('Failed to load personalized suggestions')
+        
+        // Fallback to static suggestions
+        const baseSuggestions = getSuggestionsForType(type, context)
+        setSuggestions(baseSuggestions)
       } finally {
         setLoading(false)
       }
     }
 
     loadSuggestions()
-  }, [type, context])
+  }, [type, context, api])
 
   const handleSuggestionClick = async (suggestion) => {
     if (onSuggestionClick) {
@@ -218,7 +283,7 @@ const AIEmptyStateSuggestions = ({
       </motion.div>
 
       <h3 className="text-lg font-semibold text-gray-900 mb-2">
-        🤖 Lily has some ideas for you!
+        🤖 Lily has {suggestions.length > 0 && suggestions[0].personalizationScore > 0.6 ? 'personalized' : 'some'} ideas for you!
       </h3>
       
       <AnimatePresence mode="wait">

@@ -23,8 +23,7 @@ except ImportError:
 from backend.core.config import get_settings
 from backend.core.vector_store import vector_store
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
+# Get logger (use application's logging configuration)
 logger = logging.getLogger(__name__)
 
 settings = get_settings()

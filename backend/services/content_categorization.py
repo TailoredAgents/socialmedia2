@@ -15,8 +15,7 @@ from backend.core.config import get_settings
 from backend.db.models import ContentItem, ContentCategory
 from backend.services.embedding_service import embedding_service
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
+# Get logger (use application's logging configuration)
 logger = logging.getLogger(__name__)
 
 settings = get_settings()

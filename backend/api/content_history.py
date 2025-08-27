@@ -16,8 +16,7 @@ from backend.services.performance_tracking import performance_tracker
 from backend.services.content_categorization import content_categorizer
 from backend.services.embedding_service import embedding_service
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
+# Get logger (use application's logging configuration)
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/content", tags=["content-history"])

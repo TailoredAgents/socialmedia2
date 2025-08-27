@@ -16,8 +16,7 @@ from backend.db.database import get_db
 from backend.db.models import ContentItem, ContentPerformanceSnapshot, User
 from backend.core.config import get_settings
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
+# Get logger (use application's logging configuration)
 logger = logging.getLogger(__name__)
 
 settings = get_settings()

@@ -15,8 +15,7 @@ from backend.auth.auth0 import auth0_verifier
 from backend.auth.jwt_handler import JWTHandler
 from backend.core.config import get_settings
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
+# Get logger (use application's logging configuration)
 logger = logging.getLogger(__name__)
 
 settings = get_settings()

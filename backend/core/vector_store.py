@@ -22,8 +22,7 @@ except ImportError:
     # Suppress the warning at import time - it will be shown only when actually used
     pass
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Get logger (use application's logging configuration)
 logger = logging.getLogger(__name__)
 
 

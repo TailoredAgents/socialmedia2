@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 import logging
 
 from backend.db.database import get_db
@@ -80,8 +80,7 @@ class UserSettingsResponse(BaseModel):
     enable_autonomous_mode: bool = False
     auto_response_enabled: bool = False
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UpdateUserSettingsRequest(BaseModel):
     # Brand settings

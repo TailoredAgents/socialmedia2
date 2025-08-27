@@ -5,7 +5,7 @@ from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
 import uuid
 from datetime import datetime, timedelta
 
@@ -108,8 +108,7 @@ class OrganizationResponse(BaseModel):
     user_role: Optional[str] = None
     user_permissions: List[str] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TeamCreate(BaseModel):
@@ -127,8 +126,7 @@ class TeamResponse(BaseModel):
     created_at: datetime
     member_count: int = 0
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class InviteUserRequest(BaseModel):
@@ -147,8 +145,7 @@ class InvitationResponse(BaseModel):
     created_at: datetime
     team_name: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 @router.get("/", response_model=List[OrganizationResponse])

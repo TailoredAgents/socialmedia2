@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, ConfigDict
 from functools import lru_cache
 from typing import List
 import os
@@ -203,10 +203,11 @@ class Settings(BaseSettings):
     # Timezone Configuration
     timezone: str = "America/New_York"
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
-        extra = "allow"  # Allow extra fields from environment
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+        extra="allow"  # Allow extra fields from environment
+    )
     
     
     def get_celery_broker_url(self) -> str:

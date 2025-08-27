@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from backend.db.database import get_db
 from backend.db.models import (
@@ -43,8 +43,7 @@ class InteractionResponse(BaseModel):
     platform_created_at: datetime
     received_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class InteractionListResponse(BaseModel):
     interactions: List[InteractionResponse]

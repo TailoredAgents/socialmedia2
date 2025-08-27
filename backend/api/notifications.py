@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query, WebSocket, WebSock
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, and_
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 import logging
 import json
@@ -43,8 +43,7 @@ class NotificationResponse(BaseModel):
     created_at: datetime
     read_at: Optional[datetime] = None
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class CreateNotificationRequest(BaseModel):
     title: str

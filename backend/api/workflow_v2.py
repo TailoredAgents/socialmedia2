@@ -4,7 +4,7 @@ Workflow execution API endpoints
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 import uuid
 
@@ -36,8 +36,7 @@ class WorkflowExecutionResponse(BaseModel):
     execution_params: Dict[str, Any]
     results_summary: Dict[str, Any]
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 @router.post("/execute", response_model=WorkflowExecutionResponse)
 async def execute_workflow(

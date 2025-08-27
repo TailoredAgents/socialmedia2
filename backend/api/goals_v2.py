@@ -4,7 +4,7 @@ Goals API endpoints with real database operations
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from datetime import datetime, date
 import uuid
 import logging
@@ -28,7 +28,8 @@ class CreateGoalRequest(BaseModel):
     target_date: date
     platform: Optional[str] = Field(None, pattern="^(twitter|linkedin|instagram|facebook|tiktok|all)$")
     
-    @validator('target_date')
+    @field_validator('target_date')
+    @classmethod
     def target_date_must_be_future(cls, v):
         if v <= date.today():
             raise ValueError('Target date must be in the future')
@@ -41,7 +42,8 @@ class UpdateGoalRequest(BaseModel):
     target_date: Optional[date] = None
     platform: Optional[str] = Field(None, pattern="^(twitter|linkedin|instagram|facebook|tiktok|all)$")
     
-    @validator('target_date')
+    @field_validator('target_date')
+    @classmethod
     def target_date_must_be_future(cls, v):
         if v and v <= date.today():
             raise ValueError('Target date must be in the future')
@@ -66,8 +68,7 @@ class GoalResponse(BaseModel):
     updated_at: Optional[datetime]
     completed_at: Optional[datetime]
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class GoalProgressResponse(BaseModel):
     id: int
@@ -78,8 +79,7 @@ class GoalProgressResponse(BaseModel):
     source: Optional[str]
     notes: Optional[str]
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class CreateMilestoneRequest(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
@@ -97,8 +97,7 @@ class MilestoneResponse(BaseModel):
     achieved_at: Optional[datetime]
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 @router.post("/", response_model=GoalResponse)
 async def create_goal(

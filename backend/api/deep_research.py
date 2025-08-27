@@ -6,7 +6,7 @@ API endpoints for managing deep research operations, scheduling,
 and knowledge base queries.
 """
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 import logging
@@ -53,8 +53,7 @@ class IndustryResearchSetup(BaseModel):
     business_context: Dict[str, Any] = Field(..., description="Business context and goals")
     schedule_config: Optional[Dict[str, Any]] = Field(None, description="Custom schedule configuration")
     
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(json_schema_extra={
             "example": {
                 "industry": "fintech",
                 "business_context": {
@@ -70,7 +69,7 @@ class IndustryResearchSetup(BaseModel):
                     "day_of_week": 0
                 }
             }
-        }
+    })
 
 class ResearchQuery(BaseModel):
     """Request model for knowledge base queries"""
@@ -82,8 +81,7 @@ class ScheduleUpdate(BaseModel):
     """Request model for updating research schedule"""
     schedule: Dict[str, Any] = Field(..., description="New schedule configuration")
     
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(json_schema_extra={
             "example": {
                 "schedule": {
                     "hour": 3,
@@ -91,7 +89,7 @@ class ScheduleUpdate(BaseModel):
                     "day_of_week": 1
                 }
             }
-        }
+    })
 
 # ============================================================================
 # Research Setup & Management Endpoints

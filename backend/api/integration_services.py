@@ -23,7 +23,7 @@ router = APIRouter(prefix="/api/integrations", tags=["integrations"])
 
 class InstagramPostRequest(BaseModel):
     caption: str = Field(..., max_length=2200)
-    media_urls: List[str] = Field(..., min_items=1, max_items=10)
+    media_urls: List[str] = Field(..., min_length=1, max_length=10)
     media_type: str = Field(..., pattern="^(IMAGE|VIDEO|CAROUSEL_ALBUM|REELS)$")
     location_id: Optional[str] = None
     hashtags: Optional[List[str]] = Field(default_factory=list)
@@ -37,8 +37,8 @@ class FacebookPostRequest(BaseModel):
     targeting: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
 class ResearchQueryRequest(BaseModel):
-    keywords: List[str] = Field(..., min_items=1, max_items=10)
-    platforms: List[str] = Field(..., min_items=1)
+    keywords: List[str] = Field(..., min_length=1, max_length=10)
+    platforms: List[str] = Field(..., min_length=1)
     time_range: str = Field("24h", pattern="^(1h|24h|7d|30d)$")
     location: Optional[str] = None
     max_results: int = Field(50, ge=10, le=500)

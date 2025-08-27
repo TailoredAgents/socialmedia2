@@ -1,7 +1,7 @@
 """
 Pydantic schemas for Two-Factor Authentication
 """
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Optional
 
 
@@ -16,21 +16,21 @@ class Setup2FAResponse(BaseModel):
     manual_entry_key: str = Field(..., description="Manual entry key for authenticator app")
     backup_codes: List[str] = Field(..., description="Backup recovery codes")
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(json_schema_extra={
             "example": {
                 "qr_code": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
                 "manual_entry_key": "JBSWY3DPEHPK3PXP",
                 "backup_codes": ["A1B2-C3D4", "E5F6-G7H8", "I9J0-K1L2"]
             }
-        }
+    })
 
 
 class Verify2FASetupRequest(BaseModel):
     """Request to verify and activate 2FA"""
     token: str = Field(..., min_length=6, max_length=6, description="6-digit TOTP code from authenticator app")
     
-    @validator('token')
+    @field_validator('token')
+    @classmethod
     def validate_token(cls, v):
         if not v.isdigit():
             raise ValueError('Token must be 6 digits')
@@ -50,13 +50,15 @@ class Login2FARequest(BaseModel):
     totp_code: Optional[str] = Field(None, min_length=6, max_length=6, description="6-digit TOTP code")
     backup_code: Optional[str] = Field(None, description="Backup recovery code")
     
-    @validator('totp_code')
+    @field_validator('totp_code')
+    @classmethod
     def validate_totp_code(cls, v):
         if v is not None and not v.isdigit():
             raise ValueError('TOTP code must be 6 digits')
         return v
     
-    @validator('backup_code')
+    @field_validator('backup_code')
+    @classmethod
     def validate_backup_code(cls, v):
         if v is not None:
             # Allow various formats: XXXX-XXXX, XXXXXXXX
@@ -71,13 +73,12 @@ class TwoFactorStatusResponse(BaseModel):
     enabled: bool = Field(..., description="Whether 2FA is enabled")
     backup_codes_remaining: Optional[int] = Field(None, description="Number of unused backup codes")
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(json_schema_extra={
             "example": {
                 "enabled": True,
                 "backup_codes_remaining": 8
             }
-        }
+    })
 
 
 class RegenerateBackupCodesRequest(BaseModel):
@@ -85,7 +86,8 @@ class RegenerateBackupCodesRequest(BaseModel):
     password: str = Field(..., min_length=1, description="Current account password")
     totp_code: str = Field(..., min_length=6, max_length=6, description="6-digit TOTP code")
     
-    @validator('totp_code')
+    @field_validator('totp_code')
+    @classmethod
     def validate_token(cls, v):
         if not v.isdigit():
             raise ValueError('TOTP code must be 6 digits')
@@ -96,9 +98,8 @@ class RegenerateBackupCodesResponse(BaseModel):
     """Response with new backup codes"""
     backup_codes: List[str] = Field(..., description="New backup recovery codes")
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(json_schema_extra={
             "example": {
                 "backup_codes": ["A1B2-C3D4", "E5F6-G7H8", "I9J0-K1L2"]
             }
-        }
+    })

@@ -3,7 +3,7 @@ Production configuration for AI Social Media Content Agent
 """
 import os
 from typing import Optional, List
-from pydantic import Field
+from pydantic import Field, ConfigDict
 from backend.core.config import Settings
 
 class ProductionSettings(Settings):
@@ -158,9 +158,10 @@ class ProductionSettings(Settings):
     datadog_api_key: Optional[str] = Field(None, env="DATADOG_API_KEY")
     mixpanel_token: Optional[str] = Field(None, env="MIXPANEL_TOKEN")
     
-    class Config:
-        env_file = ".env.production"
-        case_sensitive = False
+    model_config = ConfigDict(
+        env_file=".env.production",
+        case_sensitive=False
+    )
 
 def get_production_settings() -> ProductionSettings:
     """Get production settings instance"""

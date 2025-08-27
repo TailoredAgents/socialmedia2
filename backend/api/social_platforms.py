@@ -9,7 +9,7 @@ import json
 
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.responses import RedirectResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy.orm import Session
 
 from backend.db.database import get_db
@@ -45,12 +45,11 @@ class SocialPlatformConnectionResponse(BaseModel):
     last_used_at: Optional[datetime]
     platform_metadata: Dict[str, Any] = {}
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class PostContentRequest(BaseModel):
     content: str = Field(..., min_length=1, max_length=3000)
-    platforms: List[str] = Field(..., min_items=1)
+    platforms: List[str] = Field(..., min_length=1)
     media_urls: Optional[List[str]] = None
     schedule_for: Optional[datetime] = None
 

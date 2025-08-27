@@ -4,7 +4,7 @@ Content management API endpoints
 from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, ConfigDict
 from datetime import datetime, date, timezone, timedelta
 import uuid
 import json
@@ -72,7 +72,7 @@ class EditImageRequest(BaseModel):
 
 class GenerateContentImagesRequest(BaseModel):
     content_text: str = Field(..., min_length=1, max_length=2000)
-    platforms: List[str] = Field(..., min_items=1)
+    platforms: List[str] = Field(..., min_length=1)
     image_count: int = Field(1, ge=1, le=3)
     industry_context: Optional[str] = Field(None, max_length=1000)
 
@@ -89,8 +89,7 @@ class ContentResponse(BaseModel):
     created_at: datetime
     updated_at: Optional[datetime]
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ContentAnalytics(BaseModel):
     total_posts: int

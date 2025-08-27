@@ -27,19 +27,13 @@ def suppress_third_party_warnings():
     warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd.lang.arabic")
     warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd.lang.persian")
     
-    # ChromaDB uses deprecated Pydantic v1 patterns
-    # They are migrating to Pydantic v2 but haven't completed yet
-    warnings.filterwarnings("ignore", category=DeprecationWarning, module="chromadb")
-    warnings.filterwarnings("ignore", category=DeprecationWarning, module="chromadb.types")
+    # Remove ChromaDB warnings (not used in this project - FAISS is used instead)
+    # Keeping generic Pydantic warnings for other third-party libraries
     warnings.filterwarnings("ignore", message=".*model_fields.*attribute.*deprecated.*")
     warnings.filterwarnings("ignore", message=".*PydanticDeprecatedSince211.*")
     
-    # Pydantic v2 migration warnings from dependencies
-    warnings.filterwarnings("ignore", category=DeprecationWarning, module="pydantic")
-    warnings.filterwarnings("ignore", message=".*model_fields.*")
-    warnings.filterwarnings("ignore", message=".*class-based `config`.*")
-    warnings.filterwarnings("ignore", message=".*min_items.*")
-    warnings.filterwarnings("ignore", message=".*max_items.*")
+    # Pydantic v2 migration warnings - now mostly resolved by our fixes
+    # Keeping minimal suppression for any remaining third-party library warnings
     warnings.filterwarnings("ignore", message="Valid config keys have changed in V2")
     
     # SQLAlchemy 2.0 migration warnings

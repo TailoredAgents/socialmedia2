@@ -20,7 +20,8 @@ import {
   EyeIcon,
   ChartPieIcon,
   BoltIcon,
-  XMarkIcon
+  XMarkIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline'
 import SimilarityChart from '../components/Memory/SimilarityChart'
 import ContentDetailModal from '../components/Memory/ContentDetailModal'

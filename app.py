@@ -367,11 +367,12 @@ if environment == "production":
             logger.info("Continuing with schema safety net...")
         
         # Safety net for any missing columns/tables
-        from backend.db.ensure_columns import ensure_user_columns, ensure_notifications_table, ensure_content_logs_table
+        from backend.db.ensure_columns import ensure_user_columns, ensure_notifications_table, ensure_content_logs_table, ensure_social_inbox_tables
         logger.info("Checking database schema safety net...")
         ensure_user_columns()
         ensure_notifications_table()
         ensure_content_logs_table()
+        ensure_social_inbox_tables()
         logger.info("Database schema validation complete")
         
     except Exception as e:

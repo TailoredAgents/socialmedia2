@@ -130,11 +130,10 @@ async def get_latest_research():
     try:
         # Use AI insights service for research data with caching
         from backend.services.ai_insights_service import ai_insights_service
-        from backend.services.redis_cache import redis_cache_service
+        from backend.services.redis_cache import redis_cache as redis_cache_service
         
         # Check cache first (cache for 1 hour)
-        cache_key = "autonomous_research_latest"
-        cached_result = await redis_cache_service.get(cache_key, "research")
+        cached_result = await redis_cache_service.get("autonomous", "research_latest")
         
         if cached_result:
             logger.info("Returning cached research results for performance")
@@ -166,7 +165,7 @@ async def get_latest_research():
             }
             
             # Cache result for 1 hour to improve performance
-            await redis_cache_service.set(cache_key, "research", result, ttl_minutes=60)
+            await redis_cache_service.set("autonomous", "research_latest", result, ttl=3600)
             
             return result
         else:

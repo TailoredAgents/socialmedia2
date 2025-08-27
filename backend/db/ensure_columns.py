@@ -179,6 +179,221 @@ def ensure_notifications_table():
         logger.error(f"❌ Error ensuring notifications table: {e}")
         pass
 
+def ensure_social_inbox_tables():
+    """
+    Ensure all social inbox tables exist with proper structure
+    """
+    try:
+        with engine.connect() as conn:
+            logger.info("Checking social inbox tables...")
+            
+            # 1. Social Platform Connections table
+            result = conn.execute(text("""
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_name = 'social_platform_connections'
+            """)).fetchall()
+            
+            if not result:
+                logger.info("Creating social_platform_connections table...")
+                conn.execute(text("""
+                    CREATE TABLE social_platform_connections (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        platform VARCHAR NOT NULL,
+                        platform_user_id VARCHAR NOT NULL,
+                        platform_username VARCHAR NOT NULL,
+                        platform_display_name VARCHAR,
+                        profile_image_url VARCHAR,
+                        profile_url VARCHAR,
+                        access_token TEXT NOT NULL,
+                        refresh_token TEXT,
+                        token_expires_at TIMESTAMP WITH TIME ZONE,
+                        token_scopes JSON DEFAULT '[]',
+                        is_active BOOLEAN DEFAULT TRUE,
+                        last_sync_at TIMESTAMP WITH TIME ZONE,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP WITH TIME ZONE
+                    )
+                """))
+                
+                # Create indexes
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_social_platform_connections_user_id ON social_platform_connections (user_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_social_platform_connections_platform ON social_platform_connections (platform)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_social_platform_connections_platform_user_id ON social_platform_connections (platform_user_id)"))
+                conn.commit()
+                logger.info("✅ Successfully created social_platform_connections table")
+            
+            # 2. Social Interactions table
+            result = conn.execute(text("""
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_name = 'social_interactions'
+            """)).fetchall()
+            
+            if not result:
+                logger.info("Creating social_interactions table...")
+                conn.execute(text("""
+                    CREATE TABLE social_interactions (
+                        id VARCHAR PRIMARY KEY,
+                        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        connection_id INTEGER REFERENCES social_platform_connections(id),
+                        platform VARCHAR NOT NULL,
+                        interaction_type VARCHAR NOT NULL,
+                        external_id VARCHAR NOT NULL,
+                        parent_external_id VARCHAR,
+                        author_platform_id VARCHAR NOT NULL,
+                        author_username VARCHAR NOT NULL,
+                        author_display_name VARCHAR,
+                        author_profile_url VARCHAR,
+                        author_profile_image VARCHAR,
+                        author_verified BOOLEAN DEFAULT FALSE,
+                        content TEXT NOT NULL,
+                        media_urls JSON DEFAULT '[]',
+                        hashtags JSON DEFAULT '[]',
+                        mentions JSON DEFAULT '[]',
+                        sentiment VARCHAR DEFAULT 'neutral',
+                        intent VARCHAR,
+                        priority_score FLOAT DEFAULT 50.0,
+                        status VARCHAR DEFAULT 'unread',
+                        assigned_to INTEGER,
+                        response_strategy VARCHAR,
+                        platform_created_at TIMESTAMP WITH TIME ZONE,
+                        received_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        last_updated_at TIMESTAMP WITH TIME ZONE,
+                        metadata JSON DEFAULT '{}'
+                    )
+                """))
+                
+                # Create indexes
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_social_interactions_user_id ON social_interactions (user_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_social_interactions_platform ON social_interactions (platform)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_social_interactions_interaction_type ON social_interactions (interaction_type)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_social_interactions_external_id ON social_interactions (external_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_social_interactions_status ON social_interactions (status)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_social_interactions_priority_score ON social_interactions (priority_score)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_social_interactions_received_at ON social_interactions (received_at)"))
+                conn.commit()
+                logger.info("✅ Successfully created social_interactions table")
+            
+            # 3. Response Templates table
+            result = conn.execute(text("""
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_name = 'response_templates'
+            """)).fetchall()
+            
+            if not result:
+                logger.info("Creating response_templates table...")
+                conn.execute(text("""
+                    CREATE TABLE response_templates (
+                        id VARCHAR PRIMARY KEY,
+                        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        name VARCHAR NOT NULL,
+                        description TEXT,
+                        trigger_type VARCHAR NOT NULL,
+                        trigger_conditions JSON DEFAULT '{}',
+                        keywords JSON DEFAULT '[]',
+                        platforms JSON DEFAULT '[]',
+                        response_text TEXT NOT NULL,
+                        variables JSON DEFAULT '[]',
+                        personality_style VARCHAR DEFAULT 'professional',
+                        tone VARCHAR DEFAULT 'helpful',
+                        auto_approve BOOLEAN DEFAULT FALSE,
+                        is_active BOOLEAN DEFAULT TRUE,
+                        priority INTEGER DEFAULT 1,
+                        usage_count INTEGER DEFAULT 0,
+                        avg_satisfaction FLOAT DEFAULT 0.0,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP WITH TIME ZONE
+                    )
+                """))
+                
+                # Create indexes
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_response_templates_user_id ON response_templates (user_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_response_templates_trigger_type ON response_templates (trigger_type)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_response_templates_is_active ON response_templates (is_active)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_response_templates_priority ON response_templates (priority)"))
+                conn.commit()
+                logger.info("✅ Successfully created response_templates table")
+            
+            # 4. Interaction Responses table
+            result = conn.execute(text("""
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_name = 'interaction_responses'
+            """)).fetchall()
+            
+            if not result:
+                logger.info("Creating interaction_responses table...")
+                conn.execute(text("""
+                    CREATE TABLE interaction_responses (
+                        id VARCHAR PRIMARY KEY,
+                        interaction_id VARCHAR NOT NULL REFERENCES social_interactions(id) ON DELETE CASCADE,
+                        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        response_text TEXT NOT NULL,
+                        media_urls JSON DEFAULT '[]',
+                        response_type VARCHAR DEFAULT 'manual',
+                        template_id VARCHAR REFERENCES response_templates(id),
+                        ai_confidence_score FLOAT DEFAULT 0.0,
+                        platform VARCHAR NOT NULL,
+                        platform_response_id VARCHAR,
+                        platform_url VARCHAR,
+                        status VARCHAR DEFAULT 'draft',
+                        sent_at TIMESTAMP WITH TIME ZONE,
+                        failure_reason TEXT,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP WITH TIME ZONE
+                    )
+                """))
+                
+                # Create indexes
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_interaction_responses_interaction_id ON interaction_responses (interaction_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_interaction_responses_user_id ON interaction_responses (user_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_interaction_responses_status ON interaction_responses (status)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_interaction_responses_created_at ON interaction_responses (created_at)"))
+                conn.commit()
+                logger.info("✅ Successfully created interaction_responses table")
+            
+            # 5. Company Knowledge table
+            result = conn.execute(text("""
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_name = 'company_knowledge'
+            """)).fetchall()
+            
+            if not result:
+                logger.info("Creating company_knowledge table...")
+                conn.execute(text("""
+                    CREATE TABLE company_knowledge (
+                        id VARCHAR PRIMARY KEY,
+                        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        title VARCHAR NOT NULL,
+                        topic VARCHAR NOT NULL,
+                        content TEXT NOT NULL,
+                        summary VARCHAR,
+                        keywords JSON DEFAULT '[]',
+                        tags JSON DEFAULT '[]',
+                        embedding_vector JSON,
+                        context_type VARCHAR DEFAULT 'general',
+                        platforms JSON DEFAULT '["facebook", "instagram", "twitter"]',
+                        usage_count INTEGER DEFAULT 0,
+                        effectiveness_score FLOAT DEFAULT 0.0,
+                        is_active BOOLEAN DEFAULT TRUE,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP WITH TIME ZONE
+                    )
+                """))
+                
+                # Create indexes
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_company_knowledge_user_id ON company_knowledge (user_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_company_knowledge_topic ON company_knowledge (topic)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_company_knowledge_is_active ON company_knowledge (is_active)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_company_knowledge_usage_count ON company_knowledge (usage_count)"))
+                conn.commit()
+                logger.info("✅ Successfully created company_knowledge table")
+                
+            logger.info("✅ All social inbox tables verified/created successfully")
+            
+    except Exception as e:
+        logger.error(f"❌ Error ensuring social inbox tables: {e}")
+        pass
+
 def ensure_user_columns():
     """
     Ensure all required columns exist in the users table.

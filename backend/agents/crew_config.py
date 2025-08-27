@@ -21,9 +21,9 @@ research_agent = Agent(
     trending topics, audience behavior, and content performance. You excel at identifying 
     emerging trends and understanding what content resonates with different audiences.""",
     tools=[search_tool, web_tool],
-    verbose=True,
+    verbose=False,  # Reduce memory from logging
     allow_delegation=False,
-    max_iter=3
+    max_iter=2  # Reduce iterations to save memory
 )
 
 # Content Generation Sub-Agent
@@ -34,9 +34,9 @@ content_agent = Agent(
     marketing. You understand platform-specific best practices and can create compelling 
     content that drives engagement while maintaining brand consistency.""",
     tools=[],
-    verbose=True,
+    verbose=False,  # Reduce memory from logging
     allow_delegation=False,
-    max_iter=3
+    max_iter=2  # Reduce iterations to save memory
 )
 
 # Posting Sub-Agent
@@ -47,9 +47,9 @@ posting_agent = Agent(
     posting schedules, and cross-platform optimization. You ensure content reaches 
     the right audience at the right time.""",
     tools=[],
-    verbose=True,
+    verbose=False,  # Reduce memory from logging
     allow_delegation=False,
-    max_iter=2
+    max_iter=1  # Minimal iterations for posting
 )
 
 # Optimizer Sub-Agent
@@ -60,9 +60,9 @@ optimizer_agent = Agent(
     performance optimization. You excel at identifying patterns in engagement data 
     and providing actionable insights to improve content strategy.""",
     tools=[],
-    verbose=True,
+    verbose=False,  # Reduce memory from logging
     allow_delegation=False,
-    max_iter=3
+    max_iter=2  # Reduce iterations to save memory
 )
 
 def create_research_task(topic: str = "social media trends"):
@@ -140,8 +140,8 @@ def create_daily_crew(topic: str = "social media trends", brand_voice: str = "pr
         agents=[research_agent, content_agent, posting_agent],
         tasks=[research_task, content_task, posting_task],
         process=Process.sequential,
-        memory=True,
-        verbose=2
+        memory=False,  # Disable crew memory to reduce RAM usage
+        verbose=0  # Disable verbose logging
     )
     
     return crew
@@ -155,8 +155,8 @@ def create_optimization_crew(performance_data: dict):
         agents=[optimizer_agent],
         tasks=[optimization_task],
         process=Process.sequential,
-        memory=True,
-        verbose=2
+        memory=False,  # Disable crew memory to reduce RAM usage
+        verbose=0  # Disable verbose logging
     )
     
     return crew

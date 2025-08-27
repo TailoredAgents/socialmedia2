@@ -12,7 +12,8 @@ import numpy as np
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 
-from backend.core.memory import FAISSMemorySystem
+# Lazy import to avoid loading FAISS at startup
+# from backend.core.memory import FAISSMemorySystem
 from backend.db.models import Memory, Content
 from backend.db.database import get_db
 from backend.core.config import get_settings
@@ -21,11 +22,40 @@ settings = get_settings()
 logger = logging.getLogger(__name__)
 
 class MemoryService:
-    """Service for managing memory system with FAISS integration"""
+    """Service for managing memory system with lazy FAISS loading"""
     
     def __init__(self):
-        self.faiss_memory = FAISSMemorySystem()
-        self.executor = ThreadPoolExecutor(max_workers=4)
+        self._faiss_memory = None
+        self.executor = ThreadPoolExecutor(max_workers=2)  # Reduced workers
+    
+    @property
+    def faiss_memory(self):
+        """Lazy-load FAISS memory system only when needed"""
+        if self._faiss_memory is None:
+            try:
+                from backend.core.memory import FAISSMemorySystem
+                self._faiss_memory = FAISSMemorySystem()
+                logger.info("FAISS memory system loaded on-demand")
+            except Exception as e:
+                logger.warning(f"Failed to load FAISS memory system: {e}")
+                # Use a mock object that returns empty results
+                self._faiss_memory = self._create_fallback_memory()
+        return self._faiss_memory
+    
+    def _create_fallback_memory(self):
+        """Create fallback memory object when FAISS is not available"""
+        class FallbackMemory:
+            def store_content(self, content, metadata):
+                return f"fallback_{hash(content)}"
+            def search_similar(self, query, top_k=5, threshold=0.8):
+                return []
+            def get_high_performing_content(self, days_back=30):
+                return []
+            def analyze_content_patterns(self):
+                return {"patterns": [], "insights": []}
+            def cleanup_old_content(self, days_back=90):
+                return 0
+        return FallbackMemory()
     
     async def store_memory(
         self,

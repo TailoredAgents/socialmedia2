@@ -12,7 +12,8 @@ import numpy as np
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, and_, or_
 
-from backend.core.memory import FAISSMemorySystem
+# Lazy import to avoid loading FAISS at startup
+# from backend.core.memory import FAISSMemorySystem
 from backend.services.embedding_service import embedding_service, EmbeddingResult
 from backend.db.models import Memory, Content, ContentLog, MemoryContent
 from backend.core.config import get_settings
@@ -60,10 +61,31 @@ class SimilarityService:
     """
     
     def __init__(self):
-        """Initialize the similarity service"""
-        self.faiss_memory = FAISSMemorySystem()
-        self.executor = ThreadPoolExecutor(max_workers=6)
+        """Initialize the similarity service with lazy loading"""
+        self._faiss_memory = None
+        self.executor = ThreadPoolExecutor(max_workers=2)  # Reduced workers
         self.supported_platforms = ["twitter", "linkedin", "instagram", "facebook", "tiktok"]
+    
+    @property
+    def faiss_memory(self):
+        """Lazy-load FAISS memory system only when needed"""
+        if self._faiss_memory is None:
+            try:
+                from backend.core.memory import FAISSMemorySystem
+                self._faiss_memory = FAISSMemorySystem()
+                logger.info("FAISS similarity system loaded on-demand")
+            except Exception as e:
+                logger.warning(f"Failed to load FAISS similarity system: {e}")
+                # Create fallback
+                class FallbackMemory:
+                    def search_similar(self, query, top_k=5):
+                        return []
+                    def get_content_for_repurposing(self):
+                        return []
+                    def get_high_performing_content(self):
+                        return []
+                self._faiss_memory = FallbackMemory()
+        return self._faiss_memory
         
         # Content performance thresholds
         self.performance_thresholds = {

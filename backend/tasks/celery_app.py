@@ -32,9 +32,15 @@ celery_app.conf.update(
     task_track_started=True,
     task_time_limit=5 * 60,  # 5 minutes (reduced from 10)
     task_soft_time_limit=4 * 60,  # 4 minutes (reduced from 8)
-    worker_prefetch_multiplier=1,
-    worker_max_tasks_per_child=10,  # Very aggressive recycling (was 50)
-    worker_max_memory_per_child=300000,  # 300MB limit (was 500MB)
+    
+    # MEMORY OPTIMIZATION: Force single-process, serial execution
+    worker_concurrency=1,  # Only 1 process at a time
+    worker_prefetch_multiplier=1,  # Only 1 task prefetched
+    worker_max_tasks_per_child=5,  # Restart after 5 tasks (was 10)
+    worker_max_memory_per_child=200000,  # 200MB limit (was 300MB)
+    
+    # Use threads instead of processes to reduce memory overhead
+    worker_pool='threads',  # Use thread pool instead of process pool
     worker_disable_rate_limits=True,
     worker_pool_restarts=True,
 )

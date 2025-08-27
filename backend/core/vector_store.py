@@ -63,6 +63,7 @@ class VectorStore:
         self.index_file = os.path.join(index_path, "faiss.index")
         self.metadata_file = os.path.join(index_path, "metadata.json")
         self.id_mapping_file = os.path.join(index_path, "id_mapping.json")
+        self.vectors_file = os.path.join(index_path, "vectors.npz")  # Store vectors for rebuild
         
         # Create directory if it doesn't exist
         os.makedirs(index_path, exist_ok=True)
@@ -71,6 +72,7 @@ class VectorStore:
         self._index = self._create_or_load_index()
         self._metadata = self._load_metadata()
         self._id_mapping = self._load_id_mapping()
+        self._vectors = self._load_vectors()  # Store vectors for deletion/rebuild
         self._next_internal_id = max([int(k) for k in self._id_mapping.keys()] + [-1]) + 1
         
         logger.info(f"VectorStore initialized with {self.total_vectors} vectors")
@@ -158,6 +160,43 @@ class VectorStore:
         except Exception as e:
             logger.error(f"Failed to save ID mapping: {e}")
     
+    def _load_vectors(self) -> Dict[str, np.ndarray]:
+        """Load stored vectors from disk."""
+        if os.path.exists(self.vectors_file):
+            try:
+                with np.load(self.vectors_file) as data:
+                    # Convert numpy arrays back to dictionary
+                    vectors = {}
+                    for internal_id in data.files:
+                        vectors[internal_id] = data[internal_id]
+                    logger.info(f"Loaded {len(vectors)} stored vectors")
+                    return vectors
+            except Exception as e:
+                logger.error(f"Failed to load vectors: {e}")
+        return {}
+    
+    def _save_vectors(self):
+        """Save vectors to disk for rebuild capability."""
+        try:
+            # Only save vectors for which we have valid metadata
+            valid_vectors = {
+                internal_id: vector 
+                for internal_id, vector in self._vectors.items() 
+                if internal_id in self._metadata
+            }
+            
+            if valid_vectors:
+                np.savez_compressed(self.vectors_file, **valid_vectors)
+                logger.info(f"Saved {len(valid_vectors)} vectors to disk")
+            else:
+                # Remove file if no valid vectors
+                if os.path.exists(self.vectors_file):
+                    os.remove(self.vectors_file)
+                    logger.info("Removed empty vectors file")
+                    
+        except Exception as e:
+            logger.error(f"Failed to save vectors: {e}")
+    
     def add_vector(
         self, 
         vector: np.ndarray, 
@@ -194,7 +233,7 @@ class VectorStore:
         # Add to index
         self._index.add(vector.astype(np.float32))
         
-        # Store metadata and mapping
+        # Store metadata, mapping, and vector for rebuild capability
         internal_id = str(self._next_internal_id)
         self._id_mapping[internal_id] = content_id
         self._metadata[internal_id] = {
@@ -203,6 +242,9 @@ class VectorStore:
             'created_at': get_utc_now().isoformat(),
             'vector_norm': float(norm)
         }
+        
+        # Store the vector for potential rebuild operations
+        self._vectors[internal_id] = vector.flatten().astype(np.float32)
         
         self._next_internal_id += 1
         
@@ -251,7 +293,7 @@ class VectorStore:
         # Add to index
         self._index.add(vectors.astype(np.float32))
         
-        # Store metadata and mappings
+        # Store metadata, mappings, and vectors
         for i, (content_id, metadata) in enumerate(zip(content_ids, metadata_list)):
             internal_id = str(self._next_internal_id + i)
             self._id_mapping[internal_id] = content_id
@@ -261,6 +303,9 @@ class VectorStore:
                 'created_at': get_utc_now().isoformat(),
                 'vector_norm': float(norms[i])
             }
+            
+            # Store the vector for potential rebuild operations
+            self._vectors[internal_id] = vectors[i].flatten().astype(np.float32)
         
         self._next_internal_id += n_vectors
         self._save_all()
@@ -336,12 +381,19 @@ class VectorStore:
         logger.warning("Direct vector retrieval is expensive with FAISS")
         return None
     
-    def remove_vector(self, content_id: str) -> bool:
+    def remove_vector(self, content_id: str, rebuild_index: bool = True) -> bool:
         """
-        Remove vector by content ID.
-        Note: FAISS doesn't support efficient deletion, only metadata removal.
+        Remove vector by content ID with true deletion from index.
+        
+        Args:
+            content_id: Content ID to remove
+            rebuild_index: Whether to rebuild the index immediately (default: True)
+                          Set to False if doing bulk deletions, then call rebuild_index() once
+        
+        Returns:
+            True if vector was found and removed, False otherwise
         """
-        # Find and remove from metadata
+        # Find the internal ID for this content
         internal_id = None
         for iid, cid in self._id_mapping.items():
             if cid == content_id:
@@ -349,29 +401,83 @@ class VectorStore:
                 break
         
         if internal_id is None:
+            logger.warning(f"Content ID {content_id} not found for removal")
             return False
         
-        # Remove from metadata and mapping
+        # Remove from all data structures
         self._metadata.pop(internal_id, None)
         self._id_mapping.pop(internal_id, None)
+        self._vectors.pop(internal_id, None)
         
-        self._save_metadata()
-        self._save_id_mapping()
+        logger.info(f"Removed vector data for content_id: {content_id}")
         
-        logger.info(f"Removed metadata for content_id: {content_id}")
-        logger.warning("Vector still exists in FAISS index (rebuild required for full removal)")
+        if rebuild_index:
+            # Immediately rebuild index to ensure true deletion
+            self.rebuild_index()
+            logger.info(f"Index rebuilt after removing content_id: {content_id}")
+        else:
+            # Just save metadata/mapping changes for now
+            self._save_metadata()
+            self._save_id_mapping()
+            self._save_vectors()
+            logger.info(f"Vector marked for deletion: {content_id} (rebuild required)")
+        
         return True
     
+    def remove_vectors_batch(self, content_ids: List[str]) -> int:
+        """
+        Remove multiple vectors efficiently with a single index rebuild.
+        
+        Args:
+            content_ids: List of content IDs to remove
+            
+        Returns:
+            Number of vectors successfully removed
+        """
+        removed_count = 0
+        
+        logger.info(f"Starting bulk removal of {len(content_ids)} vectors")
+        
+        # Remove all vectors without rebuilding
+        for content_id in content_ids:
+            if self.remove_vector(content_id, rebuild_index=False):
+                removed_count += 1
+        
+        # Single rebuild at the end
+        if removed_count > 0:
+            logger.info(f"Rebuilding index after removing {removed_count} vectors")
+            self.rebuild_index()
+        
+        logger.info(f"Bulk removal complete: {removed_count}/{len(content_ids)} vectors removed")
+        return removed_count
+    
     def get_statistics(self) -> Dict[str, Any]:
-        """Get index statistics."""
+        """Get comprehensive index statistics."""
+        stored_vectors = len(self._vectors)
+        metadata_count = len(self._metadata)
+        mapping_count = len(self._id_mapping)
+        
+        # Check for inconsistencies
+        inconsistencies = []
+        if stored_vectors != metadata_count:
+            inconsistencies.append(f"Stored vectors ({stored_vectors}) != metadata ({metadata_count})")
+        if metadata_count != mapping_count:
+            inconsistencies.append(f"Metadata ({metadata_count}) != ID mapping ({mapping_count})")
+        if FAISS_AVAILABLE and self.total_vectors != metadata_count:
+            inconsistencies.append(f"FAISS index ({self.total_vectors}) != metadata ({metadata_count})")
+        
         return {
             'total_vectors': self.total_vectors,
+            'stored_vectors': stored_vectors,
+            'metadata_entries': metadata_count,
+            'id_mappings': mapping_count,
             'dimension': self.dimension,
             'index_type': self.index_type,
             'memory_usage_mb': self._estimate_memory_usage(),
             'faiss_available': FAISS_AVAILABLE,
-            'metadata_count': len(self._metadata),
-            'id_mapping_count': len(self._id_mapping)
+            'is_trained': self.is_trained,
+            'inconsistencies': inconsistencies,
+            'needs_rebuild': len(inconsistencies) > 0
         }
     
     def _estimate_memory_usage(self) -> float:
@@ -387,26 +493,108 @@ class VectorStore:
     def rebuild_index(self):
         """
         Rebuild index from scratch (useful after many deletions).
-        This is expensive but ensures optimal performance.
+        This is expensive but ensures optimal performance and true vector deletion.
         """
         if not FAISS_AVAILABLE:
+            logger.warning("FAISS not available, cannot rebuild index")
             return
         
-        logger.info("Rebuilding FAISS index...")
+        logger.info("Rebuilding FAISS index from stored vectors...")
         
-        # Create new index
-        old_index = self._index
-        self._index = self._create_or_load_index()
+        # Get all valid vectors (ones that still have metadata)
+        valid_vectors = []
+        valid_internal_ids = []
         
-        # Note: Would need to re-add all valid vectors here
-        # This is a placeholder for full implementation
-        logger.warning("Index rebuild not fully implemented - requires vector storage")
+        for internal_id in self._metadata.keys():
+            if internal_id in self._vectors:
+                valid_vectors.append(self._vectors[internal_id])
+                valid_internal_ids.append(internal_id)
+        
+        if not valid_vectors:
+            logger.info("No valid vectors to rebuild, creating empty index")
+            # Create fresh empty index
+            if self.index_type == "flat_ip":
+                self._index = faiss.IndexFlatIP(self.dimension)
+            elif self.index_type == "hnsw":
+                self._index = faiss.IndexHNSWFlat(self.dimension, 32)
+                self._index.hnsw.efConstruction = 40
+                self._index.hnsw.efSearch = 16
+            elif self.index_type == "ivf":
+                quantizer = faiss.IndexFlatIP(self.dimension)
+                self._index = faiss.IndexIVFFlat(quantizer, self.dimension, 100)
+            else:
+                self._index = faiss.IndexFlatIP(self.dimension)
+                
+            self._save_index()
+            logger.info("Empty index created and saved")
+            return
+        
+        # Convert vectors to numpy array
+        vectors_array = np.array(valid_vectors).astype(np.float32)
+        
+        # Ensure vectors are properly shaped
+        if vectors_array.ndim == 1:
+            vectors_array = vectors_array.reshape(1, -1)
+        
+        logger.info(f"Rebuilding index with {len(valid_vectors)} valid vectors")
+        
+        # Create fresh index
+        if self.index_type == "flat_ip":
+            new_index = faiss.IndexFlatIP(self.dimension)
+        elif self.index_type == "hnsw":
+            new_index = faiss.IndexHNSWFlat(self.dimension, 32)
+            new_index.hnsw.efConstruction = 40
+            new_index.hnsw.efSearch = 16
+        elif self.index_type == "ivf":
+            quantizer = faiss.IndexFlatIP(self.dimension)
+            new_index = faiss.IndexIVFFlat(quantizer, self.dimension, min(100, len(valid_vectors)))
+            # Train the index if needed
+            if not new_index.is_trained:
+                new_index.train(vectors_array)
+        else:
+            new_index = faiss.IndexFlatIP(self.dimension)
+        
+        # Add all valid vectors to new index
+        new_index.add(vectors_array)
+        
+        # Replace the old index
+        self._index = new_index
+        
+        # Clean up ID mapping - rebuild it sequentially for consistency
+        new_id_mapping = {}
+        for i, internal_id in enumerate(valid_internal_ids):
+            new_id_mapping[str(i)] = self._id_mapping[internal_id]
+        
+        # Update metadata with new internal IDs
+        new_metadata = {}
+        for i, old_internal_id in enumerate(valid_internal_ids):
+            new_internal_id = str(i)
+            new_metadata[new_internal_id] = self._metadata[old_internal_id]
+        
+        # Update vectors dict with new internal IDs
+        new_vectors = {}
+        for i, old_internal_id in enumerate(valid_internal_ids):
+            new_internal_id = str(i)
+            new_vectors[new_internal_id] = self._vectors[old_internal_id]
+        
+        # Replace old data structures
+        self._id_mapping = new_id_mapping
+        self._metadata = new_metadata
+        self._vectors = new_vectors
+        self._next_internal_id = len(valid_internal_ids)
+        
+        # Save everything
+        self._save_all()
+        
+        logger.info(f"Index rebuilt successfully with {self.total_vectors} vectors")
+        logger.info(f"Memory usage: {self._estimate_memory_usage():.2f} MB")
     
     def _save_all(self):
         """Save all components to disk."""
         self._save_index()
         self._save_metadata()
         self._save_id_mapping()
+        self._save_vectors()
     
     @property
     def total_vectors(self) -> int:

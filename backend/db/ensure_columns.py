@@ -258,14 +258,15 @@ def ensure_social_inbox_tables():
                         mentions JSON DEFAULT '[]',
                         sentiment VARCHAR DEFAULT 'neutral',
                         intent VARCHAR,
-                        priority_score FLOAT DEFAULT 50.0,
+                        priority_score FLOAT DEFAULT 0.0,
                         status VARCHAR DEFAULT 'unread',
-                        assigned_to INTEGER,
-                        response_strategy VARCHAR,
-                        platform_created_at TIMESTAMP WITH TIME ZONE,
+                        assigned_to INTEGER REFERENCES users(id),
+                        response_strategy VARCHAR DEFAULT 'auto',
+                        platform_metadata JSON DEFAULT '{}',
+                        platform_created_at TIMESTAMP WITH TIME ZONE NOT NULL,
                         received_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                         last_updated_at TIMESTAMP WITH TIME ZONE,
-                        metadata JSON DEFAULT '{}'
+                        UNIQUE(platform, external_id)
                     )
                 """))
                 

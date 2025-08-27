@@ -5,7 +5,7 @@ import asyncio
 import numpy as np
 import logging
 from typing import List, Dict, Any, Optional, Tuple, Union
-from datetime import datetime
+from datetime import datetime, timezone
 import time
 import hashlib
 from dataclasses import dataclass
@@ -380,7 +380,7 @@ class EmbeddingService:
                     'content': content,
                     'content_length': len(content),
                     'embedding_model': self.model_name,
-                    'created_at': datetime.utcnow().isoformat(),
+                    'created_at': datetime.now(timezone.utc).isoformat(),
                     'content_hash': hashlib.sha256(content.encode()).hexdigest()[:16]
                 }
                 
@@ -486,7 +486,7 @@ class EmbeddingService:
                     'content': content,
                     'content_length': len(content),
                     'embedding_model': self.model_name,
-                    'created_at': datetime.utcnow().isoformat(),
+                    'created_at': datetime.now(timezone.utc).isoformat(),
                     'content_hash': hashlib.sha256(content.encode()).hexdigest()[:16]
                 }
                 

@@ -5,7 +5,7 @@ Proactive cache warming based on user behavior patterns and platform activity
 import asyncio
 import logging
 from typing import Dict, List, Optional, Set, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict, Counter
 from dataclasses import dataclass
 
@@ -55,7 +55,7 @@ class CacheWarmupService:
                 content_query = (
                     db.query(ContentItem)
                     .filter(ContentItem.user_id == user_id)
-                    .filter(ContentItem.created_at >= datetime.utcnow() - timedelta(days=days_back))
+                    .filter(ContentItem.created_at >= datetime.now(timezone.utc) - timedelta(days=days_back))
                 )
                 
                 platform_usage = Counter()
@@ -70,7 +70,7 @@ class CacheWarmupService:
                     # Calculate frequency and recency scores
                     recent_dates = recent_activity[platform]
                     avg_recency = sum(
-                        (datetime.utcnow() - date).days for date in recent_dates
+                        (datetime.now(timezone.utc) - date).days for date in recent_dates
                     ) / len(recent_dates)
                     
                     frequency_score = min(count / days_back, 1.0)  # Normalize to 0-1
@@ -132,7 +132,7 @@ class CacheWarmupService:
             last_warmup = await self.cache.get("system", "warmup", user_id=user_id, resource_id="last_warmup")
             if last_warmup:
                 last_time = datetime.fromisoformat(last_warmup)
-                if datetime.utcnow() - last_time < timedelta(hours=6):
+                if datetime.now(timezone.utc) - last_time < timedelta(hours=6):
                     logger.info(f"User {user_id} cache recently warmed, skipping")
                     return {"status": "recently_warmed", "last_warmup": last_warmup}
         
@@ -157,7 +157,7 @@ class CacheWarmupService:
                     warmup_data = {
                         "platform": pattern.platform,
                         "operation": pattern.operation,
-                        "warmed_at": datetime.utcnow().isoformat(),
+                        "warmed_at": datetime.now(timezone.utc).isoformat(),
                         "priority": pattern.priority,
                         "user_id": user_id,
                         "warmup_session": warmup_key
@@ -183,7 +183,7 @@ class CacheWarmupService:
             # Update last warmup time
             await self.cache.set(
                 "system", "warmup", 
-                datetime.utcnow().isoformat(),
+                datetime.now(timezone.utc).isoformat(),
                 user_id=user_id,
                 resource_id="last_warmup",
                 ttl=86400  # 24 hours
@@ -194,7 +194,7 @@ class CacheWarmupService:
                 "warmed_count": warmed_count,
                 "failed_count": failed_count,
                 "patterns_analyzed": len(patterns),
-                "warmup_time": datetime.utcnow().isoformat()
+                "warmup_time": datetime.now(timezone.utc).isoformat()
             }
             
             logger.info(f"Cache warmup completed for user {user_id}: {warmed_count} items warmed, {failed_count} failed")
@@ -222,7 +222,7 @@ class CacheWarmupService:
                 # Get most engaged-with content from last 7 days
                 popular_content = (
                     db.query(ContentItem)
-                    .filter(ContentItem.published_at >= datetime.utcnow() - timedelta(days=7))
+                    .filter(ContentItem.published_at >= datetime.now(timezone.utc) - timedelta(days=7))
                     .filter(ContentItem.engagement_count > 0)
                     .order_by(ContentItem.engagement_count.desc())
                     .limit(limit)
@@ -243,7 +243,7 @@ class CacheWarmupService:
                             "content_id": content.id,
                             "platform": content.platform,
                             "engagement_count": content.engagement_count,
-                            "cached_at": datetime.utcnow().isoformat()
+                            "cached_at": datetime.now(timezone.utc).isoformat()
                         },
                         resource_id=str(content.id),
                         ttl=3600  # 1 hour for popular content
@@ -257,7 +257,7 @@ class CacheWarmupService:
                     "status": "completed",
                     "warmed_count": warmed_count,
                     "platforms": list(platforms),
-                    "warmup_time": datetime.utcnow().isoformat()
+                    "warmup_time": datetime.now(timezone.utc).isoformat()
                 }
                 
         except Exception as e:
@@ -274,7 +274,7 @@ class CacheWarmupService:
                 active_users = (
                     db.query(User.id)
                     .join(ContentItem)
-                    .filter(ContentItem.created_at >= datetime.utcnow() - timedelta(days=30))
+                    .filter(ContentItem.created_at >= datetime.now(timezone.utc) - timedelta(days=30))
                     .distinct()
                     .limit(50)  # Limit to prevent overwhelming the system
                     .all()
@@ -347,7 +347,7 @@ class CacheWarmupService:
             
             # Add current status
             warmup_stats["warmup_in_progress"] = len(self.warmup_in_progress)
-            warmup_stats["last_checked"] = datetime.utcnow().isoformat()
+            warmup_stats["last_checked"] = datetime.now(timezone.utc).isoformat()
             
             return warmup_stats
             

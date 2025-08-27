@@ -12,11 +12,13 @@ celery_app = Celery(
     broker=settings.get_celery_broker_url(),
     backend=settings.get_celery_result_backend(),
     include=[
-        "backend.tasks.content_tasks",
-        "backend.tasks.research_tasks", 
+        "backend.tasks.lightweight_research_tasks",  # Memory optimized tasks
         "backend.tasks.posting_tasks",
-        "backend.tasks.optimization_tasks",
         "backend.tasks.autonomous_scheduler",
+        # Disabled heavy tasks to prevent memory issues
+        # "backend.tasks.content_tasks",  # CrewAI - uses 500MB+
+        # "backend.tasks.research_tasks",  # CrewAI - uses 500MB+ 
+        # "backend.tasks.optimization_tasks",  # May be heavy
     ]
 )
 
@@ -26,13 +28,15 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
-    result_expires=3600,
+    result_expires=1800,  # Reduced to 30 minutes
     task_track_started=True,
-    task_time_limit=10 * 60,  # 10 minutes (reduced from 30)
-    task_soft_time_limit=8 * 60,  # 8 minutes (reduced from 25)
+    task_time_limit=5 * 60,  # 5 minutes (reduced from 10)
+    task_soft_time_limit=4 * 60,  # 4 minutes (reduced from 8)
     worker_prefetch_multiplier=1,
-    worker_max_tasks_per_child=50,  # Reduced from 1000 to prevent memory accumulation
-    worker_max_memory_per_child=500000,  # 500MB limit per worker process
+    worker_max_tasks_per_child=10,  # Very aggressive recycling (was 50)
+    worker_max_memory_per_child=300000,  # 300MB limit (was 500MB)
+    worker_disable_rate_limits=True,
+    worker_pool_restarts=True,
 )
 
 # Production autonomous schedule for fully automated operation
@@ -65,10 +69,10 @@ celery_app.conf.beat_schedule = {
         'options': {'queue': 'posting'},
     },
     
-    # Legacy tasks (will be phased out)
-    'legacy-research': {
-        'task': 'backend.tasks.research_tasks.run_daily_research',
-        'schedule': 60.0 * 60.0 * 12,  # Every 12 hours (reduced frequency)
-        'options': {'queue': 'legacy'},
+    # Lightweight research tasks (memory optimized)
+    'lightweight-research': {
+        'task': 'backend.tasks.lightweight_research_tasks.lightweight_daily_research',
+        'schedule': 60.0 * 60.0 * 8,  # Every 8 hours
+        'options': {'queue': 'research', 'expires': 300},  # 5 min expiry
     },
 }

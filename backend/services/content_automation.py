@@ -140,13 +140,13 @@ class ContentGenerationAutomation:
         """Initialize content automation pipeline"""
         self.openai_api_key = settings.openai_api_key if hasattr(settings, 'openai_api_key') else None
         
-        # Platform-specific content limits
+        # Platform-specific content limits with 50-char safety buffer
         self.platform_limits = {
-            "twitter": {"text": 280, "hashtags": 2, "thread_max": 10},
-            "instagram": {"text": 2200, "hashtags": 30, "carousel_max": 10},
-            "facebook": {"text": 63206, "hashtags": 10, "images_max": 10},
-            "linkedin": {"text": 3000, "hashtags": 5, "articles_max": 120000},
-            "tiktok": {"text": 150, "hashtags": 5, "video_max": 60}
+            "twitter": {"text": 280 - 50, "hashtags": 2, "thread_max": 10},
+            "instagram": {"text": 2200 - 50, "hashtags": 30, "carousel_max": 10},
+            "facebook": {"text": 63206 - 50, "hashtags": 10, "images_max": 10},
+            "linkedin": {"text": 3000 - 50, "hashtags": 5, "articles_max": 120000},
+            "tiktok": {"text": 150 - 50, "hashtags": 5, "video_max": 60}
         }
         
         # Content templates by type and platform
@@ -460,28 +460,27 @@ class ContentGenerationAutomation:
             # Initialize async OpenAI client
             client = AsyncOpenAI(api_key=self.openai_api_key)
             
-            # Build prompt
+            # Build strict prompt
+            strict_limit = max_chars - 10  # Extra safety margin
             prompt = f"""
             Create engaging {platform} content about {request.topic}.
+            
+            🚨 CRITICAL CHARACTER LIMIT: {strict_limit} characters maximum
+            - COUNT EVERY CHARACTER including spaces, punctuation, hashtags
+            - YOUR RESPONSE MUST BE UNDER {strict_limit} CHARACTERS (strict limit)
+            - This is for {platform} - exceeding the limit will break the post
+            - AIM for {strict_limit - 20} characters to be safe
             
             Requirements:
             - Tone: {request.tone.value}
             - Target audience: {request.target_audience}
-            - Maximum {max_chars} characters
             - Content type: {request.content_type.value}
+            - Keywords to include: {', '.join(request.keywords)}
             
             Context: {research_context}
             
-            Keywords to include: {', '.join(request.keywords)}
-            
-            Create content that:
-            1. Engages the {request.target_audience} audience
-            2. Matches the {request.tone.value} tone
-            3. Is optimized for {platform}
-            4. Incorporates relevant keywords naturally
-            5. Encourages engagement
-            
-            Content:
+            IMPORTANT: Count characters as you write. Write concisely. Quality over quantity.
+            Return ONLY the final content text under {strict_limit} characters. No explanations or extra text.
             """
             
             # Build messages
@@ -505,9 +504,12 @@ class ContentGenerationAutomation:
             
             content = response.choices[0].message.content.strip()
             
-            # Ensure content fits within limits
+            # Ensure content fits within limits with extra safety
             if len(content) > max_chars:
-                content = content[:max_chars-3] + "..."
+                logger.warning(f"Content exceeded {max_chars} chars ({len(content)}), truncating")
+                # Truncate more aggressively to stay well under limit
+                safe_limit = max_chars - 20  # 20 char safety buffer
+                content = content[:safe_limit].rsplit(' ', 1)[0] + "..."
             
             return content
             

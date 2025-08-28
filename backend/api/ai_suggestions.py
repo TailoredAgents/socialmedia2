@@ -259,6 +259,17 @@ def get_fallback_suggestions(suggestion_type: str, context: Dict[str, Any]) -> L
                 "personalization_score": 0.8
             },
             {
+                "id": "engagement-goals",
+                "title": "Boost engagement rates",
+                "description": "Set targets to increase likes, comments, and shares",
+                "action": "Set Targets",
+                "color": "blue",
+                "ai_prompt": "Create engagement improvement goals and strategies",
+                "estimated_time": "1 minute",
+                "priority": 2,
+                "personalization_score": 0.7
+            },
+            {
                 "id": "brand-voice",
                 "title": "Optimize brand voice",
                 "description": "Refine your content tone and messaging consistency",
@@ -281,30 +292,6 @@ def get_fallback_suggestions(suggestion_type: str, context: Dict[str, Any]) -> L
                 "personalization_score": 0.4
             }
         ],
-        "goals": [
-            {
-                "id": "growth-goals",
-                "title": "Set growth targets",
-                "description": "AI-recommended goals based on your current performance",
-                "action": "Create Goals",
-                "color": "green",
-                "ai_prompt": "Suggest realistic growth goals based on current metrics",
-                "estimated_time": "30 seconds",
-                "priority": 1,
-                "personalization_score": 0.8
-            },
-            {
-                "id": "engagement-goals",
-                "title": "Boost engagement rates",
-                "description": "Set targets to increase likes, comments, and shares",
-                "action": "Set Targets",
-                "color": "blue",
-                "ai_prompt": "Create engagement improvement goals and strategies",
-                "estimated_time": "1 minute",
-                "priority": 2,
-                "personalization_score": 0.7
-            }
-        ],
         "inbox": [
             {
                 "id": "inbox-cleanup",
@@ -316,6 +303,76 @@ def get_fallback_suggestions(suggestion_type: str, context: Dict[str, Any]) -> L
                 "estimated_time": "2 minutes",
                 "priority": 3,
                 "personalization_score": 0.6
+            }
+        ],
+        "memory": [
+            {
+                "id": "brand-knowledge",
+                "title": "Update brand knowledge",
+                "description": "Add key brand information to your AI memory",
+                "action": "Update Knowledge",
+                "color": "blue",
+                "ai_prompt": "Suggest important brand information to store in memory",
+                "estimated_time": "1 minute",
+                "priority": 2,
+                "personalization_score": 0.8
+            },
+            {
+                "id": "audience-insights",
+                "title": "Store audience insights",
+                "description": "Capture key learnings about your audience preferences",
+                "action": "Save Insights",
+                "color": "green",
+                "ai_prompt": "Analyze and store audience behavior patterns",
+                "estimated_time": "45 seconds",
+                "priority": 3,
+                "personalization_score": 0.7
+            },
+            {
+                "id": "content-performance",
+                "title": "Record content performance",
+                "description": "Remember what types of content work best",
+                "action": "Record Performance",
+                "color": "orange",
+                "ai_prompt": "Identify and store successful content patterns",
+                "estimated_time": "30 seconds",
+                "priority": 4,
+                "personalization_score": 0.6
+            }
+        ],
+        "scheduler": [
+            {
+                "id": "optimal-timing",
+                "title": "Find optimal posting times",
+                "description": "AI analysis of when your audience is most active",
+                "action": "Analyze Timing",
+                "color": "purple",
+                "ai_prompt": "Analyze engagement data to suggest optimal posting times",
+                "estimated_time": "1 minute",
+                "priority": 1,
+                "personalization_score": 0.9
+            },
+            {
+                "id": "content-calendar",
+                "title": "Create weekly schedule",
+                "description": "Plan your content posting schedule for the week",
+                "action": "Plan Schedule",
+                "color": "blue",
+                "ai_prompt": "Create a strategic weekly content posting calendar",
+                "estimated_time": "2 minutes",
+                "priority": 2,
+                "personalization_score": 0.8
+            },
+            {
+                "id": "automation-setup",
+                "title": "Set up automated posting",
+                "description": "Configure smart posting automation for consistent presence",
+                "action": "Setup Automation",
+                "color": "green",
+                "ai_prompt": "Configure intelligent automated posting settings",
+                "estimated_time": "3 minutes",
+                "priority": 3,
+                "personalization_score": 0.7
             }
         ]
     }

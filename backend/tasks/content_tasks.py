@@ -6,6 +6,7 @@ from celery import current_task
 from backend.tasks.celery_app import celery_app
 from backend.agents.crew_config import create_daily_crew
 from backend.agents.tools import memory_tool, openai_tool
+from datetime import datetime, timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -42,7 +43,7 @@ def generate_daily_content(self, topic="social media trends", brand_voice="profe
                     'type': 'daily_content',
                     'topic': topic,
                     'brand_voice': brand_voice,
-                    'generated_at': current_task.request.utc
+                    'generated_at': datetime.now(timezone.utc).isoformat()
                 }
             )
         

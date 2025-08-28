@@ -10,7 +10,7 @@ from backend.agents.tools import web_scraper, twitter_tool, memory_tool, openai_
 from backend.services.research_scheduler import research_scheduler
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def run_daily_research(self, topics=None):
                 metadata={
                     'type': 'research',
                     'topic': topic,
-                    'research_date': current_task.request.utc
+                    'research_date': datetime.now(timezone.utc).isoformat()
                 }
             )
             

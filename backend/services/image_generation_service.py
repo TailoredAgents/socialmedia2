@@ -25,15 +25,27 @@ class ImageGenerationService:
     """
     
     def __init__(self):
-        # Use xAI Grok for image generation
-        self.client = OpenAI(
-            api_key=settings.xai_api_key,
-            base_url="https://api.x.ai/v1"
-        )
-        self.async_client = AsyncOpenAI(
-            api_key=settings.xai_api_key,
-            base_url="https://api.x.ai/v1"
-        )
+        # Check if xAI API key is configured
+        if not settings.xai_api_key:
+            logger.warning("xAI API key not configured. Image generation will be unavailable.")
+            self.client = None
+            self.async_client = None
+        else:
+            # Use xAI Grok for image generation
+            try:
+                self.client = OpenAI(
+                    api_key=settings.xai_api_key,
+                    base_url="https://api.x.ai/v1"
+                )
+                self.async_client = AsyncOpenAI(
+                    api_key=settings.xai_api_key,
+                    base_url="https://api.x.ai/v1"
+                )
+                logger.info("xAI image generation service initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize xAI image generation service: {e}")
+                self.client = None
+                self.async_client = None
         
         # Platform-specific optimization prompts
         self.platform_styles = {
@@ -115,6 +127,19 @@ class ImageGenerationService:
         Returns:
             Dict containing image data, metadata, and generation info
         """
+        # Check if service is available
+        if not self.async_client:
+            return {
+                "status": "error",
+                "error": "Image generation service is unavailable. Please check xAI API key configuration.",
+                "image_data": None,
+                "metadata": {
+                    "platform": platform,
+                    "quality_preset": quality_preset,
+                    "timestamp": datetime.now().isoformat()
+                }
+            }
+            
         try:
             # Enhance prompt for the platform
             enhanced_prompt = self._enhance_prompt_for_platform(
@@ -226,6 +251,19 @@ class ImageGenerationService:
         Returns:
             Dict containing edited image data and metadata
         """
+        # Check if service is available
+        if not self.async_client:
+            return {
+                "status": "error",
+                "error": "Image editing service is unavailable. Please check xAI API key configuration.",
+                "image_data": None,
+                "metadata": {
+                    "platform": platform,
+                    "quality_preset": quality_preset,
+                    "timestamp": datetime.now().isoformat()
+                }
+            }
+            
         try:
             # Prepare tool options
             tool_options = self.quality_presets.get(quality_preset, self.quality_presets["standard"])

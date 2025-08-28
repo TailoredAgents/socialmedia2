@@ -1,6 +1,7 @@
 """
 Content management API endpoints
 """
+import logging
 from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
@@ -18,6 +19,7 @@ from backend.services.image_generation_service import image_generation_service
 from backend.services.file_upload_service import file_upload_service
 from backend.utils.db_checks import ensure_table_exists, safe_table_query
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/content", tags=["content"])
 
 # Pydantic models

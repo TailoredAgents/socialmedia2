@@ -408,8 +408,26 @@ async def get_contextual_suggestions(
         # Limit results
         ai_suggestions = ai_suggestions[:request.limit]
         
-        # Convert to response models
-        suggestions = [AISuggestion(**suggestion) for suggestion in ai_suggestions]
+        # Convert to response models with validation error handling
+        suggestions = []
+        for suggestion in ai_suggestions:
+            try:
+                suggestions.append(AISuggestion(**suggestion))
+            except Exception as validation_error:
+                logger.warning(f"Invalid AI suggestion format: {validation_error}. Suggestion: {suggestion}")
+                # Skip malformed suggestions, continue with others
+                continue
+        
+        # If all AI suggestions were malformed, fall back to static suggestions
+        if not suggestions:
+            logger.warning("All AI suggestions were malformed, falling back to static suggestions")
+            fallback_suggestions = get_fallback_suggestions(request.type, user_context)[:request.limit]
+            for suggestion in fallback_suggestions:
+                try:
+                    suggestions.append(AISuggestion(**suggestion))
+                except Exception as fallback_error:
+                    logger.error(f"Even fallback suggestion is malformed: {fallback_error}. Suggestion: {suggestion}")
+                    continue
         
         # Determine personalization level
         avg_score = sum(s.personalization_score for s in suggestions) / len(suggestions) if suggestions else 0

@@ -7,7 +7,8 @@ import {
   LightBulbIcon,
   CalendarDaysIcon,
   HashtagIcon,
-  PhotoIcon
+  PhotoIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline'
 import { useEnhancedApi } from '../hooks/useEnhancedApi'
 import { useNotifications } from '../hooks/useNotifications'

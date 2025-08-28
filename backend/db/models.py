@@ -72,6 +72,10 @@ class User(Base):
     
     # User credentials for social media platforms
     credentials = relationship("UserCredentials", back_populates="user", cascade="all, delete-orphan")
+    
+    # Content and memory relationships (NEW - for AI suggestions performance)
+    memories = relationship("Memory", back_populates="user", foreign_keys="Memory.user_id")
+    content = relationship("Content", back_populates="user", foreign_keys="Content.user_id")
 
 class ContentLog(Base):
     __tablename__ = "content_logs"
@@ -238,6 +242,7 @@ class Memory(Base):
     __tablename__ = "memories"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     content = Column(Text, nullable=False)
     memory_type = Column(String, nullable=False)  # content, research, template, trend, insight
     vector_id = Column(String, index=True)  # FAISS vector ID
@@ -248,18 +253,22 @@ class Memory(Base):
     tags = Column(JSON, default=[])
     
     # Timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Performance tracking
     access_count = Column(Integer, default=0)
     last_accessed = Column(DateTime(timezone=True))
+    
+    # Relationships
+    user = relationship("User", back_populates="memories")
 
 
 class Content(Base):
     __tablename__ = "content"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     title = Column(String)
     content = Column(Text, nullable=False)
     platform = Column(String, nullable=False)
@@ -280,8 +289,12 @@ class Content(Base):
     memory_id = Column(Integer, ForeignKey("memories.id"))
     
     # Timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User", back_populates="content")
+    memory = relationship("Memory")
 
 
 class ContentItem(Base):

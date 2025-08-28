@@ -142,7 +142,7 @@ async def generate_contextual_suggestions(user_context: Dict[str, Any], suggesti
         client = AsyncOpenAI(api_key=settings.openai_api_key)
         
         response = await client.chat.completions.create(
-            model="gpt-4o-mini",  # Use fast, cost-effective model
+            model="gpt-5-mini",  # Use latest fast, cost-effective model
             messages=[
                 {
                     "role": "system",

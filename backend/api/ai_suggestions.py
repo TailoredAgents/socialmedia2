@@ -172,7 +172,7 @@ Return suggestions as JSON array with this format:
 Make suggestions specific to their experience level and current situation. For new users, focus on getting started. For experienced users, focus on optimization and growth."""
                 }
             ],
-            max_tokens=1500,
+            max_completion_tokens=1500,  # GPT-5 models use max_completion_tokens
             temperature=0.7,
             timeout=10.0  # 10 second timeout to prevent long waits
         )

@@ -82,6 +82,7 @@ def token_is_expired(sent_at: datetime, hours: int) -> bool:
 @router.post("/register", response_model=TokenResponse)
 async def open_register(
     request: OpenRegisterRequest,
+    response: Response,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
@@ -165,17 +166,32 @@ async def open_register(
             verification_token
         )
     
-    # Generate JWT token (but user needs to verify email to fully access features)
+    # Generate JWT access token and refresh token
     try:
         access_token = jwt_handler.create_access_token(
             data={"sub": str(new_user.id), "email": new_user.email}
         )
+        
+        refresh_token = jwt_handler.create_refresh_token(
+            data={"sub": str(new_user.id), "email": new_user.email}
+        )
     except Exception as e:
-        logger.error(f"Failed to create JWT token: {e}")
+        logger.error(f"Failed to create JWT tokens: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create access token: {str(e)}"
         )
+    
+    # Set refresh token in HTTP-only cookie
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,  # HTTPS only in production
+        samesite="lax",  # CSRF protection
+        max_age=7 * 24 * 60 * 60,  # 7 days in seconds
+        path="/"
+    )
     
     logger.info(f"New user registered: {new_user.email} (First user: {is_first_user})")
     
@@ -351,6 +367,7 @@ async def reset_password(
 @router.post("/login", response_model=TokenResponse)
 async def login(
     request: LoginRequest,
+    response: Response,
     db: Session = Depends(get_db)
 ):
     """Login with email and password - email verification recommended but not required"""
@@ -376,9 +393,24 @@ async def login(
             detail="Invalid email or password"
         )
     
-    # Generate JWT token
+    # Generate JWT access token and refresh token
     access_token = jwt_handler.create_access_token(
         data={"sub": str(user.id), "email": user.email}
+    )
+    
+    refresh_token = jwt_handler.create_refresh_token(
+        data={"sub": str(user.id), "email": user.email}
+    )
+    
+    # Set refresh token in HTTP-only cookie
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,  # HTTPS only in production
+        samesite="lax",  # CSRF protection
+        max_age=7 * 24 * 60 * 60,  # 7 days in seconds
+        path="/"
     )
     
     logger.info(f"User logged in: {user.email} (Verified: {user.email_verified})")
@@ -396,42 +428,67 @@ async def login(
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(
     request: Request,
+    response: Response,
     db: Session = Depends(get_db)
 ):
     """
-    Refresh access token using existing token
-    For now, just validates current token and returns a new one
+    Refresh access token using refresh token from HTTP-only cookie
     """
-    # Get Authorization header
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
+    # Get refresh token from cookie
+    refresh_token = request.cookies.get("refresh_token")
+    
+    if not refresh_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing or invalid authorization header"
+            detail="Refresh token not found"
         )
     
-    token = auth_header.split(" ")[1]
-    
     try:
-        # Verify current token
-        payload = jwt_handler.verify_token(token)
+        # Verify refresh token
+        payload = jwt_handler.verify_token(refresh_token)
+        
+        # Ensure this is a refresh token
+        if payload.get("type") != "refresh":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token type"
+            )
+        
         user_id = int(payload.get("sub"))
         
         # Get user from database
         user = db.query(User).filter(User.id == user_id).first()
-        if not user:
+        if not user or not user.is_active:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found"
+                detail="User not found or inactive"
             )
         
-        # Generate new token
-        access_token = jwt_handler.create_access_token(
+        # Generate new access token
+        new_access_token = jwt_handler.create_access_token(
             data={"sub": str(user.id), "email": user.email}
         )
         
+        # Generate new refresh token for rotation (security best practice)
+        new_refresh_token = jwt_handler.create_refresh_token(
+            data={"sub": str(user.id), "email": user.email}
+        )
+        
+        # Set new refresh token in HTTP-only cookie
+        response.set_cookie(
+            key="refresh_token",
+            value=new_refresh_token,
+            httponly=True,
+            secure=True,  # HTTPS only in production
+            samesite="lax",  # CSRF protection
+            max_age=7 * 24 * 60 * 60,  # 7 days in seconds
+            path="/"
+        )
+        
+        logger.info(f"Token refreshed for user: {user.email}")
+        
         return TokenResponse(
-            access_token=access_token,
+            access_token=new_access_token,
             user_id=user.id,
             email=user.email,
             username=user.username,
@@ -444,7 +501,7 @@ async def refresh_token(
         logger.error(f"Token refresh failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token"
+            detail="Invalid or expired refresh token"
         )
 
 @router.get("/me", response_model=TokenResponse)
@@ -496,9 +553,18 @@ async def get_current_user(
         )
 
 @router.post("/logout")
-async def logout():
+async def logout(response: Response):
     """
-    Logout endpoint - in JWT stateless auth, this just returns success
-    Frontend should discard the token
+    Logout endpoint - clears the refresh token cookie
+    Frontend should discard the access token
     """
+    # Clear the refresh token cookie
+    response.delete_cookie(
+        key="refresh_token",
+        path="/",
+        httponly=True,
+        secure=True,
+        samesite="lax"
+    )
+    
     return {"message": "Logout successful", "status": "success"}

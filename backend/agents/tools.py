@@ -146,48 +146,83 @@ class OpenAITool:
             self.client = OpenAI(api_key=settings.openai_api_key)
     
     def generate_text(self, prompt: str, model: str = "gpt-5-mini", max_tokens: int = 500, use_web_search: bool = False) -> str:
-        """Generate text using OpenAI with optional web search"""
+        """Generate text using OpenAI with fallback models and better error handling"""
         if not self.client:
-            return "Error: OpenAI API key not configured. Please set the OPENAI_API_KEY environment variable."
+            return "AI text generation is currently unavailable. Please check your OpenAI API configuration."
         
-        try:
-            if use_web_search and model.startswith("gpt-5"):
-                # Use Responses API with web search for GPT-5 models
-                response = self.client.responses.create(
-                    model=model,
-                    input=f"Use web search for current information: {prompt}",
-                    tools=[
-                        {
-                            "type": "web_search"
-                        }
-                    ],
-                    text={"verbosity": "medium"}
-                )
-                return response.output_text if hasattr(response, 'output_text') else str(response)
-            else:
-                # Use Chat Completions for non-web search requests
+        # Define fallback models if the specified model fails
+        fallback_models = ["gpt-5-mini", "gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"]
+        models_to_try = [model] + [m for m in fallback_models if m != model]
+        
+        for current_model in models_to_try:
+            try:
+                logger.info(f"Attempting text generation with model: {current_model}")
+                
+                if use_web_search and current_model.startswith("gpt-5"):
+                    # Use Responses API with web search for GPT-5 models
+                    try:
+                        response = self.client.responses.create(
+                            model=current_model,
+                            input=f"Use web search for current information: {prompt}",
+                            tools=[
+                                {
+                                    "type": "web_search"
+                                }
+                            ],
+                            text={"verbosity": "medium"}
+                        )
+                        result = response.output_text if hasattr(response, 'output_text') else str(response)
+                        logger.info(f"Text generation with web search successful using {current_model}")
+                        return result
+                    except Exception as web_error:
+                        logger.warning(f"Web search failed with {current_model}, falling back to regular completion: {web_error}")
+                        # Fall through to regular completion
+                
+                # Use Chat Completions for non-web search requests or web search fallback
                 params = get_openai_completion_params(
-                    model=model,
+                    model=current_model,
                     max_tokens=max_tokens,
                     temperature=0.7,
                     messages=[{"role": "user", "content": prompt}]
                 )
                 response = self.client.chat.completions.create(**params)
-                return response.choices[0].message.content
-        except Exception as e:
-            return f"Error generating text: {str(e)}"
+                result = response.choices[0].message.content
+                logger.info(f"Text generation successful using {current_model}")
+                return result
+                
+            except Exception as e:
+                logger.warning(f"Text generation failed with {current_model}: {e}")
+                
+                # Check for specific error types
+                error_str = str(e).lower()
+                if "rate limit" in error_str or "429" in error_str:
+                    continue  # Try next model
+                elif "invalid_request_error" in error_str or "model" in error_str:
+                    continue  # Try next model  
+                elif "insufficient_quota" in error_str or "quota" in error_str:
+                    return "AI service quota exceeded. Please try again later or contact support."
+                elif "authentication" in error_str or "401" in error_str:
+                    return "AI service authentication failed. Please contact support."
+                else:
+                    continue  # Try next model for unknown errors
+        
+        # If all models failed
+        logger.error("All text generation models failed")
+        return "AI text generation is temporarily unavailable due to service issues. Please try again in a few minutes."
     
     def generate_content(self, prompt: str, content_type: str = "text", platform: str = None, tone: str = "professional") -> Dict[str, Any]:
-        """Generate social media content using OpenAI"""
+        """Generate social media content using OpenAI with fallback models"""
         if not self.client:
             return {
                 "status": "error",
-                "error": "OpenAI API key not configured. Please set the OPENAI_API_KEY environment variable to enable content generation."
+                "error": "AI content generation is currently unavailable. Please check your OpenAI API configuration."
             }
         
-        try:
-            # Build context-aware prompt
-            context_prompt = f"""Create engaging {content_type} content for social media with the following specifications:
+        # List of models to try in order of preference
+        models_to_try = ["gpt-5-mini", "gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"]
+        
+        # Build context-aware prompt
+        context_prompt = f"""Create engaging {content_type} content for social media with the following specifications:
 
 Platform: {platform or 'general social media'}
 Tone: {tone}
@@ -209,40 +244,71 @@ Please provide:
 
 Format your response as JSON with keys: content, title, hashtags"""
 
-            params = get_openai_completion_params(
-                model="gpt-5-mini",
-                max_tokens=800,
-                temperature=0.7,
-                messages=[{"role": "user", "content": context_prompt}]
-            )
-            response = self.client.chat.completions.create(**params)
-            
-            content_text = response.choices[0].message.content.strip()
-            
-            # Try to parse as JSON, fallback to text parsing
+        for model in models_to_try:
             try:
-                result = json.loads(content_text)
-                return {
-                    "status": "success",
-                    "content": result.get("content", content_text),
-                    "title": result.get("title", "Generated Content"),
-                    "hashtags": result.get("hashtags", [])
-                }
-            except json.JSONDecodeError:
-                # Fallback: treat entire response as content
-                return {
-                    "status": "success",
-                    "content": content_text,
-                    "title": f"Generated {content_type.title()} Content",
-                    "hashtags": []
-                }
+                logger.info(f"Attempting content generation with model: {model}")
                 
-        except Exception as e:
-            logger.error(f"Content generation failed: {e}")
-            return {
-                "status": "error",
-                "error": f"Content generation failed: {str(e)}"
-            }
+                params = get_openai_completion_params(
+                    model=model,
+                    max_tokens=800,
+                    temperature=0.7,
+                    messages=[{"role": "user", "content": context_prompt}]
+                )
+                response = self.client.chat.completions.create(**params)
+                
+                content_text = response.choices[0].message.content.strip()
+                
+                # Try to parse as JSON, fallback to text parsing
+                try:
+                    result = json.loads(content_text)
+                    logger.info(f"Content generation successful with model: {model}")
+                    return {
+                        "status": "success",
+                        "content": result.get("content", content_text),
+                        "title": result.get("title", "Generated Content"),
+                        "hashtags": result.get("hashtags", []),
+                        "model_used": model
+                    }
+                except json.JSONDecodeError:
+                    # Fallback: treat entire response as content
+                    logger.info(f"Content generation successful (non-JSON) with model: {model}")
+                    return {
+                        "status": "success",
+                        "content": content_text,
+                        "title": f"Generated {content_type.title()} Content",
+                        "hashtags": [],
+                        "model_used": model
+                    }
+                    
+            except Exception as e:
+                logger.warning(f"Content generation failed with {model}: {e}")
+                
+                # Check for specific error types for better user messaging
+                error_str = str(e).lower()
+                if "rate limit" in error_str or "429" in error_str:
+                    continue  # Try next model
+                elif "invalid_request_error" in error_str or "model" in error_str:
+                    continue  # Try next model
+                elif "insufficient_quota" in error_str or "quota" in error_str:
+                    return {
+                        "status": "error",
+                        "error": "AI service quota exceeded. Please try again later or contact support."
+                    }
+                elif "authentication" in error_str or "401" in error_str:
+                    return {
+                        "status": "error", 
+                        "error": "AI service authentication failed. Please contact support."
+                    }
+                else:
+                    # For unknown errors, continue trying other models
+                    continue
+        
+        # If all models failed
+        logger.error("All content generation models failed")
+        return {
+            "status": "error",
+            "error": "AI content generation is temporarily unavailable due to service issues. Please try again in a few minutes."
+        }
 
     def generate_image_prompt(self, content_description: str) -> str:
         """Generate an image prompt based on content description"""

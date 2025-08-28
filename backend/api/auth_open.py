@@ -188,7 +188,7 @@ async def open_register(
         value=refresh_token,
         httponly=True,
         secure=True,  # HTTPS only in production
-        samesite="lax",  # CSRF protection
+        samesite="none",  # Allow cross-origin cookies (frontend ↔ api domains)
         max_age=7 * 24 * 60 * 60,  # 7 days in seconds
         path="/"
     )
@@ -408,7 +408,7 @@ async def login(
         value=refresh_token,
         httponly=True,
         secure=True,  # HTTPS only in production
-        samesite="lax",  # CSRF protection
+        samesite="none",  # Allow cross-origin cookies (frontend ↔ api domains)
         max_age=7 * 24 * 60 * 60,  # 7 days in seconds
         path="/"
     )
@@ -535,7 +535,7 @@ async def refresh_token(
             value=new_refresh_token,
             httponly=True,
             secure=True,  # HTTPS only in production
-            samesite="lax",  # CSRF protection
+            samesite="none",  # Allow cross-origin cookies (frontend ↔ api domains)
             max_age=7 * 24 * 60 * 60,  # 7 days in seconds
             path="/"
         )
@@ -613,13 +613,13 @@ async def logout(response: Response):
     Logout endpoint - clears the refresh token cookie
     Frontend should discard the access token
     """
-    # Clear the refresh token cookie
+    # Clear the refresh token cookie with same attributes as when set
     response.delete_cookie(
         key="refresh_token",
         path="/",
         httponly=True,
         secure=True,
-        samesite="lax"
+        samesite="none"  # Must match the original cookie attributes
     )
     
     return {"message": "Logout successful", "status": "success"}

@@ -195,12 +195,13 @@ async def get_upcoming_scheduled(
 async def generate_content(request: ContentGenerationRequest):
     """Generate AI-powered social media content with industry insights and research data"""
     try:
-        # Platform character limits with 50-char buffer for safety
+        # Platform character limits with 50-char buffer for safety (Updated 2025 limits)
         platform_limits = {
             "twitter": 280 - 50,
-            "linkedin": 3000 - 50,
+            "linkedin": 1300 - 50,  # Personal posts: 1300 characters (was incorrectly 3000)
             "instagram": 2200 - 50,
-            "facebook": 63206 - 50
+            "facebook": 63206 - 50,
+            "tiktok": 4000 - 50  # Added TikTok: 4000 characters (major 2025 update)
         }
         
         max_chars = platform_limits.get(request.platform, 250)

@@ -140,13 +140,13 @@ class ContentGenerationAutomation:
         """Initialize content automation pipeline"""
         self.openai_api_key = settings.openai_api_key if hasattr(settings, 'openai_api_key') else None
         
-        # Platform-specific content limits with 50-char safety buffer
+        # Platform-specific content limits with 50-char safety buffer (Updated 2025 limits)
         self.platform_limits = {
             "twitter": {"text": 280 - 50, "hashtags": 2, "thread_max": 10},
             "instagram": {"text": 2200 - 50, "hashtags": 30, "carousel_max": 10},
             "facebook": {"text": 63206 - 50, "hashtags": 10, "images_max": 10},
-            "linkedin": {"text": 3000 - 50, "hashtags": 5, "articles_max": 120000},
-            "tiktok": {"text": 150 - 50, "hashtags": 5, "video_max": 60}
+            "linkedin": {"text": 1300 - 50, "hashtags": 5, "articles_max": 100000},  # Personal posts: 1300 chars
+            "tiktok": {"text": 4000 - 50, "hashtags": 5, "video_max": 60}  # Updated: 4000 chars in 2025
         }
         
         # Content templates by type and platform

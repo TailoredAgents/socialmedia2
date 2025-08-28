@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react'
 import { useWebSocket } from '../../contexts/WebSocketContext'
+import { useAuth } from '../../contexts/AuthContext'
 import NotificationToast from './NotificationToast'
 
 const RealTimeNotificationContainer = () => {
+  const { isAuthenticated } = useAuth()
   const { 
     notifications, 
     unreadCount,
@@ -58,8 +60,8 @@ const RealTimeNotificationContainer = () => {
 
   return (
     <div className="fixed top-0 right-0 z-50 p-4 space-y-4">
-      {/* Connection Status Indicator (only show if not connected) */}
-      {connectionStatus !== 'connected' && (
+      {/* Connection Status Indicator (only show if authenticated and not connected) */}
+      {isAuthenticated && connectionStatus !== 'connected' && (
         <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 rounded-md shadow-lg">
           <div className="flex items-center">
             <div className="flex-shrink-0">
@@ -72,8 +74,8 @@ const RealTimeNotificationContainer = () => {
         </div>
       )}
 
-      {/* Notification Toasts */}
-      {recentNotifications.map(notification => (
+      {/* Notification Toasts (only show for authenticated users) */}
+      {isAuthenticated && recentNotifications.map(notification => (
         <NotificationToast
           key={notification.id}
           id={notification.id}
@@ -88,8 +90,8 @@ const RealTimeNotificationContainer = () => {
         />
       ))}
 
-      {/* Unread Count Badge (if notifications are minimized) */}
-      {unreadCount > 0 && recentNotifications.length === 0 && (
+      {/* Unread Count Badge (only show for authenticated users) */}
+      {isAuthenticated && unreadCount > 0 && recentNotifications.length === 0 && (
         <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium shadow-lg">
           {unreadCount} new notifications
         </div>

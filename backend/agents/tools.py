@@ -329,61 +329,50 @@ Format your response as JSON with keys: content, title, hashtags"""
     
     def create_image(self, prompt: str, size: str = "1024x1024") -> Dict[str, Any]:
         """
-        Generate image using OpenAI Responses API with image_generation tool
+        Generate image using dedicated image generation service
         
-        Uses the enhanced Responses API for real-time streaming and multi-turn editing capabilities,
-        providing superior social media content creation with iterative refinement.
+        Delegates to the ImageGenerationService which properly handles xAI Grok-2 image generation
+        with correct API usage and error handling.
         """
-        if not self.client:
-            return {
-                "status": "error",
-                "error": "OpenAI API key not configured. Please set the OPENAI_API_KEY environment variable to enable image generation."
-            }
-        
         try:
-            response = self.client.responses.create(
-                model="grok-2-image",  # Use Grok-2 image model exclusively
-                messages=[
-                    {
-                        "role": "user", 
-                        "content": f"Generate an image with this description: {prompt}"
-                    }
-                ],
-                tools=[
-                    {
-                        "type": "image_generation",
-                        "image_generation": {
-                            "size": size,
-                            "quality": "standard"
-                        }
-                    }
-                ],
-                stream=False
-            )
+            # Import here to avoid circular imports
+            from backend.services.image_generation_service import image_generation_service
             
-            # Extract base64 image data from Responses API tool call result
-            image_b64 = None
-            if response.content and response.content.tool_calls:
-                for tool_call in response.content.tool_calls:
-                    if tool_call.type == "image_generation":
-                        image_b64 = tool_call.image_generation.b64_json
-                        break
+            # Convert size to quality preset for the service
+            quality_preset = "standard"
+            if "512" in size:
+                quality_preset = "draft"
+            elif "1792" in size or "1024" in size:
+                quality_preset = "premium"
+                
+            # Use the dedicated image generation service
+            import asyncio
+            result = asyncio.run(image_generation_service.generate_image(
+                prompt=prompt,
+                platform="general",
+                quality_preset=quality_preset
+            ))
             
-            if not image_b64:
-                raise Exception("No image data returned from OpenAI Responses API")
-            image_data_url = f"data:image/png;base64,{image_b64}"
-            
-            return {
-                "status": "success",
-                "image_url": image_data_url,
-                "prompt": prompt,
-                "model": "grok-2-image"
-            }
+            # Convert service response to expected format
+            if result.get("status") == "success":
+                return {
+                    "status": "success",
+                    "image_url": result.get("image_data", ""),
+                    "prompt": prompt,
+                    "model": "grok-2-image"
+                }
+            else:
+                return {
+                    "status": "error",
+                    "error": result.get("error", "Image generation failed"),
+                    "model": "grok-2-image"
+                }
+                
         except Exception as e:
             logger.error(f"Image generation failed: {e}")
             return {
                 "status": "error",
-                "error": f"Failed to generate image with Grok-2: {str(e)}"
+                "error": f"Failed to generate image: {str(e)}"
             }
     
     def analyze_sentiment(self, text: str) -> Dict[str, Any]:

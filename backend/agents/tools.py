@@ -407,10 +407,25 @@ class FAISSMemoryTool:
         if not settings.openai_api_key:
             logger.warning("OpenAI API key not configured. Memory embeddings will be unavailable.")
             self.openai_client = None
+            self.index = None
         else:
             self.openai_client = OpenAI(api_key=settings.openai_api_key)
-        # Initialize FAISS index (placeholder for now)
-        self.index = None
+            # Initialize FAISS index for real vector search
+            try:
+                import faiss
+                import numpy as np
+                # Initialize with text-embedding-3-large dimensions (3072)
+                self.dimension = 3072
+                self.index = faiss.IndexFlatIP(self.dimension)  # Inner product for cosine similarity
+                self.np = np
+                self.faiss = faiss
+                logger.info("FAISS memory index initialized successfully")
+            except ImportError:
+                logger.warning("FAISS not installed. Falling back to basic similarity search.")
+                self.index = None
+                self.np = None
+                self.faiss = None
+                
         self.stored_content = []
     
     def embed_text(self, text: str) -> List[float]:
@@ -430,33 +445,106 @@ class FAISSMemoryTool:
             return []
     
     def store_content(self, content: str, metadata: Dict[str, Any]):
-        """Store content with embeddings (simplified version)"""
+        """Store content with embeddings in FAISS index"""
         embedding = self.embed_text(content)
-        if embedding:
-            self.stored_content.append({
+        if not embedding:
+            return False
+            
+        try:
+            # Store metadata and content
+            item = {
                 'content': content,
                 'metadata': metadata,
                 'embedding': embedding
-            })
+            }
+            self.stored_content.append(item)
+            
+            # Add to FAISS index if available
+            if self.index is not None and self.np is not None:
+                # Convert to numpy array and normalize for cosine similarity
+                embedding_array = self.np.array([embedding], dtype='float32')
+                # Normalize for cosine similarity with IndexFlatIP
+                self.faiss.normalize_L2(embedding_array)
+                self.index.add(embedding_array)
+                
+            logger.debug(f"Stored content in memory: {len(content)} chars")
             return True
-        return False
+            
+        except Exception as e:
+            logger.error(f"Failed to store content in memory: {e}")
+            return False
     
     def search_similar(self, query: str, top_k: int = 5) -> List[Dict]:
-        """Search for similar content (simplified version)"""
+        """Search for similar content using FAISS vector similarity"""
         query_embedding = self.embed_text(query)
         if not query_embedding:
             return []
         
-        # Simplified similarity search (in production, use FAISS)
-        results = []
-        for item in self.stored_content[-10:]:  # Return recent items
-            results.append({
-                'content': item['content'],
-                'metadata': item['metadata'],
-                'similarity': 0.8  # Placeholder similarity score
-            })
+        if not self.stored_content:
+            logger.debug("No content stored in memory")
+            return []
         
-        return results[:top_k]
+        try:
+            # Use FAISS if available
+            if self.index is not None and self.np is not None and self.index.ntotal > 0:
+                # Convert query to numpy array and normalize
+                query_array = self.np.array([query_embedding], dtype='float32')
+                self.faiss.normalize_L2(query_array)
+                
+                # Search FAISS index
+                top_k = min(top_k, self.index.ntotal)
+                similarities, indices = self.index.search(query_array, top_k)
+                
+                # Build results with actual similarity scores
+                results = []
+                for i, (similarity, idx) in enumerate(zip(similarities[0], indices[0])):
+                    if idx < len(self.stored_content):
+                        results.append({
+                            'content': self.stored_content[idx]['content'],
+                            'metadata': self.stored_content[idx]['metadata'],
+                            'similarity': float(similarity)  # Cosine similarity score
+                        })
+                
+                return results
+                
+            else:
+                # Fallback: manual cosine similarity calculation
+                def cosine_similarity(a, b):
+                    if not a or not b:
+                        return 0.0
+                    dot_product = sum(x * y for x, y in zip(a, b))
+                    norm_a = sum(x * x for x in a) ** 0.5
+                    norm_b = sum(x * x for x in b) ** 0.5
+                    if norm_a == 0 or norm_b == 0:
+                        return 0.0
+                    return dot_product / (norm_a * norm_b)
+                
+                # Calculate similarities manually
+                results = []
+                for item in self.stored_content:
+                    if item['embedding']:
+                        similarity = cosine_similarity(query_embedding, item['embedding'])
+                        results.append({
+                            'content': item['content'],
+                            'metadata': item['metadata'],
+                            'similarity': similarity
+                        })
+                
+                # Sort by similarity and return top_k
+                results.sort(key=lambda x: x['similarity'], reverse=True)
+                return results[:top_k]
+                
+        except Exception as e:
+            logger.error(f"Similarity search failed: {e}")
+            # Fallback to recent items
+            results = []
+            for item in self.stored_content[-top_k:]:
+                results.append({
+                    'content': item['content'],
+                    'metadata': item['metadata'],
+                    'similarity': 0.0  # Unknown similarity due to error
+                })
+            return results
 
 # Initialize tools
 web_scraper = WebScrapingTool()

@@ -175,18 +175,57 @@ class ContentGenerationAutomation:
         logger.info("ContentGenerationAutomation initialized")
     
     async def generate_content(self, platform: str, topic: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
-        """Public interface for content generation (for testing)"""
+        """Public interface for content generation"""
         try:
-            # Mock content generation for testing
-            return {
-                "status": "success",
-                "content": f"Mock generated content for {platform} about {topic}",
-                "platform": platform,
-                "topic": topic,
-                "context": context or {},
-                "generated_at": datetime.utcnow().isoformat()
-            }
+            # Import here to avoid circular imports
+            from backend.db.database import get_db
+            
+            # Create a proper content generation request
+            request = ContentGenerationRequest(
+                topic=topic,
+                platforms=[platform],
+                content_type=ContentType.POST,
+                tone=ContentTone.PROFESSIONAL,
+                target_audience=context.get("target_audience", "general audience") if context else "general audience",
+                keywords=context.get("keywords", []) if context else [],
+                goals=context.get("goals", []) if context else [],
+                include_hashtags=context.get("include_hashtags", True) if context else True,
+                include_call_to_action=context.get("include_call_to_action", True) if context else True,
+                max_length=context.get("max_length") if context else None,
+                include_media=context.get("include_media", False) if context else False
+            )
+            
+            # Get database session
+            db = next(get_db())
+            
+            try:
+                # Use the real content generation pipeline
+                generated_content = await self._generate_content(db, request, None)
+                
+                if generated_content:
+                    content_item = generated_content[0]  # Get first result
+                    return {
+                        "status": "success",
+                        "content": content_item.content,
+                        "platform": platform,
+                        "topic": topic,
+                        "context": context or {},
+                        "generated_at": datetime.utcnow().isoformat(),
+                        "hashtags": getattr(content_item, 'hashtags', []),
+                        "call_to_action": getattr(content_item, 'call_to_action', None)
+                    }
+                else:
+                    return {
+                        "status": "error",
+                        "error": "No content was generated",
+                        "platform": platform,
+                        "topic": topic
+                    }
+            finally:
+                db.close()
+                
         except Exception as e:
+            logger.error(f"Content generation failed: {e}")
             return {
                 "status": "error",
                 "error": str(e),

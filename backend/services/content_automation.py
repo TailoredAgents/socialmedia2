@@ -489,13 +489,15 @@ class ContentGenerationAutomation:
                 {"role": "user", "content": prompt}
             ]
             
-            # Create chat completion with modern API
-            params = {
-                "model": "gpt-4.1-mini",
-                "messages": messages,
-                "max_completion_tokens": min(max_chars // 3, 500),  # GPT-5 uses max_completion_tokens
-                # "temperature": 0.7  # Temperature not supported for GPT-5 models
-            }
+            # Create chat completion using openai_utils for correct parameters
+            from backend.core.openai_utils import get_openai_completion_params
+            
+            params = get_openai_completion_params(
+                model="gpt-4o-mini",
+                max_tokens=min(max_chars // 3, 500),
+                temperature=0.7,
+                messages=messages
+            )
             
             # Web search tool not supported - removed to prevent API errors
             # Using research context in prompts instead

@@ -103,8 +103,8 @@ class DeepResearchAgent:
         self.vector_store = VectorStore()
         # Model selection based on task type
         self.routine_research_model = "gpt-5-mini"  # For hourly/daily research
-        self.deep_research_model = "gpt-5"  # For weekly deep dives
-        self.analysis_model = "gpt-5"  # For comprehensive analysis
+        self.deep_research_model = "gpt-5-mini"  # For weekly deep dives (with Serper)
+        self.analysis_model = "gpt-5-mini"  # For comprehensive analysis (with Serper)
         
         # Research configuration
         self.max_sources_per_topic = 50

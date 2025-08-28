@@ -151,7 +151,7 @@ class AIInsightsService:
             """
             
             params = get_openai_completion_params(
-                model="gpt-5",
+                model="gpt-5-mini",
                 max_tokens=1000,  # Adding reasonable default
                 temperature=0.7,
                 messages=[{"role": "user", "content": prompt}]
@@ -232,7 +232,7 @@ class AIInsightsService:
             """
             
             params = get_openai_completion_params(
-                model="gpt-5",
+                model="gpt-5-mini",
                 max_tokens=2000,
                 temperature=0.7,
                 messages=[{"role": "user", "content": insight_prompt}]

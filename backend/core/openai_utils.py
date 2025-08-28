@@ -26,6 +26,10 @@ def get_openai_completion_params(model: str, max_tokens: int, temperature: float
     if model.startswith("gpt-5"):
         base_params["max_completion_tokens"] = max_tokens
         # Temperature parameter is not supported for GPT-5 models
+    elif model.startswith("gpt-4.1"):
+        # GPT-4.1 series models use max_completion_tokens and support temperature
+        base_params["max_completion_tokens"] = max_tokens
+        base_params["temperature"] = temperature
     elif model.startswith("o1"):
         base_params["max_completion_tokens"] = max_tokens
         # Temperature parameter is not supported for o1 reasoning models
@@ -62,6 +66,8 @@ def get_max_tokens_for_model(model: str) -> int:
     """
     if model.startswith("gpt-5"):
         return 128000  # GPT-5 can emit up to 128K tokens
+    elif model.startswith("gpt-4.1"):
+        return 128000  # GPT-4.1 series supports up to 128K tokens (1M context)
     elif model.startswith("gpt-4"):
         return 4096   # GPT-4 standard limit
     elif model.startswith("gpt-3.5"):

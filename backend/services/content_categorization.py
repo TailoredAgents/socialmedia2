@@ -192,7 +192,7 @@ class ContentCategorizer:
             """
             
             response = await self.async_client.chat.completions.create(
-                model="gpt-5-mini",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You are an expert content analyst specializing in social media categorization. Always respond with valid JSON."},
                     {"role": "user", "content": prompt}

@@ -491,7 +491,7 @@ class ContentGenerationAutomation:
             
             # Create chat completion with modern API
             params = {
-                "model": "gpt-5",
+                "model": "gpt-4.1-mini",
                 "messages": messages,
                 "max_completion_tokens": min(max_chars // 3, 500),  # GPT-5 uses max_completion_tokens
                 # "temperature": 0.7  # Temperature not supported for GPT-5 models

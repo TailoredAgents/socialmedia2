@@ -145,7 +145,7 @@ async def generate_contextual_suggestions(user_context: Dict[str, Any], suggesti
         from backend.core.openai_utils import get_openai_completion_params
         
         params = get_openai_completion_params(
-            model="gpt-5-mini",
+            model="gpt-4.1-mini",
             max_tokens=1500,
             temperature=0.7,  # Will be ignored for GPT-5 models
             messages=[

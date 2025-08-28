@@ -432,15 +432,70 @@ async def refresh_token(
     db: Session = Depends(get_db)
 ):
     """
-    Refresh access token using refresh token from HTTP-only cookie
+    Refresh access token using refresh token from HTTP-only cookie or Authorization header
+    Supports backwards compatibility during migration
     """
-    # Get refresh token from cookie
+    # Try to get refresh token from cookie first (new method)
     refresh_token = request.cookies.get("refresh_token")
     
+    # Fall back to Authorization header for backwards compatibility
     if not refresh_token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            # During transition, accept access tokens and create new refresh tokens
+            access_token = auth_header.split(" ")[1]
+            try:
+                # Verify the access token and extract user info
+                payload = jwt_handler.verify_token(access_token)
+                user_id = int(payload.get("sub"))
+                
+                # Get user from database
+                user = db.query(User).filter(User.id == user_id).first()
+                if not user or not user.is_active:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="User not found or inactive"
+                    )
+                
+                # Generate new tokens (both access and refresh)
+                new_access_token = jwt_handler.create_access_token(
+                    data={"sub": str(user.id), "email": user.email}
+                )
+                
+                new_refresh_token = jwt_handler.create_refresh_token(
+                    data={"sub": str(user.id), "email": user.email}
+                )
+                
+                # Set refresh token in HTTP-only cookie for future requests
+                response.set_cookie(
+                    key="refresh_token",
+                    value=new_refresh_token,
+                    httponly=True,
+                    secure=True,
+                    samesite="lax",
+                    max_age=7 * 24 * 60 * 60,
+                    path="/"
+                )
+                
+                logger.info(f"Token refreshed via Authorization header (migration): {user.email}")
+                
+                return TokenResponse(
+                    access_token=new_access_token,
+                    user_id=user.id,
+                    email=user.email,
+                    username=user.username,
+                    email_verified=user.email_verified,
+                    tier=user.tier,
+                    is_superuser=user.is_superuser
+                )
+                
+            except Exception as e:
+                logger.error(f"Failed to refresh via Authorization header: {e}")
+                # Continue to error below
+        
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token not found"
+            detail="Refresh token not found in cookie or Authorization header"
         )
     
     try:

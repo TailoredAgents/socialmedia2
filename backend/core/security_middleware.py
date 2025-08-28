@@ -247,8 +247,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     
     async def dispatch(self, request: Request, call_next):
         try:
-            # Skip rate limiting for health checks and CORS preflight requests
-            if request.url.path in ["/health", "/ready", "/metrics"] or request.method == "OPTIONS":
+            # Skip rate limiting for health checks, auth endpoints, and CORS preflight requests
+            exempt_paths = [
+                "/health", "/ready", "/metrics", 
+                "/api/auth/refresh",  # Token refresh should be frequent
+                "/docs", "/redoc", "/openapi.json"  # Documentation endpoints
+            ]
+            if request.url.path in exempt_paths or request.method == "OPTIONS":
                 return await call_next(request)
             
             client_ip = self.get_client_ip(request)
@@ -552,15 +557,24 @@ def setup_security_middleware(app, environment: str = "production"):
         except Exception as e:
             logger.error(f"❌ Failed to add request validation middleware: {e}")
         
-        # 2. Rate limiting
+        # 2. Rate limiting with production-ready defaults
         try:
+            # More generous defaults for SaaS applications
+            default_per_minute = "120" if environment == "production" else "60"
+            default_per_hour = "2000" if environment == "production" else "1000" 
+            default_burst = "30" if environment == "production" else "10"
+            
+            requests_per_minute = int(os.getenv("RATE_LIMIT_PER_MINUTE", default_per_minute))
+            requests_per_hour = int(os.getenv("RATE_LIMIT_PER_HOUR", default_per_hour))
+            burst_limit = int(os.getenv("RATE_LIMIT_BURST", default_burst))
+            
             app.add_middleware(
                 RateLimitMiddleware,
-                requests_per_minute=int(os.getenv("RATE_LIMIT_PER_MINUTE", "60")),
-                requests_per_hour=int(os.getenv("RATE_LIMIT_PER_HOUR", "1000")),
-                burst_limit=int(os.getenv("RATE_LIMIT_BURST", "10"))
+                requests_per_minute=requests_per_minute,
+                requests_per_hour=requests_per_hour,
+                burst_limit=burst_limit
             )
-            logger.info("✅ Rate limiting middleware added")
+            logger.info(f"✅ Rate limiting middleware added: {requests_per_minute}/min, {requests_per_hour}/hr, burst={burst_limit}")
         except Exception as e:
             logger.error(f"❌ Failed to add rate limiting middleware: {e}")
         

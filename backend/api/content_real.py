@@ -5,7 +5,7 @@ IMPORTANT: This file contains ONLY real AI-powered functionality.
 NO MOCK DATA OR FALLBACKS ARE ALLOWED IN THIS FILE.
 All responses must be genuine AI-generated content or proper error handling with Lily messages.
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
@@ -18,7 +18,7 @@ from backend.services.ai_insights_service import ai_insights_service
 from backend.services.twitter_service import twitter_service
 from backend.auth.dependencies import get_current_active_user
 from backend.db.database import get_db
-from backend.db.models import User
+from backend.db.models import User, ContentLog
 
 router = APIRouter(prefix="/api/content", tags=["content"])
 logger = logging.getLogger(__name__)
@@ -453,15 +453,49 @@ async def get_social_connections():
     }
 
 @router.get("/{content_id}")
-async def get_content_by_id(content_id: str):
+async def get_content_by_id(
+    content_id: int,
+    current_user: UserTable = Depends(current_active_user),
+    db: Session = Depends(get_db)
+):
     """Get content by ID"""
     try:
-        if content_id not in content_storage:
+        content_service = ContentPersistenceService(db)
+        content_log = content_service.get_content_by_id(current_user.id, content_id)
+        
+        if not content_log:
             raise HTTPException(status_code=404, detail="Content not found")
+        
+        # Format response to match expected structure
+        engagement_data = content_log.engagement_data or {}
+        content_obj = {
+            "id": content_log.id,
+            "title": engagement_data.get("title", ""),
+            "content": content_log.content,
+            "platform": content_log.platform,
+            "content_type": content_log.content_type,
+            "status": content_log.status,
+            "scheduled_at": content_log.scheduled_for.isoformat() + "Z" if content_log.scheduled_for else None,
+            "published_at": content_log.published_at.isoformat() + "Z" if content_log.published_at else None,
+            "tags": engagement_data.get("tags", []),
+            "created_at": content_log.created_at.isoformat() + "Z",
+            "updated_at": content_log.updated_at.isoformat() + "Z" if content_log.updated_at else None,
+            "generated_by_ai": engagement_data.get('generated_by_ai', False),
+            "industry_context": engagement_data.get('industry_context', ''),
+            "image_url": engagement_data.get('image_url', None),
+            "image_prompt": engagement_data.get('image_prompt', None),
+            "performance": {
+                "views": engagement_data.get('views', 0),
+                "likes": engagement_data.get('likes', 0),
+                "shares": engagement_data.get('shares', 0),
+                "comments": engagement_data.get('comments', 0),
+                "engagement_rate": engagement_data.get('engagement_rate', 0)
+            }
+        }
         
         return {
             "success": True,
-            "content": content_storage[content_id]
+            "content": content_obj
         }
     except HTTPException:
         raise

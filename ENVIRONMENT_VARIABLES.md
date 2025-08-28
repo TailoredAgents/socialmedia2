@@ -51,17 +51,31 @@ HOST=0.0.0.0
 |----------|----------|---------|-------------|
 | `SERPER_API_KEY` | No | - | Serper API key for web search functionality |
 
+#### **Image Generation API (Optional)**
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `XAI_API_KEY` | No | - | xAI API key for Grok-2 image generation |
+
 **Example:**
 ```bash
 OPENAI_API_KEY=sk-proj-your-openai-api-key-here
 SERPER_API_KEY=your-serper-api-key-here
+XAI_API_KEY=xai-your-xai-api-key-here
 ```
 
 **Setup Instructions:**
+
+**OpenAI API:**
 1. Visit [OpenAI Platform](https://platform.openai.com/api-keys)
 2. Create a new API key
 3. Set billing limits and monitor usage
 4. Add key to environment variables
+
+**xAI API (for image generation):**
+1. Visit [xAI Console](https://console.x.ai/)
+2. Create a new API key
+3. Monitor usage and billing
+4. Add key to environment variables (image generation will be disabled without this)
 
 ---
 

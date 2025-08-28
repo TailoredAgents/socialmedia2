@@ -195,12 +195,12 @@ async def get_upcoming_scheduled(
 async def generate_content(request: ContentGenerationRequest):
     """Generate AI-powered social media content with industry insights and research data"""
     try:
-        # Platform character limits with 30-char buffer
+        # Platform character limits with 50-char buffer for safety
         platform_limits = {
-            "twitter": 280 - 30,
-            "linkedin": 3000 - 30,
-            "instagram": 2200 - 30,
-            "facebook": 63206 - 30
+            "twitter": 280 - 50,
+            "linkedin": 3000 - 50,
+            "instagram": 2200 - 50,
+            "facebook": 63206 - 50
         }
         
         max_chars = platform_limits.get(request.platform, 250)
@@ -247,11 +247,11 @@ async def generate_content(request: ContentGenerationRequest):
         Instructions: {instructions}
         Context: {enhanced_context}
         
-        🚨 CRITICAL CHARACTER LIMIT: {max_chars} characters maximum
+        🚨 CRITICAL CHARACTER LIMIT: {max_chars - 10} characters maximum
         - COUNT EVERY CHARACTER including spaces, punctuation, hashtags
-        - YOUR RESPONSE MUST BE UNDER {max_chars} CHARACTERS
+        - YOUR RESPONSE MUST BE UNDER {max_chars - 10} CHARACTERS (strict limit)
         - This is for {request.platform} - exceeding the limit will break the post
-        - If you exceed {max_chars} characters, the content will be rejected
+        - AIM for {max_chars - 20} characters to be safe
         
         Requirements:
         - Platform: {request.platform}
@@ -261,8 +261,8 @@ async def generate_content(request: ContentGenerationRequest):
         - Focus on actionable insights and benefits
         - Make it engaging and authentic
         
-        IMPORTANT: Count your characters carefully. Write concisely. Quality over quantity.
-        Return ONLY the final content text under {max_chars} characters. No explanations.
+        IMPORTANT: Count characters as you write. Write concisely. Quality over quantity.
+        Return ONLY the final content text under {max_chars - 10} characters. No explanations or extra text.
         """
         
         # Use web search for research-heavy platforms like LinkedIn and Twitter
@@ -294,14 +294,14 @@ async def generate_content(request: ContentGenerationRequest):
             
             # Instead of truncating, try one more time with an even stricter prompt
             stricter_prompt = f"""
-            EMERGENCY: Create {request.platform} content UNDER {max_chars - 20} characters.
+            EMERGENCY: Create {request.platform} content UNDER {max_chars - 30} characters.
             
             Topic: {instructions}
-            Context: {enhanced_context[:200]}
+            Context: {enhanced_context[:150]}
             
-            🚨 ABSOLUTE LIMIT: {max_chars - 20} characters (leaving safety buffer)
-            Write SHORT, impactful content. No fluff. Quality over quantity.
-            Include hashtags if under limit.
+            🚨 ABSOLUTE LIMIT: {max_chars - 30} characters (strict safety buffer)
+            Write SHORT, impactful content. No fluff. Be extremely concise.
+            Include hashtags only if plenty of room left.
             
             Return ONLY the content, nothing else.
             """

@@ -139,10 +139,17 @@ class OpenAITool:
     """OpenAI integration for content generation and analysis"""
     
     def __init__(self):
-        self.client = OpenAI(api_key=settings.openai_api_key)
+        if not settings.openai_api_key:
+            logger.warning("OpenAI API key not configured. Content generation will be unavailable.")
+            self.client = None
+        else:
+            self.client = OpenAI(api_key=settings.openai_api_key)
     
     def generate_text(self, prompt: str, model: str = "gpt-5-mini", max_tokens: int = 500, use_web_search: bool = False) -> str:
         """Generate text using OpenAI with optional web search"""
+        if not self.client:
+            return "Error: OpenAI API key not configured. Please set the OPENAI_API_KEY environment variable."
+        
         try:
             if use_web_search and model.startswith("gpt-5"):
                 # Use Responses API with web search for GPT-5 models
@@ -172,6 +179,12 @@ class OpenAITool:
     
     def generate_content(self, prompt: str, content_type: str = "text", platform: str = None, tone: str = "professional") -> Dict[str, Any]:
         """Generate social media content using OpenAI"""
+        if not self.client:
+            return {
+                "status": "error",
+                "error": "OpenAI API key not configured. Please set the OPENAI_API_KEY environment variable to enable content generation."
+            }
+        
         try:
             # Build context-aware prompt
             context_prompt = f"""Create engaging {content_type} content for social media with the following specifications:
@@ -233,6 +246,9 @@ Format your response as JSON with keys: content, title, hashtags"""
 
     def generate_image_prompt(self, content_description: str) -> str:
         """Generate an image prompt based on content description"""
+        if not self.client:
+            return "Error: OpenAI API key not configured. Please set the OPENAI_API_KEY environment variable."
+        
         prompt = f"""Create a detailed image prompt for generating a social media visual based on this content: {content_description}
         
         The prompt should be:
@@ -252,6 +268,12 @@ Format your response as JSON with keys: content, title, hashtags"""
         Uses the enhanced Responses API for real-time streaming and multi-turn editing capabilities,
         providing superior social media content creation with iterative refinement.
         """
+        if not self.client:
+            return {
+                "status": "error",
+                "error": "OpenAI API key not configured. Please set the OPENAI_API_KEY environment variable to enable image generation."
+            }
+        
         try:
             response = self.client.responses.create(
                 model="grok-2-image",  # Use Grok-2 image model exclusively
@@ -300,6 +322,14 @@ Format your response as JSON with keys: content, title, hashtags"""
     
     def analyze_sentiment(self, text: str) -> Dict[str, Any]:
         """Analyze sentiment of text"""
+        if not self.client:
+            return {
+                "sentiment": "neutral", 
+                "confidence": 0.0, 
+                "key_emotions": [],
+                "error": "OpenAI API key not configured"
+            }
+        
         prompt = f"""Analyze the sentiment of this text and return a JSON response with:
         - sentiment: (positive/negative/neutral)
         - confidence: (0-1 scale)
@@ -319,13 +349,21 @@ class FAISSMemoryTool:
     """FAISS vector memory for storing and retrieving content insights"""
     
     def __init__(self):
-        self.openai_client = OpenAI(api_key=settings.openai_api_key)
+        if not settings.openai_api_key:
+            logger.warning("OpenAI API key not configured. Memory embeddings will be unavailable.")
+            self.openai_client = None
+        else:
+            self.openai_client = OpenAI(api_key=settings.openai_api_key)
         # Initialize FAISS index (placeholder for now)
         self.index = None
         self.stored_content = []
     
     def embed_text(self, text: str) -> List[float]:
         """Create embedding for text"""
+        if not self.openai_client:
+            logger.warning("Cannot create embedding: OpenAI API key not configured")
+            return []
+            
         try:
             response = self.openai_client.embeddings.create(
                 model="text-embedding-3-large",

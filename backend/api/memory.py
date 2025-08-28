@@ -21,8 +21,8 @@ async def get_all_memory(
 ):
     """Get all stored memory content with pagination"""
     try:
-        # Get all metadata entries (simplified pagination for now)
-        all_entries = list(memory_system.metadata.values())
+        # Get all memory entries (simplified pagination for now)
+        all_entries = list(memory_system.content_store.values())
         
         # Calculate pagination
         total = len(all_entries)

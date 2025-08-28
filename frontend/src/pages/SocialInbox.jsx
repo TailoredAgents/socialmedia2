@@ -461,7 +461,7 @@ function SocialInbox() {
               type="inbox"
               context={{ 
                 hasFilters: platformFilter !== 'all' || statusFilter !== 'all' || intentFilter !== 'all',
-                priorityFilter: 'all' // Priority filter not implemented yet
+                priorityFilter: 'all', // Priority filter not implemented yet
                 selectedPlatform: platformFilter
               }}
               onSuggestionClick={(suggestion) => {

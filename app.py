@@ -364,5 +364,15 @@ except Exception as e:
     logger.warning(f"⚠️ Schema safety net warnings: {e}")
     logger.info("App will continue - database tables may need manual creation")
 
+# AI Suggestions Performance Fix - Auto-migration on startup
+try:
+    from backend.db.auto_migrate import init_database_schema
+    logger.info("🚀 Initializing AI suggestions performance fix...")
+    init_database_schema()
+    logger.info("✅ AI suggestions performance optimization completed")
+except Exception as e:
+    logger.warning(f"⚠️ AI suggestions auto-migration warnings: {e}")
+    logger.info("AI suggestions may be slower until database schema is updated manually")
+
 # Export the app
 __all__ = ["app"]

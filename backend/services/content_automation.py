@@ -493,7 +493,7 @@ class ContentGenerationAutomation:
             from backend.core.openai_utils import get_openai_completion_params
             
             params = get_openai_completion_params(
-                model="gpt-4o-mini",
+                model="gpt-4.1-mini",
                 max_tokens=min(max_chars // 3, 500),
                 temperature=0.7,
                 messages=messages

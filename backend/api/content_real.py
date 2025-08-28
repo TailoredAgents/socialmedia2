@@ -268,7 +268,7 @@ async def generate_content(request: ContentGenerationRequest):
         # Use web search for research-heavy platforms like LinkedIn and Twitter
         if request.platform in ['linkedin', 'twitter']:
             response = await client.responses.create(
-                model="gpt-4o-mini",
+                model="gpt-4.1-mini",
                 input=f"Generate social media content with current trends and information. {prompt}",
                 tools=[
                     {
@@ -281,7 +281,7 @@ async def generate_content(request: ContentGenerationRequest):
         else:
             # Use regular Chat Completions for other platforms
             response = await client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4.1-mini",
                 messages=[{"role": "user", "content": prompt}],
                 max_completion_tokens=400
             )
@@ -307,7 +307,7 @@ async def generate_content(request: ContentGenerationRequest):
             """
             
             retry_response = await client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4.1-mini",
                 messages=[{"role": "user", "content": stricter_prompt}],
                 # temperature=0.5,  # Temperature not supported for GPT-5 models
                 max_completion_tokens=200  # GPT-5 uses max_completion_tokens

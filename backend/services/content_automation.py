@@ -184,7 +184,7 @@ class ContentGenerationAutomation:
             request = ContentGenerationRequest(
                 topic=topic,
                 platforms=[platform],
-                content_type=ContentType.POST,
+                content_type=ContentType.TEXT_POST,
                 tone=ContentTone.PROFESSIONAL,
                 target_audience=context.get("target_audience", "general audience") if context else "general audience",
                 keywords=context.get("keywords", []) if context else [],

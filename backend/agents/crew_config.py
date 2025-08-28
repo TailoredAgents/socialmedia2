@@ -130,12 +130,16 @@ def create_optimization_task(performance_data: dict):
 def create_daily_crew(topic: str = "social media trends", brand_voice: str = "professional"):
     """Create a crew for daily content workflow"""
     
-    # Create tasks
+    # Create tasks - CrewAI automatically passes outputs between sequential tasks
     research_task = create_research_task(topic)
-    content_task = create_content_generation_task("{research_context}", brand_voice)
-    posting_task = create_posting_task("{content}")
     
-    # Create crew
+    # Content task will automatically receive research_task output as context
+    content_task = create_content_generation_task("Use the research findings from the previous task as context.", brand_voice)
+    
+    # Posting task will automatically receive content_task output as context  
+    posting_task = create_posting_task("Use the content generated from the previous task.")
+    
+    # Create crew with sequential processing - outputs flow automatically between tasks
     crew = Crew(
         agents=[research_agent, content_agent, posting_agent],
         tasks=[research_task, content_task, posting_task],

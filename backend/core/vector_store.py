@@ -7,7 +7,6 @@ import os
 import json
 import uuid
 import pickle
-import builtins
 import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime, timezone
@@ -114,7 +113,7 @@ class VectorStore:
         """Load metadata mapping internal IDs to content information."""
         if os.path.exists(self.metadata_file):
             try:
-                with builtins.open(self.metadata_file, 'r', encoding='utf-8') as f:
+                with open(self.metadata_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
             except Exception as e:
                 logger.error(f"Failed to load metadata: {e}")
@@ -124,7 +123,7 @@ class VectorStore:
         """Load mapping from internal IDs to content IDs."""
         if os.path.exists(self.id_mapping_file):
             try:
-                with builtins.open(self.id_mapping_file, 'r', encoding='utf-8') as f:
+                with open(self.id_mapping_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
             except Exception as e:
                 logger.error(f"Failed to load ID mapping: {e}")
@@ -144,7 +143,7 @@ class VectorStore:
     def _save_metadata(self):
         """Save metadata to disk."""
         try:
-            with builtins.open(self.metadata_file, 'w', encoding='utf-8') as f:
+            with open(self.metadata_file, 'w', encoding='utf-8') as f:
                 json.dump(self._metadata, f, indent=2, default=str, ensure_ascii=False)
             logger.info("Metadata saved successfully")
         except Exception as e:
@@ -153,7 +152,7 @@ class VectorStore:
     def _save_id_mapping(self):
         """Save ID mapping to disk."""
         try:
-            with builtins.open(self.id_mapping_file, 'w', encoding='utf-8') as f:
+            with open(self.id_mapping_file, 'w', encoding='utf-8') as f:
                 json.dump(self._id_mapping, f, indent=2)
             logger.info("ID mapping saved successfully")
         except Exception as e:
@@ -618,6 +617,107 @@ class VectorStore:
             logger.info(f"Training index with {training_vectors.shape[0]} vectors")
             self._index.train(training_vectors.astype(np.float32))
             self._save_index()
+    
+    async def similarity_search(
+        self, 
+        query: str, 
+        k: int = 5, 
+        threshold: float = 0.7,
+        filter: Dict[str, Any] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Async wrapper for similarity search with text query.
+        
+        Args:
+            query: Text query to search for
+            k: Number of results to return
+            threshold: Minimum similarity threshold
+            filter: Metadata filter (currently not implemented)
+            
+        Returns:
+            List of search results with content_id, score, and metadata
+        """
+        try:
+            # Get embeddings for the query text
+            from backend.services.embedding_service import get_embedding_service
+            embedding_service = get_embedding_service()
+            query_embedding = await embedding_service.create_embedding_async(query)
+            
+            if query_embedding is None:
+                logger.warning(f"Failed to get embedding for query: {query}")
+                return []
+            
+            # query_embedding is already a normalized numpy array from embedding service
+            query_vector = query_embedding
+            
+            # Call sync search method
+            results = self.search(query_vector, k=k, threshold=threshold)
+            
+            # Apply filter if provided (simple metadata filtering)
+            if filter:
+                filtered_results = []
+                for result in results:
+                    metadata = result.get('metadata', {})
+                    match = True
+                    for key, value in filter.items():
+                        if metadata.get(key) != value:
+                            match = False
+                            break
+                    if match:
+                        filtered_results.append(result)
+                results = filtered_results
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"Error in similarity_search: {e}")
+            return []
+    
+    async def add_text(
+        self,
+        text: str,
+        metadata: Dict[str, Any] = None,
+        content_id: str = None
+    ) -> str:
+        """
+        Async wrapper to add text content to vector store.
+        
+        Args:
+            text: Text content to add
+            metadata: Associated metadata
+            content_id: Unique content identifier (auto-generated if None)
+            
+        Returns:
+            Content ID of the added text
+        """
+        try:
+            # Get embeddings for the text
+            from backend.services.embedding_service import get_embedding_service
+            embedding_service = get_embedding_service()
+            text_embedding = await embedding_service.create_embedding_async(text)
+            
+            if text_embedding is None:
+                logger.warning(f"Failed to get embedding for text: {text[:100]}...")
+                raise ValueError("Failed to generate embedding for text")
+            
+            # text_embedding is already a normalized numpy array from embedding service
+            text_vector = text_embedding
+            
+            # Add metadata with the original text
+            full_metadata = metadata or {}
+            full_metadata['text'] = text
+            full_metadata['text_length'] = len(text)
+            
+            # Call sync add_vector method
+            return self.add_vector(
+                vector=text_vector,
+                content_id=content_id,
+                metadata=full_metadata
+            )
+            
+        except Exception as e:
+            logger.error(f"Error in add_text: {e}")
+            raise
     
     def __del__(self):
         """Ensure data is saved when object is destroyed."""

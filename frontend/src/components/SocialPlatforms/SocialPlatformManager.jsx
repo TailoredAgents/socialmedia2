@@ -85,8 +85,6 @@ const SocialPlatformManager = () => {
       case 'twitter':
       case 'x':
         return '𝕏'
-      case 'linkedin':
-        return 'in'
       case 'instagram':
         return '📷'
       default:
@@ -99,8 +97,6 @@ const SocialPlatformManager = () => {
       case 'twitter':
       case 'x':
         return '#000000'
-      case 'linkedin':
-        return '#0A66C2'
       case 'instagram':
         return '#E4405F'
       default:
@@ -137,7 +133,7 @@ const SocialPlatformManager = () => {
     }
   }
 
-  const availablePlatforms = ['twitter', 'linkedin', 'instagram']
+  const availablePlatforms = ['twitter', 'instagram']
   const connectedPlatforms = connections.map(c => c.platform.toLowerCase())
   const unconnectedPlatforms = availablePlatforms.filter(p => !connectedPlatforms.includes(p))
 

@@ -16,7 +16,6 @@ import {
 
 const platforms = [
   { value: 'twitter', label: 'Twitter', maxLength: 280 },
-  { value: 'linkedin', label: 'LinkedIn', maxLength: 3000 },
   { value: 'instagram', label: 'Instagram', maxLength: 2200 },
   { value: 'facebook', label: 'Facebook', maxLength: 63206 }
 ]

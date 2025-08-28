@@ -140,13 +140,11 @@ class ContentGenerationAutomation:
         """Initialize content automation pipeline"""
         self.openai_api_key = settings.openai_api_key if hasattr(settings, 'openai_api_key') else None
         
-        # Platform-specific content limits with 50-char safety buffer (Updated 2025 limits)
+        # Platform-specific content limits with 50-char safety buffer (LinkedIn and TikTok removed)
         self.platform_limits = {
             "twitter": {"text": 280 - 50, "hashtags": 2, "thread_max": 10},
             "instagram": {"text": 2200 - 50, "hashtags": 30, "carousel_max": 10},
-            "facebook": {"text": 63206 - 50, "hashtags": 10, "images_max": 10},
-            "linkedin": {"text": 1300 - 50, "hashtags": 5, "articles_max": 100000},  # Personal posts: 1300 chars
-            "tiktok": {"text": 4000 - 50, "hashtags": 5, "video_max": 60}  # Updated: 4000 chars in 2025
+            "facebook": {"text": 63206 - 50, "hashtags": 10, "images_max": 10}
         }
         
         # Content templates by type and platform
@@ -386,7 +384,7 @@ class ContentGenerationAutomation:
             )
             
             # Generate title if needed
-            title = await self._generate_title(request, platform) if platform in ["linkedin", "facebook"] else None
+            title = await self._generate_title(request, platform) if platform in ["facebook"] else None
             
             content = GeneratedContent(
                 platform=platform,
@@ -595,9 +593,7 @@ class ContentGenerationAutomation:
         platform_hashtags = {
             "twitter": ["#TwitterChat", "#Thread", "#Insights"],
             "instagram": ["#InstaGood", "#PhotoOfTheDay", "#MotivationMonday"],
-            "facebook": ["#Community", "#Discussion", "#Share"],
-            "linkedin": ["#Professional", "#Career", "#Industry", "#Networking"],
-            "tiktok": ["#ForYou", "#Trending", "#Viral"]
+            "facebook": ["#Community", "#Discussion", "#Share"]
         }
         
         base_tags = platform_hashtags.get(platform, [])
@@ -630,11 +626,6 @@ class ContentGenerationAutomation:
                     "Share this with your friends!",
                     "Join the conversation below! 👇"
                 ],
-                "linkedin": [
-                    "What's your take on this? Share your thoughts!",
-                    "Connect with me to discuss further!",
-                    "What has been your experience? Comment below!"
-                ]
             }
             
             platform_ctas = cta_templates.get(platform, ["Let us know what you think!"])
@@ -694,8 +685,7 @@ class ContentGenerationAutomation:
             base_engagement = {
                 "twitter": {"likes": 10, "retweets": 2, "replies": 1},
                 "instagram": {"likes": 50, "comments": 5, "shares": 1},
-                "facebook": {"likes": 25, "comments": 3, "shares": 2},
-                "linkedin": {"likes": 15, "comments": 2, "shares": 1}
+                "facebook": {"likes": 25, "comments": 3, "shares": 2}
             }
             
             platform_base = base_engagement.get(platform, {"likes": 10, "comments": 1, "shares": 1})
@@ -708,7 +698,7 @@ class ContentGenerationAutomation:
                 multiplier += 0.2
             
             # Longer content might get more engagement on some platforms
-            if len(content) > 100 and platform in ["facebook", "linkedin"]:
+            if len(content) > 100 and platform in ["facebook"]:
                 multiplier += 0.1
             
             # Question in content increases engagement
@@ -772,8 +762,6 @@ class ContentGenerationAutomation:
             # Platform-specific optimizations
             if platform == "twitter" and len(content.split()) < 20:  # Concise for Twitter
                 score += 1.0
-            elif platform == "linkedin" and len(content.split()) > 30:  # More detailed for LinkedIn
-                score += 1.0
             elif platform == "instagram" and len(hashtags) >= 5:  # More hashtags for Instagram
                 score += 1.0
             
@@ -785,7 +773,7 @@ class ContentGenerationAutomation:
     
     async def _generate_title(self, request: ContentGenerationRequest, platform: str) -> Optional[str]:
         """Generate title for platforms that support it"""
-        if platform not in ["linkedin", "facebook"]:
+        if platform not in ["facebook"]:
             return None
         
         try:
@@ -853,8 +841,6 @@ class ContentGenerationAutomation:
                 return await self._publish_to_instagram(account, content)
             elif content.platform == "facebook":
                 return await self._publish_to_facebook(account, content)
-            elif content.platform == "linkedin":
-                return await self._publish_to_linkedin(account, content)
             else:
                 raise Exception(f"Platform {content.platform} not supported for publishing")
                 

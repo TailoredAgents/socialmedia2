@@ -195,13 +195,11 @@ async def get_upcoming_scheduled(
 async def generate_content(request: ContentGenerationRequest):
     """Generate AI-powered social media content with industry insights and research data"""
     try:
-        # Platform character limits with 50-char buffer for safety (Updated 2025 limits)
+        # Platform character limits with 50-char buffer for safety (LinkedIn and TikTok removed)
         platform_limits = {
             "twitter": 280 - 50,
-            "linkedin": 1300 - 50,  # Personal posts: 1300 characters (was incorrectly 3000)
             "instagram": 2200 - 50,
-            "facebook": 63206 - 50,
-            "tiktok": 4000 - 50  # Added TikTok: 4000 characters (major 2025 update)
+            "facebook": 63206 - 50
         }
         
         max_chars = platform_limits.get(request.platform, 250)
@@ -266,8 +264,8 @@ async def generate_content(request: ContentGenerationRequest):
         Return ONLY the final content text under {max_chars - 10} characters. No explanations or extra text.
         """
         
-        # Use web search for research-heavy platforms like LinkedIn and Twitter
-        if request.platform in ['linkedin', 'twitter']:
+        # Use web search for research-heavy platforms like Twitter
+        if request.platform in ['twitter']:
             response = await client.responses.create(
                 model="gpt-4.1-mini",
                 input=f"Generate social media content with current trends and information. {prompt}",
@@ -429,11 +427,6 @@ async def get_social_connections():
     """Get status of social media API connections"""
     connections = {
         "twitter": twitter_service.get_connection_status(),
-        "linkedin": {
-            "connected": False,
-            "error": "LinkedIn API credentials not configured",
-            "credentials_needed": ["client_id", "client_secret", "access_token"]
-        },
         "instagram": {
             "connected": False,
             "error": "Instagram API credentials not configured", 

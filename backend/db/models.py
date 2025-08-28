@@ -82,7 +82,7 @@ class ContentLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    platform = Column(String, nullable=False)  # twitter, instagram, facebook, youtube, tiktok
+    platform = Column(String, nullable=False)  # twitter, instagram, facebook
     content = Column(Text, nullable=False)
     content_type = Column(String, nullable=False)  # text, image, video
     status = Column(String, default="draft")  # draft, scheduled, published, failed
@@ -307,7 +307,7 @@ class ContentItem(Base):
     content_hash = Column(String, index=True)  # SHA256 hash for deduplication
     
     # Platform and type information
-    platform = Column(String, nullable=False, index=True)  # twitter, linkedin, instagram, facebook
+    platform = Column(String, nullable=False, index=True)  # twitter, instagram, facebook
     content_type = Column(String, nullable=False, index=True)  # text, image, video, carousel, story
     content_format = Column(String)  # post, thread, article, etc.
     
@@ -648,7 +648,7 @@ class SocialPlatformConnection(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    platform = Column(String, nullable=False, index=True)  # twitter, linkedin, instagram, facebook
+    platform = Column(String, nullable=False, index=True)  # twitter, instagram, facebook
     
     # Platform account details
     platform_user_id = Column(String, nullable=False, index=True)  # ID from the platform
@@ -730,7 +730,7 @@ class SocialPost(Base):
     
     # Post type and format
     post_type = Column(String, default="text")  # text, image, video, carousel, story, reel
-    post_format = Column(String)  # single, thread, article (for LinkedIn)
+    post_format = Column(String)  # single, thread, article
     
     # Scheduling and timing
     scheduled_for = Column(DateTime(timezone=True))

@@ -79,7 +79,7 @@ class AIInsightsService:
         try:
             # Use GPT-5 mini with web search via Responses API
             response = await self.async_client.responses.create(
-                model="gpt-4o-mini",
+                model="gpt-5-mini",
                 input=f"Search for recent AI agent industry news: {query}. Focus on content from the last 7 days. Provide structured results with titles, URLs, and summaries.",
                 tools=[
                     {
@@ -151,7 +151,7 @@ class AIInsightsService:
             """
             
             params = get_openai_completion_params(
-                model="gpt-4o-mini",
+                model="gpt-5-mini",
                 max_tokens=1000,  # Adding reasonable default
                 temperature=0.7,
                 messages=[{"role": "user", "content": prompt}]
@@ -232,7 +232,7 @@ class AIInsightsService:
             """
             
             params = get_openai_completion_params(
-                model="gpt-4o-mini",
+                model="gpt-5-mini",
                 max_tokens=2000,
                 temperature=0.7,
                 messages=[{"role": "user", "content": insight_prompt}]
@@ -251,7 +251,7 @@ class AIInsightsService:
             """
             
             trending_params = get_openai_completion_params(
-                model="gpt-4o-mini",
+                model="gpt-5-mini",
                 max_tokens=100,
                 temperature=0.5,
                 messages=[{"role": "user", "content": trending_prompt}]

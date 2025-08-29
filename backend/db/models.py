@@ -123,7 +123,26 @@ class UserSetting(Base):
     brand_name = Column(String)
     brand_voice = Column(String, default="professional")
     primary_color = Column(String, default="#3b82f6")
+    secondary_color = Column(String, default="#10b981")  # For accents/gradients
     logo_url = Column(String)
+    
+    # Industry & Visual Style Settings
+    industry_type = Column(String, default="general")  # restaurant, law_firm, tech_startup, healthcare, retail, etc.
+    visual_style = Column(String, default="modern")  # modern, classic, minimalist, bold, playful, luxury
+    image_mood = Column(JSON, default=["professional", "clean"])  # List of mood keywords
+    brand_keywords = Column(JSON, default=[])  # Keywords to emphasize in image generation
+    avoid_list = Column(JSON, default=[])  # Things to never include in images
+    
+    # Image Generation Preferences
+    enable_auto_image_generation = Column(Boolean, default=True)
+    preferred_image_style = Column(JSON, default={
+        "lighting": "natural",
+        "composition": "rule_of_thirds",
+        "color_temperature": "neutral"
+    })
+    custom_image_prompts = Column(JSON, default={})  # User-defined prompt templates
+    image_quality = Column(String, default="high")  # low, medium, high, ultra
+    image_aspect_ratio = Column(String, default="1:1")  # 1:1, 16:9, 9:16, 4:5
     
     # Content preferences
     content_frequency = Column(Integer, default=3)  # posts per week

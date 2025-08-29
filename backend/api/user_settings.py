@@ -64,7 +64,22 @@ class UserSettingsResponse(BaseModel):
     brand_name: Optional[str] = None
     brand_voice: str = "professional"
     primary_color: str = "#3b82f6"
+    secondary_color: str = "#10b981"
     logo_url: Optional[str] = None
+    
+    # Industry & Visual Style Settings
+    industry_type: str = "general"
+    visual_style: str = "modern"
+    image_mood: List[str] = ["professional", "clean"]
+    brand_keywords: List[str] = []
+    avoid_list: List[str] = []
+    
+    # Image Generation Preferences
+    enable_auto_image_generation: bool = True
+    preferred_image_style: Dict[str, str] = {"lighting": "natural", "composition": "rule_of_thirds", "color_temperature": "neutral"}
+    custom_image_prompts: Dict[str, str] = {}
+    image_quality: str = "high"
+    image_aspect_ratio: str = "1:1"
     
     # Content preferences  
     content_frequency: int = 3
@@ -87,7 +102,22 @@ class UpdateUserSettingsRequest(BaseModel):
     brand_name: Optional[str] = None
     brand_voice: Optional[str] = None
     primary_color: Optional[str] = None
+    secondary_color: Optional[str] = None
     logo_url: Optional[str] = None
+    
+    # Industry & Visual Style Settings  
+    industry_type: Optional[str] = None
+    visual_style: Optional[str] = None
+    image_mood: Optional[List[str]] = None
+    brand_keywords: Optional[List[str]] = None
+    avoid_list: Optional[List[str]] = None
+    
+    # Image Generation Preferences
+    enable_auto_image_generation: Optional[bool] = None
+    preferred_image_style: Optional[Dict[str, str]] = None
+    custom_image_prompts: Optional[Dict[str, str]] = None
+    image_quality: Optional[str] = None
+    image_aspect_ratio: Optional[str] = None
     
     # Content preferences
     content_frequency: Optional[int] = Field(None, ge=1, le=20)

@@ -101,6 +101,131 @@ class ImageGenerationService:
         
         return enhanced_prompt
 
+    def build_prompt_with_user_settings(self, 
+                                      base_prompt: str, 
+                                      user_settings: Optional[Dict[str, Any]] = None,
+                                      platform: str = "instagram") -> str:
+        """
+        Enhance a base prompt with user's industry presets and brand parameters.
+        
+        Args:
+            base_prompt: The original prompt describing what to generate
+            user_settings: User's settings from UserSetting model
+            platform: Target social media platform
+            
+        Returns:
+            Enhanced prompt incorporating user's style preferences
+        """
+        if not user_settings:
+            return self._enhance_prompt_with_context(base_prompt, platform)
+        
+        enhanced_prompt = base_prompt
+        
+        # Add industry-specific styling
+        industry_presets = {
+            "restaurant": {
+                "style": "warm, appetizing, professional food photography",
+                "lighting": "golden hour, natural lighting",
+                "composition": "appetizing close-up, rule of thirds",
+                "mood": "inviting, delicious, mouth-watering"
+            },
+            "law_firm": {
+                "style": "professional, authoritative, clean corporate design",
+                "lighting": "bright, even office lighting",
+                "composition": "structured, balanced, sophisticated",
+                "mood": "trustworthy, professional, established"
+            },
+            "tech_startup": {
+                "style": "modern, innovative, futuristic design",
+                "lighting": "cool tones, gradient backgrounds, tech-inspired",
+                "composition": "dynamic, cutting-edge, minimal",
+                "mood": "innovative, forward-thinking, disruptive"
+            },
+            "healthcare": {
+                "style": "clean, medical, trustworthy professional design",
+                "lighting": "bright, clean, sterile white backgrounds",
+                "composition": "organized, clear, medical-grade quality",
+                "mood": "caring, professional, reliable"
+            },
+            "retail": {
+                "style": "commercial product photography, lifestyle branding",
+                "lighting": "bright, even product lighting, lifestyle ambiance",
+                "composition": "product-focused, lifestyle context, commercial quality",
+                "mood": "desirable, lifestyle-oriented, aspirational"
+            },
+            "fitness": {
+                "style": "energetic, dynamic, motivational fitness imagery",
+                "lighting": "dramatic gym lighting, natural outdoor light",
+                "composition": "action-oriented, motivational, strength-focused",
+                "mood": "energetic, motivational, powerful"
+            }
+        }
+        
+        industry_type = user_settings.get("industry_type", "general")
+        if industry_type in industry_presets:
+            preset = industry_presets[industry_type]
+            enhanced_prompt += f" Style: {preset['style']}. {preset['lighting']}. {preset['composition']}. Mood: {preset['mood']}."
+        
+        # Add visual style preferences
+        visual_style = user_settings.get("visual_style", "modern")
+        style_descriptors = {
+            "modern": "sleek, contemporary, minimalist, current design trends",
+            "classic": "timeless, elegant, traditional, refined aesthetics",
+            "minimalist": "clean, simple, uncluttered, essential elements only",
+            "bold": "striking, vibrant, high-contrast, attention-grabbing",
+            "playful": "fun, creative, colorful, engaging and lighthearted",
+            "luxury": "premium, sophisticated, high-end, exclusive quality"
+        }
+        if visual_style in style_descriptors:
+            enhanced_prompt += f" Visual style: {style_descriptors[visual_style]}."
+        
+        # Add brand colors
+        primary_color = user_settings.get("primary_color", "#3b82f6")
+        secondary_color = user_settings.get("secondary_color", "#10b981")
+        if primary_color != "#3b82f6":  # Only add if user customized
+            enhanced_prompt += f" Use brand color scheme with primary color {primary_color}"
+            if secondary_color != "#10b981":
+                enhanced_prompt += f" and secondary accent {secondary_color}"
+            enhanced_prompt += "."
+        
+        # Add brand keywords to emphasize
+        brand_keywords = user_settings.get("brand_keywords", [])
+        if brand_keywords:
+            keywords_str = ", ".join(brand_keywords[:3])  # Limit to 3 most important
+            enhanced_prompt += f" Emphasize: {keywords_str}."
+        
+        # Add mood descriptors
+        image_mood = user_settings.get("image_mood", ["professional", "clean"])
+        if image_mood:
+            mood_str = ", ".join(image_mood)
+            enhanced_prompt += f" Overall mood: {mood_str}."
+        
+        # Add things to avoid
+        avoid_list = user_settings.get("avoid_list", [])
+        if avoid_list:
+            avoid_str = ", ".join(avoid_list[:5])  # Limit to prevent prompt bloat
+            enhanced_prompt += f" Avoid: {avoid_str}."
+        
+        # Add image quality and style preferences
+        preferred_style = user_settings.get("preferred_image_style", {})
+        if preferred_style:
+            lighting = preferred_style.get("lighting", "natural")
+            composition = preferred_style.get("composition", "rule_of_thirds")
+            color_temp = preferred_style.get("color_temperature", "neutral")
+            enhanced_prompt += f" Lighting: {lighting}. Composition: {composition}. Color temperature: {color_temp}."
+        
+        # Add quality specification
+        quality = user_settings.get("image_quality", "high")
+        quality_specs = {
+            "low": "draft quality, quick generation",
+            "medium": "good quality, balanced detail",
+            "high": "high resolution, detailed, professional quality",
+            "ultra": "ultra-high resolution, maximum detail, premium quality"
+        }
+        enhanced_prompt += f" Quality: {quality_specs.get(quality, 'high resolution, professional quality')}."
+        
+        return enhanced_prompt
+
     async def generate_image(self, 
                            prompt: str,
                            platform: str = "instagram",

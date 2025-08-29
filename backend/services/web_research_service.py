@@ -207,7 +207,7 @@ class WebResearchService:
             
             # Use GPT-5 mini with web search via Responses API
             response = await client.responses.create(
-                model="gpt-5-mini",
+                model="gpt-4o-mini",
                 input=f"Search for: {query}. Provide current, accurate information with {max_results} relevant results.",
                 tools=[
                     {

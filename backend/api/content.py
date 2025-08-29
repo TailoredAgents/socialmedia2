@@ -590,9 +590,9 @@ async def generate_content_ideas(
         Return as a JSON array of objects with keys: "idea", "reason", "format"
         """
         
-        # Use GPT-5 mini with web search for current trends via Responses API
-        response = await client.responses.create(
-            model="gpt-5-mini",
+        # Use GPT-4o-mini with web search for current trends via Chat Completions API  
+        response = await client.chat.completions.create(
+            model="gpt-4o-mini",
             input=f"You are an expert social media strategist. Use web search to find current trends and generate content ideas. {prompt}",
             tools=[
                 {
@@ -641,7 +641,7 @@ async def generate_content_ideas(
             "suggestions": suggestions[:5],  # Return top 5
             "generated_at": datetime.now(timezone.utc),
             "ai_generated": True,
-            "model_used": "gpt-5-mini"
+            "model_used": "gpt-4o-mini"
         }
         
     except Exception as e:

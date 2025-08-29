@@ -51,7 +51,7 @@ class LightweightAgent:
     async def execute_task(self, task_description: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
         """Execute a task using minimal resources with model fallback"""
         # Define fallback models
-        models_to_try = ["gpt-5-mini", "gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"]
+        models_to_try = ["gpt-4o-mini", "gpt-4o", "gpt-4"]
         
         for model in models_to_try:
             try:

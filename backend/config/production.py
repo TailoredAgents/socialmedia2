@@ -49,9 +49,9 @@ class ProductionSettings(Settings):
     # OpenAI Configuration - Updated for GPT-5 Models
     openai_api_key: str = Field(..., env="OPENAI_API_KEY")
     openai_model: str = Field("gpt-5", env="OPENAI_MODEL")  # Default to GPT-5 for content generation
-    openai_research_model: str = Field("gpt-5-mini", env="OPENAI_RESEARCH_MODEL")  # GPT-5 mini for research
+    openai_research_model: str = Field("gpt-4o-mini", env="OPENAI_RESEARCH_MODEL")  # GPT-4o mini for research
     openai_deep_research_model: str = Field("gpt-5", env="OPENAI_DEEP_RESEARCH_MODEL")  # GPT-5 for deep analysis
-    openai_categorization_model: str = Field("gpt-5-mini", env="OPENAI_CATEGORIZATION_MODEL")  # GPT-5 mini for categorization
+    openai_categorization_model: str = Field("gpt-4o-mini", env="OPENAI_CATEGORIZATION_MODEL")  # GPT-4o mini for categorization
     openai_image_model: str = Field("grok-2-image", env="OPENAI_IMAGE_MODEL")  # Grok-2 Image for all image generation
     openai_embedding_model: str = Field("text-embedding-3-large", env="OPENAI_EMBEDDING_MODEL")  # text-embedding-3-large
     openai_max_tokens: int = Field(2000, env="OPENAI_MAX_TOKENS")

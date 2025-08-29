@@ -27,16 +27,11 @@ try:
 except ImportError:
     twitter_client = None
 
-try:
-    from backend.integrations.tiktok_client import tiktok_client
-except ImportError:
-    tiktok_client = None
 
 __all__ = [
     'meta_client',
     'MetaGraphAPIClient', 
     'facebook_client',
     'instagram_client', 
-    'twitter_client',
-    'tiktok_client'
+    'twitter_client'
 ]

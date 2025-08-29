@@ -17,7 +17,8 @@ from backend.integrations.instagram_client import instagram_client
 from backend.integrations.facebook_client import facebook_client
 # LinkedIn integration removed - using stub
 linkedin_client = None
-from backend.integrations.tiktok_client import tiktok_client
+# TikTok integration removed - using stub
+tiktok_client = None
 
 settings = get_settings()
 logger = logging.getLogger(__name__)

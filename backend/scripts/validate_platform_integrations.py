@@ -29,9 +29,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from backend.core.config import get_settings
 from backend.integrations.twitter_client import twitter_client
 from backend.integrations.instagram_client import instagram_client
-from backend.integrations.linkedin_client import linkedin_client
+# LinkedIn and TikTok integrations removed
+linkedin_client = None
 from backend.integrations.facebook_client import facebook_client
-from backend.integrations.tiktok_client import tiktok_client
+# TikTok integration removed
+tiktok_client = None
 from backend.auth.social_oauth import oauth_manager
 
 # Configure logging
@@ -101,9 +103,7 @@ class PlatformValidator:
         platforms = [
             ("twitter", twitter_client),
             ("instagram", instagram_client),
-            ("linkedin", linkedin_client),
-            ("facebook", facebook_client),
-            ("tiktok", tiktok_client)
+            ("facebook", facebook_client)
         ]
         
         for platform_name, client in platforms:

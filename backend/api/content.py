@@ -100,6 +100,13 @@ class ContentAnalytics(BaseModel):
     avg_engagement: float
     top_performing_posts: List[Dict[str, Any]]
 
+class RegenerateImageRequest(BaseModel):
+    content_id: int
+    custom_prompt: str = Field(..., min_length=1, max_length=500)
+    platform: str = Field(..., pattern="^(twitter|linkedin|instagram|facebook|tiktok)$")
+    quality_preset: str = Field("standard", pattern="^(draft|standard|premium|story|banner)$")
+    keep_original_context: bool = True
+
 @cache_invalidate("content", "user_content_list")  # Invalidate user content list cache
 @router.post("/", response_model=ContentResponse)
 async def create_content(
@@ -712,6 +719,115 @@ async def edit_image(
     )
     
     return result
+
+@router.post("/regenerate-image")
+async def regenerate_image(
+    request: RegenerateImageRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Regenerate image for existing content with custom user prompt.
+    Keeps the original post text but allows user to customize image description.
+    """
+    try:
+        # Get the original content
+        content_log = db.query(ContentLog).filter(
+            ContentLog.id == request.content_id,
+            ContentLog.user_id == current_user.id
+        ).first()
+        
+        if not content_log:
+            raise HTTPException(status_code=404, detail="Content not found")
+        
+        # Get user settings for industry presets and brand parameters
+        from backend.db.models import UserSetting
+        user_settings = db.query(UserSetting).filter(UserSetting.user_id == current_user.id).first()
+        user_settings_dict = None
+        
+        if user_settings:
+            user_settings_dict = {
+                "industry_type": user_settings.industry_type,
+                "visual_style": user_settings.visual_style,
+                "primary_color": user_settings.primary_color,
+                "secondary_color": getattr(user_settings, 'secondary_color', '#10b981'),
+                "image_mood": getattr(user_settings, 'image_mood', ["professional", "clean"]),
+                "brand_keywords": getattr(user_settings, 'brand_keywords', []),
+                "avoid_list": getattr(user_settings, 'avoid_list', []),
+                "preferred_image_style": getattr(user_settings, 'preferred_image_style', {}),
+                "image_quality": getattr(user_settings, 'image_quality', "high")
+            }
+        
+        # Build enhanced prompt with user settings
+        enhanced_prompt = request.custom_prompt
+        if user_settings_dict:
+            enhanced_prompt = image_generation_service.build_prompt_with_user_settings(
+                base_prompt=request.custom_prompt,
+                user_settings=user_settings_dict,
+                platform=request.platform
+            )
+        
+        # Prepare context if keeping original context
+        content_context = None
+        if request.keep_original_context:
+            content_context = content_log.content[:200]  # First 200 chars of original post
+        
+        # Generate new image with custom prompt
+        result = await image_generation_service.generate_image(
+            prompt=enhanced_prompt,
+            platform=request.platform,
+            quality_preset=request.quality_preset,
+            content_context=content_context,
+            industry_context=user_settings_dict.get('industry_type', '') if user_settings_dict else '',
+            tone="professional"
+        )
+        
+        # Store the regeneration attempt (for analytics)
+        try:
+            engagement_data = content_log.engagement_data or {}
+            image_history = engagement_data.get("image_history", [])
+            
+            # Add this regeneration to history
+            image_history.append({
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "custom_prompt": request.custom_prompt,
+                "enhanced_prompt": enhanced_prompt,
+                "platform": request.platform,
+                "quality_preset": request.quality_preset,
+                "user_requested": True
+            })
+            
+            # Keep only last 5 attempts
+            if len(image_history) > 5:
+                image_history = image_history[-5:]
+            
+            engagement_data["image_history"] = image_history
+            content_log.engagement_data = engagement_data
+            content_log.updated_at = datetime.now(timezone.utc)
+            
+            db.commit()
+            logger.info(f"Stored image regeneration history for content {request.content_id}")
+            
+        except Exception as history_error:
+            logger.warning(f"Failed to store image history: {history_error}")
+            # Don't fail the request if history storage fails
+        
+        # Add metadata about the regeneration
+        result.update({
+            "regenerated": True,
+            "content_id": request.content_id,
+            "custom_prompt_used": request.custom_prompt,
+            "original_context_kept": request.keep_original_context,
+            "user_settings_applied": user_settings_dict is not None
+        })
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Image regeneration error: {e}")
+        raise HTTPException(status_code=500, detail=f"Image regeneration failed: {str(e)}")
 
 @router.post("/generate-content-images")
 async def generate_content_images(

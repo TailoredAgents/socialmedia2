@@ -145,13 +145,13 @@ class OpenAITool:
         else:
             self.client = OpenAI(api_key=settings.openai_api_key)
     
-    def generate_text(self, prompt: str, model: str = "gpt-5-mini", max_tokens: int = 500, use_web_search: bool = False) -> str:
+    def generate_text(self, prompt: str, model: str = "gpt-4o-mini", max_tokens: int = 500, use_web_search: bool = False) -> str:
         """Generate text using OpenAI with fallback models and better error handling"""
         if not self.client:
             return "AI text generation is currently unavailable. Please check your OpenAI API configuration."
         
-        # Define fallback models if the specified model fails
-        fallback_models = ["gpt-5-mini", "gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"]
+        # Define fallback models if the specified model fails  
+        fallback_models = ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo", "gpt-4"]
         models_to_try = [model] + [m for m in fallback_models if m != model]
         
         for current_model in models_to_try:
@@ -219,7 +219,7 @@ class OpenAITool:
             }
         
         # List of models to try in order of preference
-        models_to_try = ["gpt-5-mini", "gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"]
+        models_to_try = ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo", "gpt-4"]
         
         # Build context-aware prompt
         context_prompt = f"""Create engaging {content_type} content for social media with the following specifications:

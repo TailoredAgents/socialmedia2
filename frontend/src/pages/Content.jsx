@@ -7,6 +7,7 @@ import { error as logError } from '../utils/logger.js'
 import VirtualizedContentList, { VirtualizedContentGrid } from '../components/VirtualizedContentList'
 import AIEmptyStateSuggestions from '../components/AIEmptyStatesSuggestions'
 import EnhancedSearch from '../components/EnhancedSearch'
+import RegenerateImageModal from '../components/RegenerateImageModal'
 import { 
   PlusIcon,
   MagnifyingGlassIcon,
@@ -60,6 +61,8 @@ export default function Content() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingContent, setEditingContent] = useState(null)
+  const [showRegenerateModal, setShowRegenerateModal] = useState(false)
+  const [regeneratingContent, setRegeneratingContent] = useState(null)
   const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
   
   const { api } = useEnhancedApi()
@@ -286,6 +289,19 @@ export default function Content() {
     setShowEditModal(true)
   }
 
+  const handleRegenerateImage = (item) => {
+    setRegeneratingContent(item)
+    setShowRegenerateModal(true)
+  }
+
+  const handleRegenerateSuccess = (result) => {
+    showSuccess({
+      title: 'Image Regenerated Successfully!',
+      message: `New image created for "${regeneratingContent?.title}"`
+    })
+    // The modal will handle closing itself and cache invalidation
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -440,6 +456,7 @@ export default function Content() {
                 onEdit={handleEditContent}
                 onPublish={handlePublishContent}
                 onDelete={handleDeleteContent}
+                onRegenerateImage={handleRegenerateImage}
                 formatDate={formatDate}
                 getStatusIcon={getStatusIcon}
                 getStatusColor={getStatusColor}
@@ -455,6 +472,7 @@ export default function Content() {
                 onEdit={handleEditContent}
                 onPublish={handlePublishContent}
                 onDelete={handleDeleteContent}
+                onRegenerateImage={handleRegenerateImage}
                 formatDate={formatDate}
                 getStatusIcon={getStatusIcon}
                 getStatusColor={getStatusColor}
@@ -605,6 +623,19 @@ export default function Content() {
             })
           }}
           isLoading={updateContentMutation.isPending}
+        />
+      )}
+
+      {/* Regenerate Image Modal */}
+      {showRegenerateModal && regeneratingContent && (
+        <RegenerateImageModal
+          content={regeneratingContent}
+          isOpen={showRegenerateModal}
+          onClose={() => {
+            setShowRegenerateModal(false)
+            setRegeneratingContent(null)
+          }}
+          onSuccess={handleRegenerateSuccess}
         />
       )}
     </div>

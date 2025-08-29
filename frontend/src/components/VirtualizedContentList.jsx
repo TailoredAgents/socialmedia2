@@ -10,7 +10,8 @@ import {
   ExclamationTriangleIcon,
   DocumentTextIcon,
   PhotoIcon,
-  PlayIcon
+  PlayIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline'
 
 // Individual content item component
@@ -23,6 +24,7 @@ const ContentItem = memo(function ContentItem({
     onEdit, 
     onPublish, 
     onDelete,
+    onRegenerateImage,
     formatDate,
     getStatusIcon,
     getStatusColor,
@@ -93,6 +95,15 @@ const ContentItem = memo(function ContentItem({
               >
                 <PencilIcon className="h-4 w-4" />
               </button>
+              {(item.content_type === 'image' || item.image_url) && onRegenerateImage && (
+                <button
+                  onClick={() => onRegenerateImage(item)}
+                  className="p-1 text-gray-400 hover:text-purple-600 transition-colors"
+                  title="Regenerate Image"
+                >
+                  <ArrowPathIcon className="h-4 w-4" />
+                </button>
+              )}
               {item.status === 'draft' && (
                 <button
                   onClick={() => onPublish(item.id)}
@@ -124,6 +135,7 @@ const VirtualizedContentGrid = memo(function VirtualizedContentGrid({
   onEdit,
   onPublish,
   onDelete,
+  onRegenerateImage,
   formatDate,
   getStatusIcon,
   getStatusColor,
@@ -220,7 +232,7 @@ const VirtualizedContentGrid = memo(function VirtualizedContentGrid({
         ))}
       </div>
     )
-  }, [items, itemsPerRow, onView, onEdit, onPublish, onDelete, formatDate, getStatusIcon, getStatusColor, getContentTypeIcon])
+  }, [items, itemsPerRow, onView, onEdit, onPublish, onDelete, onRegenerateImage, formatDate, getStatusIcon, getStatusColor, getContentTypeIcon])
 
   if (rowCount === 0) {
     return null
@@ -255,6 +267,7 @@ const VirtualizedContentList = memo(function VirtualizedContentList({
   onEdit,
   onPublish,
   onDelete,
+  onRegenerateImage,
   formatDate,
   getStatusIcon,
   getStatusColor,
@@ -268,6 +281,7 @@ const VirtualizedContentList = memo(function VirtualizedContentList({
     onEdit,
     onPublish,
     onDelete,
+    onRegenerateImage,
     formatDate,
     getStatusIcon,
     getStatusColor,
@@ -330,6 +344,15 @@ const VirtualizedContentList = memo(function VirtualizedContentList({
               >
                 <PencilIcon className="h-4 w-4" />
               </button>
+              {(item.content_type === 'image' || item.image_url) && onRegenerateImage && (
+                <button
+                  onClick={() => onRegenerateImage(item)}
+                  className="p-1 text-gray-400 hover:text-purple-600 transition-colors"
+                  title="Regenerate Image"
+                >
+                  <ArrowPathIcon className="h-4 w-4" />
+                </button>
+              )}
               {item.status === 'draft' && (
                 <button
                   onClick={() => onPublish(item.id)}
@@ -351,7 +374,7 @@ const VirtualizedContentList = memo(function VirtualizedContentList({
         </div>
       </div>
     )
-  }, [items, onView, onEdit, onPublish, onDelete, formatDate, getStatusIcon, getStatusColor, getContentTypeIcon])
+  }, [items, onView, onEdit, onPublish, onDelete, onRegenerateImage, formatDate, getStatusIcon, getStatusColor, getContentTypeIcon])
 
   if (items.length === 0) {
     return null

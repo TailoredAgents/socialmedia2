@@ -175,7 +175,7 @@ async def oauth_callback_redirect(
             )
         
         # Build redirect URI (this should match the one used in authorization)
-        redirect_uri = f"{settings.app_base_url}/api/social-auth/callback/{platform}"
+        redirect_uri = f"{settings.backend_url}/api/social-auth/callback/{platform}"
         
         # Process the callback
         callback_request = OAuthCallbackRequest(

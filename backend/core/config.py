@@ -117,6 +117,7 @@ class Settings(BaseSettings):
     enable_registration: bool = Field(default=True, env="ENABLE_REGISTRATION")
     require_email_verification: bool = Field(default=False, env="REQUIRE_EMAIL_VERIFICATION")
     frontend_url: str = Field(default="https://lily-ai-socialmedia.com", env="FRONTEND_URL")
+    backend_url: str = Field(default="https://socialmedia-api-wxip.onrender.com", env="BACKEND_URL")
     email_verification_expiry_hours: int = Field(default=24, env="EMAIL_VERIFICATION_EXPIRY_HOURS")
     password_reset_expiry_hours: int = Field(default=2, env="PASSWORD_RESET_EXPIRY_HOURS")
     

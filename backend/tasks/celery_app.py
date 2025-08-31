@@ -15,6 +15,9 @@ celery_app = Celery(
         "backend.tasks.lightweight_research_tasks",  # Memory optimized tasks
         "backend.tasks.posting_tasks",
         "backend.tasks.autonomous_scheduler",
+        "backend.tasks.webhook_tasks",  # Webhook processing
+        "backend.tasks.token_health_tasks",  # Token refresh and health
+        "backend.tasks.x_polling_tasks",  # X mentions polling
         # Disabled heavy tasks to prevent memory issues
         # "backend.tasks.content_tasks",  # CrewAI - uses 500MB+
         # "backend.tasks.research_tasks",  # CrewAI - uses 500MB+ 
@@ -80,5 +83,26 @@ celery_app.conf.beat_schedule = {
         'task': 'backend.tasks.lightweight_research_tasks.lightweight_daily_research',
         'schedule': 60.0 * 60.0 * 8,  # Every 8 hours
         'options': {'queue': 'research', 'expires': 300},  # 5 min expiry
+    },
+    
+    # Partner OAuth token health audit - daily at 2 AM UTC
+    'token-health-audit': {
+        'task': 'backend.tasks.token_health_tasks.audit_all_tokens',
+        'schedule': 60.0 * 60.0 * 24,  # Daily
+        'options': {'queue': 'token_health', 'expires': 1800},  # 30 min expiry
+    },
+    
+    # X mentions polling - every 15 minutes
+    'x-mentions-polling': {
+        'task': 'backend.tasks.x_polling_tasks.poll_all_x_mentions',
+        'schedule': 60.0 * 15,  # Every 15 minutes
+        'options': {'queue': 'x_polling', 'expires': 600},  # 10 min expiry
+    },
+    
+    # Cleanup old audit logs - weekly on Sundays at 3 AM UTC
+    'cleanup-old-audits': {
+        'task': 'backend.tasks.token_health_tasks.cleanup_old_audits',
+        'schedule': 60.0 * 60.0 * 24 * 7,  # Weekly
+        'options': {'queue': 'token_health', 'expires': 3600},  # 1 hour expiry
     },
 }

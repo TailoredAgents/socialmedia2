@@ -1335,6 +1335,124 @@ async def disconnect_connection(
             }
         )
 
+
+@router.post("/{connection_id}/refresh")
+async def refresh_connection_tokens(
+    connection_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_partner_oauth_enabled)
+) -> Dict[str, Any]:
+    """
+    Manually refresh tokens for a specific connection
+    
+    Args:
+        connection_id: UUID of connection to refresh
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        Task information for the refresh operation
+    """
+    try:
+        organization_id = get_user_organization_id(current_user)
+        
+        # Verify connection exists and belongs to user's organization
+        connection = db.query(SocialConnection).filter(
+            SocialConnection.id == connection_id,
+            SocialConnection.organization_id == organization_id,
+            SocialConnection.is_active == True
+        ).first()
+        
+        if not connection:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": "connection_not_found",
+                    "message": "Connection not found or not accessible",
+                    "connection_id": connection_id
+                }
+            )
+        
+        # Check if platform supports token refresh
+        if connection.platform not in ["meta", "x"]:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "platform_not_supported",
+                    "message": f"Token refresh not supported for platform: {connection.platform}",
+                    "connection_id": connection_id
+                }
+            )
+        
+        # Enqueue refresh task
+        try:
+            from backend.tasks.token_health_tasks import refresh_connection
+            
+            task = refresh_connection.delay(connection_id)
+            task_id = task.id
+            
+        except ImportError:
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "error": "service_unavailable", 
+                    "message": "Token refresh service not available"
+                }
+            )
+        except Exception as e:
+            logger.error(f"Failed to enqueue refresh task for connection {connection_id}: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "error": "enqueue_failed",
+                    "message": "Failed to enqueue refresh task"
+                }
+            )
+        
+        # Create audit log for manual refresh request
+        audit = SocialAudit(
+            organization_id=organization_id,
+            connection_id=connection.id,
+            action="manual_refresh_requested",
+            platform=connection.platform,
+            user_id=current_user.id,
+            status="success",
+            audit_metadata={
+                "connection_id": connection_id,
+                "task_id": task_id,
+                "requested_by": current_user.email,
+                "requested_at": datetime.now(timezone.utc).isoformat()
+            }
+        )
+        db.add(audit)
+        db.commit()
+        
+        logger.info(f"Manual refresh requested for connection {connection_id} by user {current_user.id}")
+        
+        return {
+            "queued": True,
+            "task_id": task_id,
+            "connection_id": connection_id,
+            "platform": connection.platform,
+            "message": "Token refresh has been queued for processing",
+            "requested_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Manual refresh request failed for connection {connection_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "refresh_request_failed",
+                "message": "Failed to process refresh request",
+                "connection_id": connection_id
+            }
+        )
+
+
 # Disabled feature handler (when flag is off)
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def handle_disabled_feature(path: str):

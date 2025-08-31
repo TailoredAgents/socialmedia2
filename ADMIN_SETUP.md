@@ -9,7 +9,7 @@ The admin system provides a separate administrative interface with the following
 - **Separate Admin Authentication**: Dedicated admin login system with enhanced security
 - **User Management**: View, manage, and control user accounts
 - **API Key Generation**: Generate and manage API keys for users
-- **Registration Key Management**: Control new user registration with admin-generated keys
+- **Registration Key Management**: Optional invite-only registration with admin-generated keys
 - **Role-Based Access Control**: Support for SUPER_ADMIN, ADMIN, MODERATOR, and SUPPORT roles
 - **Audit Logging**: Track all administrative actions
 - **System Settings**: Configure platform-wide settings
@@ -59,25 +59,15 @@ python scripts/create_super_admin.py
 - Login with the super admin credentials you created
 - You'll be redirected to the admin dashboard at `/admin/dashboard`
 
-### 4. Create Registration Keys
-**IMPORTANT**: New users now require admin-generated registration keys to create accounts.
+### 4. User Registration Options
+The platform supports **open SaaS registration** - users can sign up directly without registration keys.
 
-- Go to the admin panel
-- Navigate to Registration Keys (coming soon) or use the API
-- Create registration keys for new users
-- Share the keys with users who need to register
+**Optional Registration Control**: If you want to restrict registration, you can:
+- Enable email verification in settings
+- Use registration keys for invite-only access (optional feature)
+- Configure email domain restrictions
 
-Example API call to create a registration key:
-```bash
-curl -X POST "/api/admin/registration-keys" \
-  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "description": "Key for new employee",
-    "max_uses": 1,
-    "email_domain_restriction": "@company.com"
-  }'
-```
+The system is configured for open registration by default. Users can sign up at `/register` on the frontend.
 
 ## Admin Routes
 
@@ -106,13 +96,14 @@ curl -X POST "/api/admin/registration-keys" \
 - Revoke API keys with reason logging
 - Monitor API usage statistics
 
-### Registration Key Management
-- Create secure registration keys for controlled access
+### Registration Key Management (Optional)
+- Create secure registration keys for invite-only access (when enabled)
 - Set usage limits (single-use or multi-use keys)
 - Add email domain restrictions (@company.com only)
 - Set expiration dates for time-limited access
 - Track which users registered with each key
 - Deactivate or delete unused keys
+- Note: By default, open registration is enabled and keys are not required
 
 ### Security Features
 - Separate JWT tokens for admin authentication (shorter lifespan)

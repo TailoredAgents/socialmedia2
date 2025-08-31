@@ -29,9 +29,9 @@ class SocialOAuthManager:
     
     Supported Platforms:
     - Twitter (OAuth 2.0 with PKCE)
-    - LinkedIn (OAuth 2.0)
     - Instagram (Facebook OAuth)
     - Facebook (OAuth 2.0)
+    - TikTok (OAuth 2.0)
     """
     
     def __init__(self):

@@ -68,7 +68,7 @@ async def initiate_platform_connection(
     """
     try:
         # Validate platform
-        supported_platforms = ["twitter", "linkedin", "instagram", "facebook", "tiktok"]
+        supported_platforms = ["twitter", "instagram", "facebook", "tiktok"]
         if request.platform not in supported_platforms:
             raise HTTPException(
                 status_code=400,
@@ -422,14 +422,6 @@ async def get_supported_platforms() -> Dict[str, Any]:
             "capabilities": ["post", "thread", "analytics", "engagement"],
             "content_types": ["text", "image", "video"],
             "max_characters": 280,
-            "supports_scheduling": True,
-            "oauth_version": "2.0"
-        },
-        "linkedin": {
-            "name": "LinkedIn",
-            "capabilities": ["post", "article", "analytics", "engagement"],
-            "content_types": ["text", "image", "video", "document"],
-            "max_characters": 3000,
             "supports_scheduling": True,
             "oauth_version": "2.0"
         },

@@ -30,3 +30,4 @@
 - Fixed router registry import errors
 - Updated frontend with new auth pages (EmailVerification, ForgotPassword, ResetPassword)
 - All authentication endpoints should be available at `/api/auth/*`
+- research the internet to confirm the proper way to fix or produce what youre working on

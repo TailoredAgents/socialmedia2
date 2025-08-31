@@ -64,7 +64,7 @@ class SimilarityService:
         """Initialize the similarity service with lazy loading"""
         self._faiss_memory = None
         self.executor = ThreadPoolExecutor(max_workers=2)  # Reduced workers
-        self.supported_platforms = ["twitter", "linkedin", "instagram", "facebook", "tiktok"]
+        self.supported_platforms = ["twitter", "instagram", "facebook", "tiktok"]
     
     @property
     def faiss_memory(self):

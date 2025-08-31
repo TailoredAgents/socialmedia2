@@ -18,6 +18,12 @@ from backend.db.database import get_db
 from backend.services.pkce_state_store import get_state_store
 from backend.services.meta_page_token_service import get_meta_page_service
 from backend.services.x_connection_service import get_x_connection_service
+
+# Import Meta webhook service for subscription management
+try:
+    from backend.services.meta_webhook_service import get_meta_webhook_service
+except ImportError:
+    get_meta_webhook_service = None
 from backend.core.encryption import encrypt_token
 from backend.auth.social_oauth import SocialOAuthManager
 from sqlalchemy.orm import Session
@@ -810,6 +816,42 @@ async def connect_meta_account(
         db.commit()
         db.refresh(connection)
         
+        # Subscribe to webhooks
+        webhook_subscription_success = False
+        if get_meta_webhook_service:
+            try:
+                webhook_service = get_meta_webhook_service()
+                
+                # Subscribe Facebook Page to webhooks
+                page_webhook_success = await webhook_service.subscribe_page_webhooks(
+                    request.page_id, 
+                    page_access_token
+                )
+                
+                # Subscribe Instagram if present
+                instagram_webhook_success = True  # Default to success if no Instagram
+                if instagram_id:
+                    instagram_webhook_success = await webhook_service.subscribe_instagram_webhooks(
+                        instagram_id,
+                        page_access_token
+                    )
+                
+                # Overall webhook subscription success
+                webhook_subscription_success = page_webhook_success and instagram_webhook_success
+                
+                # Update connection webhook status
+                if webhook_subscription_success:
+                    connection.webhook_subscribed = True
+                    db.commit()
+                    db.refresh(connection)
+                    logger.info(f"Successfully subscribed Page {request.page_id} to webhooks")
+                else:
+                    logger.warning(f"Failed to fully subscribe Page {request.page_id} to webhooks")
+                    
+            except Exception as e:
+                logger.error(f"Error subscribing Page {request.page_id} to webhooks: {e}")
+                # Don't fail the connection, just log the error
+        
         # Create audit log
         audit = SocialAudit(
             organization_id=organization_id,
@@ -822,7 +864,8 @@ async def connect_meta_account(
                 "page_id": request.page_id,
                 "page_name": page_name,
                 "instagram_id": instagram_id,
-                "connection_type": "page_with_instagram" if instagram_id else "page_only"
+                "connection_type": "page_with_instagram" if instagram_id else "page_only",
+                "webhook_subscription": webhook_subscription_success
             }
         )
         db.add(audit)
@@ -1160,6 +1203,55 @@ async def disconnect_connection(
                 }
             )
         
+        # Unsubscribe from webhooks before revoking access
+        webhook_unsubscription_success = False
+        try:
+            if connection.platform == "meta" and connection.webhook_subscribed:
+                # Import webhook service
+                try:
+                    from backend.services.meta_webhook_service import get_meta_webhook_service
+                    
+                    webhook_service = get_meta_webhook_service()
+                    
+                    # Get encrypted page token for unsubscription
+                    encrypted_page_token = connection.access_tokens.get("page_token")
+                    if encrypted_page_token:
+                        page_access_token = decrypt_token(encrypted_page_token)
+                        page_id = connection.platform_account_id
+                        
+                        # Unsubscribe Page webhooks
+                        page_webhook_success = await webhook_service.unsubscribe_page_webhooks(
+                            page_id, 
+                            page_access_token
+                        )
+                        
+                        # Unsubscribe Instagram webhooks if available
+                        instagram_webhook_success = True
+                        instagram_id = connection.connection_metadata.get("instagram_account_id")
+                        if instagram_id:
+                            instagram_webhook_success = await webhook_service.unsubscribe_instagram_webhooks(
+                                instagram_id,
+                                page_access_token
+                            )
+                        
+                        webhook_unsubscription_success = page_webhook_success and instagram_webhook_success
+                        
+                        logger.info(
+                            f"Meta webhook unsubscription for connection {connection_id}: "
+                            f"page_success={page_webhook_success}, "
+                            f"instagram_success={instagram_webhook_success}"
+                        )
+                    else:
+                        logger.warning(f"No page token found for Meta connection {connection_id} webhook unsubscription")
+                        
+                except ImportError:
+                    logger.warning("Meta webhook service not available for unsubscription")
+                except Exception as webhook_error:
+                    logger.error(f"Error during webhook unsubscription for connection {connection_id}: {webhook_error}")
+                    
+        except Exception as e:
+            logger.error(f"Unexpected error during webhook unsubscription for connection {connection_id}: {e}")
+
         # Revoke access at provider level
         settings = get_settings()
         revocation_success = await _revoke_provider_access(connection, settings)
@@ -1175,6 +1267,19 @@ async def disconnect_connection(
         
         # Create audit log
         audit_status = "success" if revocation_success else "partial_success"
+        audit_metadata = {
+            "connection_id": connection_id,
+            "platform_account_id": connection.platform_account_id,
+            "platform_username": connection.platform_username,
+            "provider_revocation": revocation_success,
+            "revoked_at": revoked_at.isoformat()
+        }
+        
+        # Add webhook unsubscription results to audit metadata
+        if connection.platform == "meta":
+            audit_metadata["webhook_unsubscription"] = webhook_unsubscription_success
+            audit_metadata["had_webhook_subscription"] = connection.webhook_subscribed
+        
         audit = SocialAudit(
             organization_id=organization_id,
             connection_id=connection.id,
@@ -1182,13 +1287,7 @@ async def disconnect_connection(
             platform=connection.platform,
             user_id=current_user.id,
             status=audit_status,
-            audit_metadata={
-                "connection_id": connection_id,
-                "platform_account_id": connection.platform_account_id,
-                "platform_username": connection.platform_username,
-                "provider_revocation": revocation_success,
-                "revoked_at": revoked_at.isoformat()
-            }
+            audit_metadata=audit_metadata
         )
         db.add(audit)
         db.commit()

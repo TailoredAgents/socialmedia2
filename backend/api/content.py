@@ -4,20 +4,22 @@ Content management API endpoints
 import logging
 from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File
 from sqlalchemy.orm import Session
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel, Field, validator, ConfigDict
 from datetime import datetime, date, timezone, timedelta
 import uuid
 import json
 
 from backend.db.database import get_db
-from backend.db.models import ContentLog, ContentItem, User
+from backend.db.models import ContentLog, ContentItem, User, SocialConnection, ContentDraft
 from backend.auth.dependencies import get_current_active_user
 from backend.services.cache_decorators import cached, cache_invalidate
 from backend.agents.tools import openai_tool
 from backend.services.image_generation_service import image_generation_service
 from backend.services.file_upload_service import file_upload_service
 from backend.utils.db_checks import ensure_table_exists, safe_table_query
+from backend.services.content_scheduler_service import get_content_scheduler_service
+from backend.api.partner_oauth import is_partner_oauth_enabled
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/content", tags=["content"])
@@ -97,8 +99,67 @@ class ContentAnalytics(BaseModel):
     total_posts: int
     posts_by_platform: Dict[str, int]
     posts_by_status: Dict[str, int]
-    avg_engagement: float
-    top_performing_posts: List[Dict[str, Any]]
+
+
+# Phase 7: New models for connection-based publishing
+class TestDraftRequest(BaseModel):
+    """Request model for creating test drafts"""
+    content: str = Field(..., min_length=1, max_length=10000)
+    media_urls: Optional[List[str]] = Field(default=[], description="List of media URLs")
+    connection_id: str = Field(..., description="UUID of the social connection")
+
+
+class ScheduleConnectionRequest(BaseModel):
+    """Request model for scheduling content with connection IDs (new flow)"""
+    content: str = Field(..., min_length=1, max_length=10000)
+    media_urls: Optional[List[str]] = Field(default=[], description="List of media URLs")
+    connection_ids: List[str] = Field(..., min_length=1, description="List of connection UUIDs")
+    scheduled_time: Optional[datetime] = Field(None, description="When to publish (null for immediate)")
+    
+    @validator('scheduled_time')
+    def scheduled_time_must_be_future(cls, v):
+        if v and v <= datetime.now(timezone.utc):
+            raise ValueError('Scheduled time must be in the future')
+        return v
+
+
+class ScheduleLegacyRequest(BaseModel):
+    """Request model for scheduling content with platforms (legacy flow)"""
+    content: str = Field(..., min_length=1, max_length=10000)
+    platforms: List[str] = Field(..., min_length=1, description="List of platform names")
+    scheduled_time: Optional[datetime] = Field(None, description="When to publish (null for immediate)")
+    
+    @validator('scheduled_time')
+    def scheduled_time_must_be_future(cls, v):
+        if v and v <= datetime.now(timezone.utc):
+            raise ValueError('Scheduled time must be in the future')
+        return v
+    
+    @validator('platforms')
+    def validate_platforms(cls, v):
+        valid_platforms = {"twitter", "linkedin", "instagram", "facebook", "tiktok"}
+        invalid_platforms = set(v) - valid_platforms
+        if invalid_platforms:
+            raise ValueError(f"Invalid platforms: {list(invalid_platforms)}")
+        return v
+
+
+class TestDraftResponse(BaseModel):
+    """Response model for test draft creation"""
+    success: bool
+    draft_id: Optional[str] = None
+    message: str
+    connection_id: str
+    platform: str
+
+
+class ScheduleResponse(BaseModel):
+    """Response model for content scheduling"""
+    success: bool
+    scheduled_count: int
+    failed_count: int
+    results: List[Dict[str, Any]]
+    errors: List[str]
 
 class RegenerateImageRequest(BaseModel):
     content_id: int
@@ -106,6 +167,138 @@ class RegenerateImageRequest(BaseModel):
     platform: str = Field(..., pattern="^(twitter|linkedin|instagram|facebook|tiktok)$")
     quality_preset: str = Field("standard", pattern="^(draft|standard|premium|story|banner)$")
     keep_original_context: bool = True
+
+
+# Phase 7: New endpoints for connection-based publishing
+@router.post("/test-draft", response_model=TestDraftResponse)
+async def create_test_draft(
+    request: TestDraftRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Create a test draft for connection verification (Phase 7)
+    This endpoint creates a draft artifact without external posting
+    and marks the connection as verified for posting after first success
+    """
+    # Check if partner OAuth is enabled
+    if not is_partner_oauth_enabled():
+        raise HTTPException(
+            status_code=404, 
+            detail="Partner OAuth feature not enabled"
+        )
+    
+    try:
+        # Get user's organization ID
+        organization_id = getattr(current_user, 'organization_id', None)
+        if not organization_id:
+            raise HTTPException(
+                status_code=400,
+                detail="User not associated with an organization"
+            )
+        
+        # Get scheduler service
+        scheduler = get_content_scheduler_service()
+        
+        # Create draft
+        success, draft_id, error = await scheduler.create_draft(
+            organization_id=str(organization_id),
+            connection_id=request.connection_id,
+            content=request.content,
+            media_urls=request.media_urls or [],
+            db=db
+        )
+        
+        if not success:
+            raise HTTPException(status_code=400, detail=error)
+        
+        # Get connection info for response
+        connection = db.query(SocialConnection).filter(
+            SocialConnection.id == request.connection_id,
+            SocialConnection.organization_id == organization_id
+        ).first()
+        
+        if not connection:
+            raise HTTPException(status_code=404, detail="Connection not found")
+        
+        return TestDraftResponse(
+            success=True,
+            draft_id=draft_id,
+            message="Draft created successfully - connection verified for posting",
+            connection_id=request.connection_id,
+            platform=connection.platform
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating test draft: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post("/schedule", response_model=ScheduleResponse)
+async def schedule_content(
+    request: Union[ScheduleConnectionRequest, ScheduleLegacyRequest],
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Schedule content for publishing (Phase 7)
+    Supports both new connection-based flow and legacy platform-based flow
+    """
+    try:
+        # Determine if this is new flow (connection_ids) or legacy (platforms)
+        if hasattr(request, 'connection_ids'):
+            # New flow with connection IDs
+            if not is_partner_oauth_enabled():
+                raise HTTPException(
+                    status_code=404,
+                    detail="Partner OAuth feature not enabled"
+                )
+            
+            # Get user's organization ID
+            organization_id = getattr(current_user, 'organization_id', None)
+            if not organization_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="User not associated with an organization"
+                )
+            
+            # Get scheduler service
+            scheduler = get_content_scheduler_service()
+            
+            # Schedule content
+            results = await scheduler.schedule_content(
+                organization_id=str(organization_id),
+                connection_ids=request.connection_ids,
+                content=request.content,
+                media_urls=getattr(request, 'media_urls', []) or [],
+                scheduled_time=request.scheduled_time,
+                db=db
+            )
+            
+            return ScheduleResponse(**results, success=results['failed_count'] == 0)
+        
+        else:
+            # Legacy flow with platforms
+            logger.info("Using legacy content scheduling flow")
+            
+            # TODO: Implement legacy flow using existing ContentLog approach
+            # For now, return a placeholder response
+            return ScheduleResponse(
+                success=False,
+                scheduled_count=0,
+                failed_count=len(request.platforms),
+                results=[],
+                errors=["Legacy flow not implemented in Phase 7"]
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error scheduling content: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 
 @cache_invalidate("content", "user_content_list")  # Invalidate user content list cache
 @router.post("/", response_model=ContentResponse)

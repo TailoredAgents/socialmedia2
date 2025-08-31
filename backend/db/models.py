@@ -99,6 +99,79 @@ class ContentLog(Base):
     # Relationships
     user = relationship("User", back_populates="content_logs")
 
+
+class ContentDraft(Base):
+    """Phase 7: Content drafts for connection verification"""
+    __tablename__ = "content_drafts"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    connection_id = Column(UUID(as_uuid=True), ForeignKey("social_connections.id", ondelete="CASCADE"), nullable=False)
+    
+    # Draft content
+    content = Column(Text, nullable=False)
+    content_hash = Column(String(64), nullable=False)  # SHA256 of content for idempotency
+    media_urls = Column(JSON, default=[])  # List of media URLs
+    
+    # Status
+    status = Column(String(50), default="created", nullable=False)  # created, verified, failed
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    verified_at = Column(DateTime(timezone=True))
+    
+    # Error tracking
+    error_message = Column(Text)
+    
+    # Relationships
+    organization = relationship("Organization")
+    connection = relationship("SocialConnection")
+    
+    __table_args__ = (
+        Index('idx_content_drafts_org_connection', organization_id, connection_id),
+        Index('idx_content_drafts_hash', content_hash),
+    )
+
+
+class ContentSchedule(Base):
+    """Phase 7: Content scheduling with connection-based publishing"""
+    __tablename__ = "content_schedules"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    connection_id = Column(UUID(as_uuid=True), ForeignKey("social_connections.id", ondelete="CASCADE"), nullable=False)
+    
+    # Content
+    content = Column(Text, nullable=False)
+    content_hash = Column(String(64), nullable=False)  # SHA256 for idempotency
+    media_urls = Column(JSON, default=[])  # List of media URLs
+    
+    # Scheduling
+    scheduled_for = Column(DateTime(timezone=True))  # NULL for immediate publish
+    status = Column(String(50), default="scheduled", nullable=False)  # scheduled, publishing, published, failed
+    
+    # Publishing results
+    published_at = Column(DateTime(timezone=True))
+    platform_post_id = Column(String(255))  # ID returned by platform
+    error_message = Column(Text)
+    
+    # Idempotency
+    idempotency_key = Column(String(255), unique=True)  # Redis key: org:conn:hash:time
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    
+    # Relationships
+    organization = relationship("Organization")
+    connection = relationship("SocialConnection")
+    
+    __table_args__ = (
+        Index('idx_content_schedules_org_connection', organization_id, connection_id),
+        Index('idx_content_schedules_scheduled', scheduled_for),
+        Index('idx_content_schedules_status', status),
+        Index('idx_content_schedules_idempotency', idempotency_key),
+    )
+
+
 class Metric(Base):
     __tablename__ = "metrics"
 
@@ -1123,6 +1196,7 @@ class SocialConnection(Base):
     is_active = Column(Boolean, default=True)
     revoked_at = Column(DateTime(timezone=True))
     last_checked_at = Column(DateTime(timezone=True))
+    verified_for_posting = Column(Boolean, default=False)  # Phase 7: First-run draft gate
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

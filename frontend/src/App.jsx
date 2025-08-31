@@ -34,6 +34,11 @@ import SocialInbox from './pages/SocialInbox'
 import Settings from './pages/Settings'
 import ErrorLogs from './components/ErrorLogs'
 
+// Conditionally import Integrations page if feature is enabled
+const Integrations = import.meta.env.VITE_FEATURE_PARTNER_OAUTH === 'true' 
+  ? React.lazy(() => import('./pages/Integrations'))
+  : null
+
 // Admin Pages
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -175,6 +180,26 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        {/* Integrations Route - Feature Flag Gated */}
+        {import.meta.env.VITE_FEATURE_PARTNER_OAUTH === 'true' && Integrations && (
+          <Route
+            path="/integrations"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <React.Suspense fallback={
+                    <div className="flex items-center justify-center min-h-screen">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <span className="ml-3 text-gray-600">Loading Integrations...</span>
+                    </div>
+                  }>
+                    <Integrations />
+                  </React.Suspense>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+        )}
         <Route
           path="/error-logs"
           element={

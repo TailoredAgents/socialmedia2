@@ -30,6 +30,7 @@ from . import (
     organizations,
     system_logs,  # System logging and error tracking
     database_health,  # Database schema health checks
+    partner_oauth,  # Partner OAuth for multi-tenant connections
 )
 
 # All routers to be registered with the FastAPI app
@@ -62,4 +63,5 @@ ROUTERS = [
     organizations.router,  # Multi-tenant organization management
     system_logs.router,  # System logging and error tracking endpoints
     database_health.router,  # Database schema health monitoring
+    partner_oauth.router,  # Partner OAuth for multi-tenant connections
 ]

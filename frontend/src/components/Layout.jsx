@@ -16,17 +16,33 @@ import {
   ArrowRightOnRectangleIcon,
   PlusIcon,
   ExclamationTriangleIcon,
-  InboxIcon
+  InboxIcon,
+  LinkIcon
 } from '@heroicons/react/24/outline'
 
-const navigation = [
+// Base navigation items
+const baseNavigation = [
   { name: 'Flight Deck', href: '/dashboard', icon: HomeIcon },
   { name: 'Social Inbox', href: '/inbox', icon: InboxIcon },
   { name: 'Create Post', href: '/create-post', icon: PlusIcon },
   { name: 'Content Library', href: '/content', icon: DocumentTextIcon },
   { name: 'Scheduler', href: '/calendar', icon: CalendarDaysIcon },
   { name: 'Brand Brain', href: '/memory', icon: CpuChipIcon },
-  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
+]
+
+// Conditionally add Integrations if feature flag is enabled
+const integrationsItem = import.meta.env.VITE_FEATURE_PARTNER_OAUTH === 'true' 
+  ? { name: 'Integrations', href: '/integrations', icon: LinkIcon }
+  : null
+
+// Settings should always be last
+const settingsItem = { name: 'Settings', href: '/settings', icon: Cog6ToothIcon }
+
+// Construct final navigation array
+const navigation = [
+  ...baseNavigation,
+  ...(integrationsItem ? [integrationsItem] : []),
+  settingsItem
 ]
 
 function classNames(...classes) {

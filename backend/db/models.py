@@ -1086,3 +1086,90 @@ class CompanyKnowledge(Base):
         Index('idx_company_knowledge_active', is_active),
         Index('idx_company_knowledge_usage', usage_count, last_used_at),
     )
+
+
+class SocialConnection(Base):
+    """Tenant-scoped social media connections for partner OAuth"""
+    __tablename__ = "social_connections"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    platform = Column(String(50), nullable=False)  # meta, x, etc.
+    connection_name = Column(String(255))  # User-friendly name
+    platform_account_id = Column(String(255))  # Platform's account ID
+    platform_username = Column(String(255))  # @handle or page name
+    
+    # Encrypted tokens (versioned envelope JSON)
+    access_token = Column(Text)  # Encrypted with versioned envelope
+    refresh_token = Column(Text)  # Encrypted with versioned envelope
+    page_access_token = Column(Text)  # Encrypted, Meta Pages only
+    
+    # Encryption metadata
+    enc_version = Column(Integer, nullable=False, default=1)
+    enc_kid = Column(String(50), nullable=False, default='default')  # Key ID for rotation
+    
+    # Token lifecycle
+    token_expires_at = Column(DateTime(timezone=True))
+    scopes = Column(JSON)  # List of granted scopes
+    
+    # Platform-specific metadata
+    platform_metadata = Column(JSON, default={})  # page_id, ig_business_id, since_id for X
+    
+    # Webhook configuration
+    webhook_subscribed = Column(Boolean, default=False)
+    webhook_secret = Column(String(255))
+    
+    # Status tracking
+    is_active = Column(Boolean, default=True)
+    revoked_at = Column(DateTime(timezone=True))
+    last_checked_at = Column(DateTime(timezone=True))
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    
+    # Relationships
+    organization = relationship("Organization", back_populates="social_connections")
+    audit_logs = relationship("SocialAudit", back_populates="connection", cascade="all, delete-orphan")
+    
+    __table_args__ = (
+        Index('idx_social_connections_org', organization_id),
+        Index('idx_social_connections_expires', token_expires_at),
+        Index('idx_social_connections_active', organization_id, platform, 
+              postgresql_where='is_active = TRUE AND revoked_at IS NULL'),
+        {'extend_existing': True}
+    )
+
+
+class SocialAudit(Base):
+    """Audit log for all social connection operations"""
+    __tablename__ = "social_audit"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"))
+    connection_id = Column(UUID(as_uuid=True), ForeignKey("social_connections.id", ondelete="CASCADE"))
+    
+    # Action details
+    action = Column(String(50), nullable=False)  # connect, disconnect, refresh, publish, webhook_verify
+    platform = Column(String(50))
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"))
+    
+    # Operation metadata
+    audit_metadata = Column(JSON)  # Additional context for the action
+    status = Column(String(50))  # success, failure, pending
+    error_message = Column(Text)
+    
+    # Timestamp
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    
+    # Relationships
+    organization = relationship("Organization")
+    connection = relationship("SocialConnection", back_populates="audit_logs")
+    user = relationship("User")
+    
+    __table_args__ = (
+        Index('idx_social_audit_org', organization_id),
+        Index('idx_social_audit_connection', connection_id),
+        Index('idx_social_audit_created', created_at),
+        {'extend_existing': True}
+    )

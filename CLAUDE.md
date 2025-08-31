@@ -31,3 +31,4 @@
 - Updated frontend with new auth pages (EmailVerification, ForgotPassword, ResetPassword)
 - All authentication endpoints should be available at `/api/auth/*`
 - research the internet to confirm the proper way to fix or produce what youre working on
+- Guardrail: production-ready only — no mock/fake/demo data in app code or migrations; mocks allowed in tests only; scan & confirm no banned patterns in the diff.

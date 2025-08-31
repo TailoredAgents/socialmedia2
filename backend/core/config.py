@@ -180,6 +180,11 @@ class Settings(BaseSettings):
     
     # Feature Flags
     feature_flags: str = ""
+    feature_partner_oauth: bool = Field(default=False, env="FEATURE_PARTNER_OAUTH")
+    
+    # Partner OAuth Configuration
+    meta_graph_version: str = Field(default="v18.0", env="META_GRAPH_VERSION")
+    token_encryption_key: str = Field(default="", env="TOKEN_ENCRYPTION_KEY")
     
     # File Upload Configuration
     upload_dir: str = Field(default="uploads", env="UPLOAD_DIR")

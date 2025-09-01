@@ -3,17 +3,26 @@ Enhanced xAI Grok 2 Vision Image Generation Service
 
 This service uses xAI Grok 2 Vision model through OpenAI-compatible API 
 for superior social media content creation and multi-turn editing capabilities.
+
+Implements Grok 4's recommendations:
+- Enhanced post-processing with aspect ratio enforcement  
+- Platform-specific image optimization
+- Quality checking and retry logic
+- Alt-text generation for accessibility
+- Structured prompt templates with quality boosters
 """
 import asyncio
 import base64
 import logging
-from typing import Dict, List, Any, Optional, AsyncGenerator, Union
+from typing import Dict, List, Any, Optional, AsyncGenerator, Union, Tuple
 from datetime import datetime
 from pathlib import Path
 import uuid
 
 from openai import OpenAI, AsyncOpenAI
 from backend.core.config import get_settings
+from backend.services.image_processing_service import image_processing_service
+from backend.services.alt_text_service import alt_text_service
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -98,6 +107,84 @@ class ImageGenerationService:
         
         if tone in tone_styles:
             enhanced_prompt += f" Tone: {tone_styles[tone]}"
+        
+        return enhanced_prompt
+    
+    def _enhance_prompt_with_quality_boosters(self, prompt: str, platform: str,
+                                            content_context: Optional[str] = None,
+                                            industry_context: Optional[str] = None,
+                                            tone: str = "professional") -> str:
+        """Enhance prompt with Grok 4's quality boosters and structured templates."""
+        
+        # Start with platform optimization
+        enhanced_prompt = self._enhance_prompt_for_platform(
+            prompt, platform, content_context, industry_context, tone
+        )
+        
+        # Add Grok 4's quality boosters
+        quality_boosters = [
+            "professional photography quality",
+            "sharp focus and crisp details",
+            "optimal lighting and composition",
+            "vibrant colors with perfect saturation",
+            "high resolution commercial quality",
+            "visually striking and engaging"
+        ]
+        
+        # Platform-specific quality enhancements
+        platform_quality = {
+            "instagram": [
+                "Instagram-worthy aesthetic",
+                "perfect for social media engagement",
+                "visually appealing thumbnail",
+                "scroll-stopping visual impact"
+            ],
+            "twitter": [
+                "Twitter timeline optimized",
+                "clear and readable at small sizes",
+                "eye-catching for quick consumption",
+                "professional social media quality"
+            ],
+            "facebook": [
+                "Facebook feed optimized",
+                "engaging for social sharing",
+                "clear call-to-action visual",
+                "community-friendly design"
+            ],
+            "linkedin": [
+                "LinkedIn professional standards",
+                "corporate presentation quality",
+                "business networking appropriate",
+                "thought leadership visual"
+            ],
+            "tiktok": [
+                "TikTok trending aesthetic",
+                "mobile-first design",
+                "Gen-Z appealing visuals",
+                "viral content potential"
+            ]
+        }
+        
+        # Add general quality boosters
+        enhanced_prompt += f". Quality requirements: {', '.join(quality_boosters[:3])}"
+        
+        # Add platform-specific quality boosters
+        if platform in platform_quality:
+            platform_boosters = platform_quality[platform][:2]
+            enhanced_prompt += f". Platform optimization: {', '.join(platform_boosters)}"
+        
+        # Add technical specifications
+        technical_specs = [
+            "studio lighting setup",
+            "professional camera angles",
+            "color-corrected and post-processed",
+            "marketing campaign quality"
+        ]
+        
+        enhanced_prompt += f". Technical specs: {', '.join(technical_specs[:2])}"
+        
+        # Add final quality directive
+        enhanced_prompt += ". Ensure maximum visual impact and professional presentation quality."
         
         return enhanced_prompt
 
@@ -233,12 +320,18 @@ class ImageGenerationService:
                            content_context: Optional[str] = None,
                            industry_context: Optional[str] = None,
                            tone: str = "professional",
-                           custom_options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                           custom_options: Optional[Dict[str, Any]] = None,
+                           enable_post_processing: bool = True,
+                           generate_alt_text: bool = True,
+                           max_retries: int = 2) -> Dict[str, Any]:
         """
-        Generate a single image using the OpenAI Responses API with image_generation tool.
+        Generate a single image with enhanced post-processing and accessibility features.
         
-        This uses the new Responses API which supports real-time streaming and multi-turn edits,
-        making it ideal for social media content creation with iterative refinement capabilities.
+        Implements Grok 4's recommendations:
+        - Enhanced prompt templates with quality boosters
+        - Platform-specific post-processing and optimization
+        - Quality validation and retry logic
+        - Alt-text generation for accessibility compliance
         
         Args:
             prompt: Base image description
@@ -248,9 +341,12 @@ class ImageGenerationService:
             industry_context: Industry-specific context
             tone: Desired tone for the image
             custom_options: Custom tool options (size, quality, format, etc.)
+            enable_post_processing: Apply platform-specific post-processing
+            generate_alt_text: Generate accessibility alt-text
+            max_retries: Maximum retry attempts for quality validation
         
         Returns:
-            Dict containing image data, metadata, and generation info
+            Dict containing processed image data, alt-text, quality metrics, and metadata
         """
         # Check if service is available
         if not self.async_client:
@@ -266,8 +362,8 @@ class ImageGenerationService:
             }
             
         try:
-            # Enhance prompt for the platform
-            enhanced_prompt = self._enhance_prompt_for_platform(
+            # Enhance prompt with Grok 4's quality boosters
+            enhanced_prompt = self._enhance_prompt_with_quality_boosters(
                 prompt, platform, content_context, industry_context, tone
             )
             
@@ -317,6 +413,84 @@ class ImageGenerationService:
             else:
                 raise Exception("No valid image data format returned from xAI")
             
+            # Convert base64 to bytes for post-processing
+            raw_image_bytes = base64.b64decode(image_base64)
+            
+            # Apply post-processing if enabled
+            processed_image_bytes = raw_image_bytes
+            processing_metadata = {}
+            
+            if enable_post_processing:
+                try:
+                    processed_image_bytes, processing_metadata = image_processing_service.resize_for_platform(
+                        raw_image_bytes, platform, "default", quality_preset
+                    )
+                    logger.info(f"Post-processing completed for {platform} with preset {quality_preset}")
+                except Exception as e:
+                    logger.warning(f"Post-processing failed: {e}, using original image")
+                    processing_metadata = {"error": str(e), "fallback": True}
+            
+            # Validate image quality
+            quality_metrics = image_processing_service.validate_image_quality(processed_image_bytes)
+            
+            # Retry if quality is too low (score < 50) and retries available
+            retry_count = 0
+            while (quality_metrics.get("quality_score", 100) < 50 and 
+                   retry_count < max_retries and 
+                   "error" not in quality_metrics):
+                
+                logger.info(f"Image quality too low (score: {quality_metrics.get('quality_score')}), retrying... ({retry_count + 1}/{max_retries})")
+                retry_count += 1
+                
+                # Add quality improvement to prompt
+                retry_prompt = enhanced_prompt + ". Generate with higher resolution, better clarity, and professional quality."
+                
+                # Retry generation
+                response = await self.async_client.images.generate(
+                    model="grok-2-image",
+                    prompt=retry_prompt,
+                    n=1,
+                    response_format="b64_json"
+                )
+                
+                if response.data and len(response.data) > 0:
+                    retry_image_data = response.data[0]
+                    if hasattr(retry_image_data, 'b64_json') and retry_image_data.b64_json:
+                        image_base64 = retry_image_data.b64_json
+                        raw_image_bytes = base64.b64decode(image_base64)
+                        
+                        # Re-process and re-validate
+                        if enable_post_processing:
+                            try:
+                                processed_image_bytes, processing_metadata = image_processing_service.resize_for_platform(
+                                    raw_image_bytes, platform, "default", quality_preset
+                                )
+                            except Exception as e:
+                                logger.warning(f"Retry post-processing failed: {e}")
+                        
+                        quality_metrics = image_processing_service.validate_image_quality(processed_image_bytes)
+            
+            # Convert processed image back to base64
+            final_image_base64 = base64.b64encode(processed_image_bytes).decode('utf-8')
+            
+            # Generate alt-text if enabled
+            alt_text_data = {}
+            if generate_alt_text:
+                try:
+                    alt_text_data = await alt_text_service.generate_alt_text(
+                        processed_image_bytes,
+                        context=content_context or prompt,
+                        platform=platform
+                    )
+                    logger.info(f"Alt-text generated: {alt_text_data.get('status')}")
+                except Exception as e:
+                    logger.warning(f"Alt-text generation failed: {e}")
+                    alt_text_data = {
+                        "alt_text": "Generated image",
+                        "status": "error",
+                        "error": str(e)
+                    }
+            
             # Generate unique filename and ID
             image_id = str(uuid.uuid4())
             timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
@@ -325,14 +499,35 @@ class ImageGenerationService:
             return {
                 "status": "success",
                 "image_id": image_id,
-                "response_id": image_id,  # Use our generated ID
-                "image_base64": image_base64,
-                "image_data_url": f"data:image/png;base64,{image_base64}",
+                "response_id": image_id,
+                "image_base64": final_image_base64,
+                "image_data_url": f"data:image/png;base64,{final_image_base64}",
                 "filename": filename,
                 "prompt": {
                     "original": prompt,
                     "enhanced": enhanced_prompt,
-                    "revised": enhanced_prompt  # Grok 2 doesn't revise prompts
+                    "revised": enhanced_prompt
+                },
+                "alt_text": alt_text_data.get("alt_text", ""),
+                "accessibility": {
+                    "alt_text": alt_text_data.get("alt_text", ""),
+                    "alt_text_status": alt_text_data.get("status", "not_generated"),
+                    "alt_text_length": alt_text_data.get("length", 0),
+                    "platform_optimized": alt_text_data.get("platform") == platform
+                },
+                "quality": {
+                    "score": quality_metrics.get("quality_score", 0),
+                    "issues": quality_metrics.get("issues", []),
+                    "recommendations": quality_metrics.get("recommendations", []),
+                    "retry_count": retry_count,
+                    "final_attempt": retry_count >= max_retries
+                },
+                "processing": {
+                    "post_processed": enable_post_processing,
+                    "processing_metadata": processing_metadata,
+                    "original_size": processing_metadata.get("original_size"),
+                    "final_size": processing_metadata.get("processed_size"),
+                    "compression_ratio": processing_metadata.get("compression_ratio", 1.0)
                 },
                 "metadata": {
                     "platform": platform,
@@ -340,11 +535,17 @@ class ImageGenerationService:
                     "tool_options": tool_options,
                     "model": "grok-2-image",
                     "generated_at": datetime.now().isoformat(),
-                    "actual_size": "1024x768",  # xAI fixed output size
-                    "requested_size": tool_options.get("size", "1024x1024"),  # What was requested
+                    "actual_size": "1024x768",
+                    "requested_size": tool_options.get("size", "1024x1024"),
                     "content_context": content_context,
                     "industry_context": industry_context,
-                    "tone": tone
+                    "tone": tone,
+                    "enhancements_applied": {
+                        "post_processing": enable_post_processing,
+                        "alt_text_generation": generate_alt_text,
+                        "quality_validation": True,
+                        "retry_logic": max_retries > 0
+                    }
                 }
             }
             
@@ -540,54 +741,273 @@ class ImageGenerationService:
                                     content_text: str,
                                     platforms: List[str],
                                     image_count: int = 1,
-                                    industry_context: Optional[str] = None) -> Dict[str, List[Dict[str, Any]]]:
+                                    industry_context: Optional[str] = None,
+                                    enable_post_processing: bool = True,
+                                    generate_alt_text: bool = True,
+                                    quality_preset: str = "standard") -> Dict[str, List[Dict[str, Any]]]:
         """
         Generate multiple images optimized for different platforms based on content.
+        Includes Grok 4's enhancements: post-processing, alt-text, and quality validation.
         
         Args:
             content_text: The social media content text
             platforms: List of target platforms
             image_count: Number of images per platform
             industry_context: Industry context for styling
+            enable_post_processing: Apply platform-specific post-processing
+            generate_alt_text: Generate accessibility alt-text
+            quality_preset: Quality preset for all images
         
         Returns:
-            Dict with platform keys and lists of generated images
+            Dict with platform keys and lists of enhanced generated images
         """
         results = {}
         
-        # Generate base prompt from content
-        base_prompt = f"Create a visual representation for this social media content: {content_text[:200]}"
+        # Generate base prompt from content with quality enhancements
+        base_prompt = f"Create a compelling visual representation for this social media content: {content_text[:200]}"
         
         for platform in platforms:
             platform_images = []
+            logger.info(f"Generating {image_count} images for {platform} platform")
             
             for i in range(image_count):
-                # Add variation to each image
+                # Add variation to each image with enhanced prompts
                 variation_prompt = base_prompt
                 if i > 0:
                     variations = [
-                        "with a different composition",
-                        "from an alternative perspective", 
-                        "with different color scheme",
-                        "in a complementary style"
+                        "with a different artistic composition and visual angle",
+                        "from an alternative creative perspective with unique styling", 
+                        "with a complementary color palette and mood",
+                        "in a distinctive style with different visual emphasis",
+                        "with varied lighting and atmospheric elements"
                     ]
                     variation_prompt += f" {variations[i % len(variations)]}"
                 
-                result = await self.generate_image(
-                    prompt=variation_prompt,
-                    platform=platform,
-                    content_context=content_text,
-                    industry_context=industry_context
-                )
+                # Add image number context for variety
+                if image_count > 1:
+                    variation_prompt += f". Variation {i + 1} of {image_count} for maximum visual diversity."
                 
-                platform_images.append(result)
+                try:
+                    result = await self.generate_image(
+                        prompt=variation_prompt,
+                        platform=platform,
+                        quality_preset=quality_preset,
+                        content_context=content_text,
+                        industry_context=industry_context,
+                        enable_post_processing=enable_post_processing,
+                        generate_alt_text=generate_alt_text,
+                        max_retries=1  # Reduced retries for batch generation
+                    )
+                    
+                    # Add batch generation metadata
+                    if "metadata" in result:
+                        result["metadata"]["batch_info"] = {
+                            "batch_index": i,
+                            "batch_total": image_count,
+                            "platform_batch": platform,
+                            "content_source": content_text[:100]
+                        }
+                    
+                    platform_images.append(result)
+                    logger.info(f"Generated image {i + 1}/{image_count} for {platform} (quality: {result.get('quality', {}).get('score', 'N/A')})")
+                    
+                except Exception as e:
+                    logger.error(f"Failed to generate image {i + 1} for {platform}: {e}")
+                    # Add error placeholder
+                    platform_images.append({
+                        "status": "error",
+                        "error": str(e),
+                        "platform": platform,
+                        "batch_index": i,
+                        "prompt": variation_prompt
+                    })
                 
-                # Brief delay to avoid rate limits
-                await asyncio.sleep(0.5)
+                # Brief delay to avoid rate limits and allow processing
+                await asyncio.sleep(1.0)  # Increased delay for post-processing
             
             results[platform] = platform_images
+            
+            # Log platform completion with quality summary
+            successful_images = [img for img in platform_images if img.get("status") == "success"]
+            avg_quality = sum(img.get("quality", {}).get("score", 0) for img in successful_images) / max(len(successful_images), 1)
+            logger.info(f"Completed {platform}: {len(successful_images)}/{image_count} successful, avg quality: {avg_quality:.1f}")
         
         return results
+
+    async def add_watermark_to_image(self, 
+                                   image_base64: str, 
+                                   watermark_text: str,
+                                   position: str = "bottom_right",
+                                   opacity: float = 0.7) -> Dict[str, Any]:
+        """
+        Add watermark to generated image using post-processing service.
+        
+        Args:
+            image_base64: Base64 encoded image
+            watermark_text: Text to add as watermark
+            position: Position for watermark (bottom_right, bottom_left, etc.)
+            opacity: Watermark opacity (0.0 to 1.0)
+            
+        Returns:
+            Dict with watermarked image data and metadata
+        """
+        try:
+            # Convert base64 to bytes
+            image_bytes = base64.b64decode(image_base64)
+            
+            # Add watermark using image processing service
+            watermarked_bytes = image_processing_service.add_watermark(
+                image_bytes, watermark_text, position, opacity
+            )
+            
+            # Convert back to base64
+            watermarked_base64 = base64.b64encode(watermarked_bytes).decode('utf-8')
+            
+            return {
+                "status": "success",
+                "image_base64": watermarked_base64,
+                "image_data_url": f"data:image/png;base64,{watermarked_base64}",
+                "watermark": {
+                    "text": watermark_text,
+                    "position": position,
+                    "opacity": opacity,
+                    "applied_at": datetime.now().isoformat()
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to add watermark: {e}")
+            return {
+                "status": "error", 
+                "error": str(e),
+                "image_base64": image_base64  # Return original on error
+            }
+
+    def get_platform_recommendations(self, platform: str) -> Dict[str, Any]:
+        """
+        Get comprehensive platform recommendations including Grok 4 enhancements.
+        
+        Args:
+            platform: Target social media platform
+            
+        Returns:
+            Dict with platform recommendations, quality presets, and best practices
+        """
+        # Get base recommendations from image processing service
+        processing_recommendations = image_processing_service.get_platform_recommendations(platform)
+        
+        # Add image generation specific recommendations
+        generation_recommendations = {
+            "platform": platform,
+            "optimal_quality_presets": self._get_platform_optimal_presets(platform),
+            "prompt_enhancements": self._get_platform_prompt_tips(platform),
+            "content_guidelines": self._get_platform_content_guidelines(platform),
+            "accessibility_features": {
+                "alt_text_required": True,
+                "alt_text_max_length": 125 if platform == "twitter" else 125,
+                "screen_reader_compatible": True
+            },
+            "post_processing_options": {
+                "auto_resize": True,
+                "quality_enhancement": True,
+                "platform_optimization": True,
+                "watermark_support": True
+            }
+        }
+        
+        # Merge recommendations
+        return {**processing_recommendations, **generation_recommendations}
+    
+    def _get_platform_optimal_presets(self, platform: str) -> List[str]:
+        """Get optimal quality presets for platform."""
+        presets = {
+            "instagram": ["standard", "premium", "story"],
+            "twitter": ["standard", "premium"], 
+            "facebook": ["standard", "premium"],
+            "linkedin": ["premium", "banner"],
+            "tiktok": ["story", "premium"],
+            "youtube": ["banner", "premium"]
+        }
+        return presets.get(platform, ["standard", "premium"])
+    
+    def _get_platform_prompt_tips(self, platform: str) -> List[str]:
+        """Get platform-specific prompt optimization tips."""
+        tips = {
+            "instagram": [
+                "Include aesthetic and lifestyle elements",
+                "Focus on visual appeal and engagement",
+                "Use vibrant colors and clear composition",
+                "Consider square or portrait orientations"
+            ],
+            "twitter": [
+                "Keep visuals simple and clear",
+                "Ensure readability at small sizes", 
+                "Use high contrast for timeline visibility",
+                "Optimize for horizontal viewing"
+            ],
+            "facebook": [
+                "Create engaging, shareable content",
+                "Use bright, attention-grabbing visuals",
+                "Consider link preview optimization",
+                "Balance text and visual elements"
+            ],
+            "linkedin": [
+                "Maintain professional appearance",
+                "Use business-appropriate imagery",
+                "Focus on thought leadership visuals",
+                "Ensure corporate presentation quality"
+            ],
+            "tiktok": [
+                "Create trendy, youthful aesthetics",
+                "Use bold, eye-catching visuals",
+                "Optimize for mobile vertical viewing",
+                "Consider viral content elements"
+            ]
+        }
+        return tips.get(platform, [
+            "Use high-quality, engaging visuals",
+            "Maintain brand consistency",
+            "Optimize for platform viewing experience"
+        ])
+    
+    def _get_platform_content_guidelines(self, platform: str) -> Dict[str, Any]:
+        """Get platform content guidelines and restrictions."""
+        guidelines = {
+            "instagram": {
+                "text_overlay_limit": "20% of image area",
+                "hashtag_support": True,
+                "story_features": ["polls", "questions", "stickers"],
+                "engagement_focus": "visual aesthetics"
+            },
+            "twitter": {
+                "character_consideration": "visual should complement 280 char limit",
+                "thread_support": True,
+                "retweet_optimization": "clear, shareable content",
+                "engagement_focus": "news and conversation"
+            },
+            "facebook": {
+                "text_overlay_limit": "20% for ads",
+                "link_preview_optimization": True,
+                "sharing_features": "reactions, comments, shares",
+                "engagement_focus": "community and sharing"
+            },
+            "linkedin": {
+                "professional_standards": "business appropriate content only",
+                "industry_focus": True,
+                "networking_optimization": "thought leadership content",
+                "engagement_focus": "professional networking"
+            },
+            "tiktok": {
+                "vertical_requirement": "9:16 aspect ratio preferred",
+                "trend_awareness": "align with current trends",
+                "music_sync": "consider audio-visual sync",
+                "engagement_focus": "entertainment and trends"
+            }
+        }
+        return guidelines.get(platform, {
+            "general_guidelines": "follow platform community standards",
+            "quality_focus": "high-resolution, engaging content"
+        })
 
     def save_image_to_file(self, image_base64: str, filepath: str) -> bool:
         """Save base64 image data to file."""

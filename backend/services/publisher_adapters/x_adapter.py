@@ -70,11 +70,40 @@ class XAdapter:
                 "text": content
             }
             
-            # Add media if provided (simplified - in production you'd upload media first)
+            # Upload media if provided
+            media_ids = []
             if media_urls:
-                logger.info(f"Media URLs provided but not implemented: {len(media_urls)} items")
-                # Note: X API requires media to be uploaded separately first
-                # This would be implemented in production
+                logger.info(f"Processing {len(media_urls)} media items for X")
+                for media_url in media_urls:
+                    try:
+                        # Download media from URL
+                        async with httpx.AsyncClient(timeout=30.0) as media_client:
+                            media_response = await media_client.get(media_url)
+                            if media_response.status_code == 200:
+                                media_data = media_response.content
+                                media_type = media_response.headers.get("content-type", "image/jpeg")
+                                
+                                # Upload to X
+                                success, media_id, upload_error = await self.upload_media(
+                                    connection, media_data, media_type
+                                )
+                                
+                                if success and media_id:
+                                    media_ids.append(media_id)
+                                    logger.info(f"Successfully uploaded media: {media_id}")
+                                else:
+                                    logger.warning(f"Failed to upload media from {media_url}: {upload_error}")
+                            else:
+                                logger.warning(f"Failed to download media from {media_url}: {media_response.status_code}")
+                    except Exception as e:
+                        logger.error(f"Error processing media {media_url}: {e}")
+                        # Continue with other media items
+                        continue
+            
+            # Add media IDs to tweet data
+            if media_ids:
+                tweet_data["media"] = {"media_ids": media_ids}
+                logger.info(f"Added {len(media_ids)} media items to tweet")
             
             # Prepare request
             url = f"{self.base_url}/tweets"
@@ -269,19 +298,143 @@ class XAdapter:
     async def upload_media(
         self, 
         connection: SocialConnection, 
-        media_url: str
+        media_data: bytes,
+        media_type: str = "image/jpeg"
     ) -> Tuple[bool, Optional[str], Optional[str]]:
         """
-        Upload media to X platform (placeholder implementation)
+        Upload media to X platform using v1.1 media upload API
         
         Args:
             connection: SocialConnection with X tokens
-            media_url: URL of media to upload
+            media_data: Raw media bytes
+            media_type: MIME type of the media
             
         Returns:
             Tuple of (success, media_id, error_message)
         """
-        # This would be implemented in production to upload media
-        # using the X API media upload endpoints
-        logger.info(f"Media upload not implemented for URL: {media_url}")
-        return False, None, "Media upload not implemented"
+        try:
+            # Validate connection
+            if connection.platform != "x":
+                raise FatalError(f"Invalid platform: {connection.platform}")
+            
+            # Get access token
+            access_token = connection.access_tokens.get("access_token")
+            if not access_token:
+                raise FatalError("No access token found")
+            
+            # Decrypt token
+            try:
+                decrypted_token = decrypt_token(access_token)
+            except Exception as e:
+                raise FatalError(f"Failed to decrypt access token: {str(e)}")
+            
+            logger.info(f"Uploading media to X, size: {len(media_data)} bytes, type: {media_type}")
+            
+            # X API v1.1 media upload endpoint
+            upload_url = "https://upload.twitter.com/1.1/media/upload.json"
+            
+            # Prepare headers
+            headers = {
+                "Authorization": f"Bearer {decrypted_token}"
+            }
+            
+            # Determine media category
+            media_category = "tweet_image" if media_type.startswith("image") else "tweet_video"
+            
+            # Prepare form data
+            files = {
+                "media": ("image.jpg", media_data, media_type)
+            }
+            
+            data = {
+                "media_category": media_category
+            }
+            
+            # Upload media
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                try:
+                    response = await client.post(
+                        upload_url, 
+                        headers=headers,
+                        files=files,
+                        data=data
+                    )
+                    
+                    logger.debug(f"X media upload response: {response.status_code}")
+                    
+                    if response.status_code == 200:
+                        result = response.json()
+                        media_id = str(result.get("media_id"))
+                        
+                        if not media_id:
+                            raise Exception("No media_id returned from X API")
+                        
+                        logger.info(f"Successfully uploaded media to X: {media_id}")
+                        return True, media_id, None
+                    
+                    elif response.status_code == 429:
+                        # Rate limiting
+                        error_msg = "Rate limited by X media upload API"
+                        logger.warning(error_msg)
+                        raise RetryableError(error_msg)
+                    
+                    elif response.status_code in [500, 502, 503, 504]:
+                        # Server errors
+                        error_msg = f"X media upload server error: {response.status_code}"
+                        logger.warning(error_msg)
+                        raise RetryableError(error_msg)
+                    
+                    elif response.status_code == 401:
+                        # Authentication error
+                        error_msg = "Authentication failed for media upload"
+                        logger.error(error_msg)
+                        raise FatalError(error_msg)
+                    
+                    elif response.status_code == 403:
+                        # Forbidden - check specific error
+                        try:
+                            error_data = response.json()
+                            error_detail = error_data.get("errors", [{}])[0].get("message", "Permission denied")
+                            error_msg = f"Media upload forbidden: {error_detail}"
+                        except:
+                            error_msg = "Media upload permission denied"
+                        
+                        logger.error(error_msg)
+                        raise FatalError(error_msg)
+                    
+                    elif response.status_code == 400:
+                        # Bad request - usually media format issues
+                        try:
+                            error_data = response.json()
+                            error_detail = error_data.get("errors", [{}])[0].get("message", "Bad request")
+                            error_msg = f"Media upload failed: {error_detail}"
+                        except:
+                            error_msg = "Invalid media format or size"
+                        
+                        logger.error(error_msg)
+                        raise FatalError(error_msg)
+                    
+                    else:
+                        # Other errors
+                        error_msg = f"Unexpected media upload response: {response.status_code}"
+                        logger.warning(error_msg)
+                        raise RetryableError(error_msg)
+                        
+                except httpx.TimeoutException:
+                    error_msg = "Media upload timeout"
+                    logger.warning(error_msg)
+                    raise RetryableError(error_msg)
+                
+                except httpx.NetworkError as e:
+                    error_msg = f"Media upload network error: {str(e)}"
+                    logger.warning(error_msg)
+                    raise RetryableError(error_msg)
+                
+        except RetryableError:
+            raise
+        except FatalError:
+            raise
+        except Exception as e:
+            error_msg = f"Unexpected error in X media upload: {str(e)}"
+            logger.error(error_msg)
+            raise RetryableError(error_msg)

@@ -67,8 +67,8 @@ async def execute_workflow(
     db.commit()
     db.refresh(execution)
     
-    # Add to background tasks
-    background_tasks.add_task(run_workflow, execution.id, request.workflow_type, db)
+    # Add to background tasks - don't pass db session to background task
+    background_tasks.add_task(run_workflow, execution.id, request.workflow_type)
     
     return execution
 
@@ -283,8 +283,12 @@ async def create_optimization_workflow_template(
     return template
 
 # Background task function
-async def run_workflow(execution_id: str, workflow_type: str, db: Session):
+async def run_workflow(execution_id: str, workflow_type: str):
     """Background task to run workflow execution"""
+    
+    # Create new database session for background task
+    from backend.db.database import get_db
+    db = next(get_db())
     
     try:
         # Get execution record
@@ -306,7 +310,7 @@ async def run_workflow(execution_id: str, workflow_type: str, db: Session):
             
             # Simulate stage processing time
             import time
-            time.sleep(2)  # In real implementation, this would be actual processing
+            await asyncio.sleep(2)  # Non-blocking sleep in async function
             
             # Simulate stage results
             if stage == "generate_content":
@@ -336,16 +340,23 @@ async def run_workflow(execution_id: str, workflow_type: str, db: Session):
         db.commit()
         
     except Exception as e:
-        # Mark as failed
-        execution.status = "failed"
-        execution.error_message = str(e)
-        execution.completed_at = datetime.utcnow()
-        
-        if execution.started_at:
-            duration = (execution.completed_at - execution.started_at).total_seconds()
-            execution.duration_seconds = int(duration)
-        
-        db.commit()
+        # Mark as failed on error
+        try:
+            execution.status = "failed"
+            execution.error_message = str(e)
+            execution.completed_at = datetime.utcnow()
+            
+            if execution.started_at:
+                duration = (execution.completed_at - execution.started_at).total_seconds()
+                execution.duration_seconds = int(duration)
+            
+            db.commit()
+        except Exception as commit_error:
+            logger.error(f"Failed to commit error state for workflow {execution_id}: {commit_error}")
+            db.rollback()
+    finally:
+        # Always close the database session
+        db.close()
 
 def get_workflow_stages(workflow_type: str) -> List[str]:
     """Get stages for different workflow types"""

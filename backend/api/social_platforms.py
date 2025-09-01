@@ -93,7 +93,11 @@ async def initiate_oauth_connection(
     
     try:
         # Generate OAuth authorization URL based on platform
-        redirect_uri = f"http://localhost:8000/api/social/callback/{platform}"
+        # Use configured backend URL instead of hardcoded localhost
+        from backend.core.config import get_settings
+        settings = get_settings()
+        base_url = settings.backend_url or "http://localhost:8000"  # Fallback for development
+        redirect_uri = f"{base_url}/api/social/callback/{platform}"
         state = f"{current_user.id}:{platform}"
         
         if platform == "twitter":

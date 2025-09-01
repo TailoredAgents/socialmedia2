@@ -470,7 +470,8 @@ class InstagramClient:
             )
             
             # Wait for media processing (Instagram requirement)
-            time.sleep(2)
+            import asyncio
+            await asyncio.sleep(2)  # Non-blocking wait for Instagram processing
             
             # Publish media
             publish_result = self.publish_media(

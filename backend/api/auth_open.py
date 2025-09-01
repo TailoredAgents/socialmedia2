@@ -159,8 +159,9 @@ async def open_register(
     
     # Send verification email in background only if required
     if settings.require_email_verification:
+        from backend.services.email_service_wrapper import safe_send_verification_email
         background_tasks.add_task(
-            email_methods.send_verification_email,
+            safe_send_verification_email,
             new_user.email,
             new_user.username,
             verification_token
@@ -280,9 +281,10 @@ async def resend_verification(
     
     db.commit()
     
-    # Send email in background
+    # Send email in background with error handling
+    from backend.services.email_service_wrapper import safe_send_verification_email
     background_tasks.add_task(
-        email_methods.send_verification_email,
+        safe_send_verification_email,
         user.email,
         user.username,
         verification_token
@@ -320,9 +322,10 @@ async def forgot_password(
     
     db.commit()
     
-    # Send reset email in background
+    # Send reset email in background with error handling
+    from backend.services.email_service_wrapper import safe_send_password_reset_email
     background_tasks.add_task(
-        email_methods.send_password_reset_email,
+        safe_send_password_reset_email,
         user.email,
         user.username,
         reset_token
@@ -543,7 +546,7 @@ async def refresh_token(
             value=new_refresh_token,
             httponly=True,
             secure=True,  # HTTPS only in production
-            samesite="none",  # Allow cross-origin cookies (frontend ↔ api domains)
+            samesite="none" if settings.environment == "production" else "lax",
             max_age=7 * 24 * 60 * 60,  # 7 days in seconds
             path="/"
         )
@@ -627,7 +630,7 @@ async def logout(response: Response):
         path="/",
         httponly=True,
         secure=True,
-        samesite="none"  # Must match the original cookie attributes
+        samesite="none" if settings.environment == "production" else "lax"  # Must match setting logic
     )
     
     return {"message": "Logout successful", "status": "success"}

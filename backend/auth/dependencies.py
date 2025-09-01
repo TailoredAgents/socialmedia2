@@ -47,27 +47,27 @@ async def get_current_user(
 ) -> AuthUser:
     """Get current authenticated user (supports both Auth0 and local JWT)"""
     
-    # Try Auth0 first
+    # Try local JWT first (primary authentication method)
     try:
-        payload = auth0_verifier.verify_token(token)
+        payload = jwt_handler.verify_token(token)
         user_id = payload.get("sub")
         email = payload.get("email")
-        username = payload.get("nickname") or payload.get("preferred_username") or email
+        username = payload.get("username")
         
-        # Ensure user exists in local database
-        await sync_auth0_user(db, user_id, email, username)
-        
-        return AuthUser(user_id=user_id, email=email, username=username, auth_method="auth0")
+        return AuthUser(user_id=user_id, email=email, username=username, auth_method="local")
     
     except HTTPException:
-        # Try local JWT
+        # Fallback to Auth0 for backward compatibility
         try:
-            payload = jwt_handler.verify_token(token)
+            payload = auth0_verifier.verify_token(token)
             user_id = payload.get("sub")
             email = payload.get("email")
-            username = payload.get("username")
+            username = payload.get("nickname") or payload.get("preferred_username") or email
             
-            return AuthUser(user_id=user_id, email=email, username=username, auth_method="local")
+            # Ensure user exists in local database
+            await sync_auth0_user(db, user_id, email, username)
+            
+            return AuthUser(user_id=user_id, email=email, username=username, auth_method="auth0")
         
         except HTTPException:
             raise HTTPException(

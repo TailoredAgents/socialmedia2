@@ -115,17 +115,21 @@ class Auth0UserManager:
     """Manage Auth0 user operations"""
     
     def __init__(self):
-        self.domain = settings.auth0_domain
-        self.client_id = settings.auth0_client_id
-        self.client_secret = settings.auth0_client_secret
+        # Auth0 settings are optional - only initialize if configured
+        self.domain = getattr(settings, 'auth0_domain', None)
+        self.client_id = getattr(settings, 'auth0_client_id', None)
+        self.client_secret = getattr(settings, 'auth0_client_secret', None)
         self._management_token = None
+        
+        # If Auth0 not configured, this manager will be disabled
+        self.enabled = bool(self.domain and self.client_id and self.client_secret)
     
     def get_management_token(self) -> str:
         """Get Auth0 Management API token"""
-        if not all([self.domain, self.client_id, self.client_secret]):
+        if not self.enabled:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Auth0 management API configuration is incomplete"
+                detail="Auth0 management API is not configured"
             )
         
         payload = {
@@ -152,6 +156,12 @@ class Auth0UserManager:
     
     def get_user_info(self, user_id: str) -> Dict[str, Any]:
         """Get user information from Auth0"""
+        if not self.enabled:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Auth0 management API is not configured"
+            )
+        
         token = self.get_management_token()
         
         try:

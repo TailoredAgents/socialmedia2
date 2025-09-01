@@ -102,9 +102,9 @@ class Settings(BaseSettings):
     
     # JWT (Updated with proper naming and production security)
     # CRITICAL: These MUST be set in production environment
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "")
-    encryption_key: str = os.getenv("ENCRYPTION_KEY", "")
-    jwt_secret: str = os.getenv("JWT_SECRET", os.getenv("SECRET_KEY", ""))  # Fallback to SECRET_KEY
+    SECRET_KEY: str = Field(default="", env="SECRET_KEY")
+    encryption_key: str = Field(default="", env="ENCRYPTION_KEY")
+    jwt_secret: str = Field(default="", env="JWT_SECRET")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -126,9 +126,14 @@ class Settings(BaseSettings):
                 logger.warning(f"   Generated temporary key: {self.encryption_key}")
             
             if not self.jwt_secret:
-                logger.error("🚨 CRITICAL: JWT_SECRET must be set in production environment") 
-                logger.error("   Set environment variable: JWT_SECRET=your-jwt-secret")
-                raise ValueError("CRITICAL: JWT_SECRET must be set in production environment")
+                # Use SECRET_KEY as fallback for JWT_SECRET
+                if self.SECRET_KEY:
+                    logger.warning("⚠️  JWT_SECRET not set - using SECRET_KEY as fallback")
+                    self.jwt_secret = self.SECRET_KEY
+                else:
+                    logger.error("🚨 CRITICAL: JWT_SECRET or SECRET_KEY must be set in production") 
+                    logger.error("   Set environment variable: JWT_SECRET=your-jwt-secret")
+                    raise ValueError("CRITICAL: JWT_SECRET must be set in production environment")
     jwt_algorithm: str = "HS256"
     jwt_access_ttl_seconds: int = 900  # 15 minutes (secure for production)
     jwt_refresh_ttl_seconds: int = 604800  # 7 days (reduced from 14 for security)

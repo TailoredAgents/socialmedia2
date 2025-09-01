@@ -26,21 +26,31 @@
 
 AI Social Media Manager is a sophisticated, enterprise-grade platform that leverages artificial intelligence to automate social media content creation, publishing, and analytics across multiple platforms. Built with modern technologies and designed for scalability, it provides comprehensive social media management capabilities for businesses, marketers, and content creators.
 
-**Current Status (August 2025)**: Recently converted from closed registration-key system to open SaaS authentication. Users can now register freely without registration keys.
+**Current Status (August 2025)**: Recently converted from closed registration-key system to open SaaS authentication with custom JWT implementation. Users can now register freely without registration keys. Complete OAuth partner integration system with connection management, rate limiting, and resilient publishing pipeline is now live.
+
+## 🌐 Production Deployment
+
+### Live Instance (Render.com)
+- **Main API**: https://socialmedia-api-wxip.onrender.com (FastAPI backend)
+- **Frontend**: https://socialmedia-frontend-pycc.onrender.com (React app)
+- **Database**: PostgreSQL with pgvector extension
+- **Redis**: Configured for caching and rate limiting
+- **Status**: Production-ready with OAuth partner integrations
 
 ### 🚀 Key Features
 
-- **🤖 AI-Powered Content Generation**: OpenAI GPT-5 and GPT-5 Mini with built-in web search and enhanced reasoning
-- **📱 Multi-Platform Support**: X/Twitter, Instagram, Facebook (LinkedIn removed)
-- **🤖 Autonomous Social Inbox**: AI-powered comment and message reply automation with personality-driven responses
-- **💬 Real-Time Social Monitoring**: WebSocket-based live interaction tracking and response management
-- **🎯 Intelligent Response Templates**: Dynamic template system with variable substitution and escalation rules
+- **🤖 AI-Powered Content Generation**: OpenAI GPT-4o and GPT-4o-mini with built-in web search and enhanced reasoning
+- **🎨 AI Image Generation**: xAI Grok-2 Vision model with streaming generation and platform optimization
+- **📱 Multi-Platform Support**: X/Twitter, Instagram, Facebook via OAuth Partner Integration
+- **🔗 Connection Management**: OAuth-based social media account connections with health monitoring
+- **⚡ Resilient Publishing**: Per-tenant rate limiting, circuit breakers, and connection-based publishing
 - **📊 Advanced Analytics**: Real-time performance tracking and insights
 - **🔍 Enhanced Semantic Memory**: text-embedding-3-large with 3072-dimensional vectors for superior search accuracy
-- **⚡ Automated Workflows**: Intelligent content scheduling and optimization
+- **⚡ Automated Workflows**: Intelligent content scheduling with draft verification gates
 - **🎯 Goal Tracking**: Comprehensive goal management with progress monitoring
-- **🛡️ Open SaaS Security**: JWT authentication with email verification and password reset
-- **📈 Performance Optimization**: Advanced caching, connection pooling, rate limiting
+- **🛡️ Custom JWT Security**: Open SaaS authentication with email verification and password reset
+- **📈 Performance Optimization**: Multi-tenant isolation, Redis caching, connection pooling
+- **🚩 Feature Flag System**: Controlled rollout of new features with environment-based configuration
 
 ---
 
@@ -137,17 +147,23 @@ The platform features a comprehensive **AI-powered social interaction management
 Before setting up the project, you'll need accounts and API access for the following services:
 
 #### 🔐 Authentication Services
-- **Auth0 Account** (Free tier available)
-  - Create an Auth0 application
-  - Configure callback URLs
-  - Get Domain, Client ID, and Client Secret
+- **Custom JWT System** (Built-in)
+  - No external authentication service required
+  - Open SaaS registration and login
+  - Email verification support (optional)
+  - Secure token-based authentication
 
 #### 🤖 AI Services
 - **OpenAI API** 
-  - GPT-5 and GPT-5 Mini access required for advanced content generation
+  - GPT-4o and GPT-4o-mini access required for content generation
   - API key with sufficient credits
   - Pay-as-you-go pricing (see pricing section for details)
   - Source: https://openai.com/pricing
+- **xAI API**
+  - Grok-2 Vision model for advanced image generation
+  - API key required for image creation features
+  - Streaming image generation capabilities
+  - Source: https://x.ai/
 
 #### 📱 Social Media Platform APIs
 
@@ -167,21 +183,20 @@ Before setting up the project, you'll need accounts and API access for the follo
   - Basic tier: Suitable for small to medium applications
   - Pro tier: Full archive search and filtered stream access
 
-#####  API
-- **Cost**: 
-  - Basic API: Free (limited features, personal profile access)
-  - Marketing Developer Platform: Contact  for pricing
-  - Company page posting: Requires partner approval
-  - Source: https://developers..com/
-- **Requirements**:
-  -  Developer Account
-  - App review and approval process
-  - Marketing Developer Platform access for advanced features
-  - Business verification for company page access
-- **Limitations**:
-  - Rate limits vary by endpoint (typically 100-500 requests per day)
-  - Company page posting requires special partnership
-  - Personal profile posting limited to basic text updates
+##### Partner OAuth Integration
+- **Meta (Facebook/Instagram)**:
+  - Facebook Developer Account required
+  - Business verification for advanced features
+  - OAuth 2.0 with PKCE for secure connections
+  - Page and Instagram account selection via Asset Picker
+- **X (Twitter)**:
+  - X Developer Account with OAuth 2.0 enabled
+  - Client ID and Client Secret required
+  - Rate limits: Basic tier $200/month for posting
+- **Connection Management**:
+  - Health monitoring with expiry tracking
+  - Secure token storage with encryption
+  - Automatic reconnection prompts
 
 ##### Instagram Business API
 - **Cost**: 
@@ -346,26 +361,33 @@ DATABASE_URL=postgresql://username:password@localhost:5432/lily_ai_socialmedia
 REDIS_URL=redis://localhost:6379/0
 
 # ================================
-# AUTHENTICATION (Auth0)
+# AUTHENTICATION (Custom JWT)
 # ================================
-AUTH0_DOMAIN=your-tenant.auth0.com
-AUTH0_CLIENT_ID=your_auth0_client_id
-AUTH0_CLIENT_SECRET=your_auth0_client_secret
-AUTH0_AUDIENCE=https://your-api-identifier
-JWT_SECRET_KEY=your-jwt-secret-key
+JWT_SECRET_KEY=your-super-secret-jwt-key-min-32-chars
+JWT_ALGORITHM=HS256
+JWT_EXPIRATION_MINUTES=1440
+# Email verification (optional)
+EMAIL_VERIFICATION_ENABLED=false
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
 
 # ================================
 # AI SERVICES
 # ================================
 OPENAI_API_KEY=sk-your-openai-api-key
-OPENAI_MODEL=gpt-5
-OPENAI_RESEARCH_MODEL=gpt-5-mini
-OPENAI_DEEP_RESEARCH_MODEL=gpt-5
-OPENAI_CATEGORIZATION_MODEL=gpt-4.1-mini
-OPENAI_IMAGE_MODEL=gpt-image-1
+OPENAI_MODEL=gpt-4o
+OPENAI_RESEARCH_MODEL=gpt-4o-mini
+OPENAI_DEEP_RESEARCH_MODEL=gpt-4o
+OPENAI_CATEGORIZATION_MODEL=gpt-4o-mini
 OPENAI_EMBEDDING_MODEL=text-embedding-3-large
 OPENAI_MAX_TOKENS=4000
-CREW_AI_API_KEY=your-crew-ai-key
+
+# xAI Services (for image generation)
+XAI_API_KEY=your-xai-api-key
+XAI_MODEL=grok-2-image
+XAI_BASE_URL=https://api.x.ai/v1
 
 # ================================
 # TWITTER/X API CONFIGURATION
@@ -377,11 +399,20 @@ TWITTER_ACCESS_TOKEN=your_twitter_access_token
 TWITTER_ACCESS_SECRET=your_twitter_access_secret
 
 # ================================
-# LINKEDIN API CONFIGURATION
+# PARTNER OAUTH CONFIGURATION
 # ================================
-LINKEDIN_CLIENT_ID=your__client_id
-LINKEDIN_CLIENT_SECRET=your__client_secret
-LINKEDIN_REDIRECT_URI=http://localhost:3000/callback/
+# Meta (Facebook/Instagram)
+META_APP_ID=your_meta_app_id
+META_APP_SECRET=your_meta_app_secret
+META_REDIRECT_URI=http://localhost:3000/oauth/meta/callback
+
+# X (Twitter) OAuth 2.0
+X_CLIENT_ID=your_x_client_id
+X_CLIENT_SECRET=your_x_client_secret
+X_REDIRECT_URI=http://localhost:3000/oauth/x/callback
+
+# Feature Flags
+VITE_FEATURE_PARTNER_OAUTH=true
 
 # ================================
 # FACEBOOK/INSTAGRAM API CONFIGURATION
@@ -426,41 +457,40 @@ PROMETHEUS_PORT=9090
 # ================================
 # FRONTEND CONFIGURATION
 # ================================
-REACT_APP_API_URL=http://localhost:8000
-REACT_APP_AUTH0_DOMAIN=your-tenant.auth0.com
-REACT_APP_AUTH0_CLIENT_ID=your_auth0_client_id
-REACT_APP_AUTH0_AUDIENCE=https://your-api-identifier
+VITE_API_URL=http://localhost:8000
+VITE_FEATURE_PARTNER_OAUTH=true
+VITE_ENVIRONMENT=development
 ```
 
 ---
 
 ## 🔧 Detailed Setup Instructions
 
-### Auth0 Configuration
+### Partner OAuth Configuration
 
-1. **Create Auth0 Account**
+1. **Meta (Facebook/Instagram) Setup**
    ```bash
-   # Visit https://auth0.com and create a free account
-   # Navigate to Applications > Create Application
-   # Choose "Single Page Application" for frontend
-   # Choose "Machine to Machine" for backend API
+   # Visit developers.facebook.com
+   # Create new app for "Business" use case
+   # Add Facebook Login and Instagram products
+   # Set redirect URI: http://localhost:3000/oauth/meta/callback
+   # Get App ID and App Secret
    ```
 
-2. **Configure Auth0 Application**
+2. **X (Twitter) OAuth 2.0 Setup**
    ```bash
-   # In Auth0 Dashboard:
-   # - Set Allowed Callback URLs: http://localhost:3000/callback
-   # - Set Allowed Logout URLs: http://localhost:3000
-   # - Set Allowed Web Origins: http://localhost:3000
-   # - Enable CORS for localhost:3000
+   # Visit developer.twitter.com
+   # Create new app with OAuth 2.0 enabled
+   # Set redirect URI: http://localhost:3000/oauth/x/callback
+   # Get Client ID and Client Secret
+   # Enable read/write permissions
    ```
 
-3. **Get Auth0 Credentials**
+3. **Feature Flag Configuration**
    ```bash
-   # Copy from Auth0 Dashboard:
-   # - Domain (e.g., your-tenant.auth0.com)
-   # - Client ID
-   # - Client Secret
+   # Enable partner OAuth features
+   VITE_FEATURE_PARTNER_OAUTH=true
+   # This gates the Integrations page and OAuth flows
    ```
 
 ### Social Media API Setup
@@ -648,15 +678,18 @@ docker-compose up -d --scale worker=4
 1. **Create Admin User**
    ```bash
    # Navigate to http://localhost:3000
-   # Click "Sign Up" and create your account via Auth0
+   # Click "Sign Up" and create your account
    # First user is automatically assigned admin role
+   # Email verification is optional (configurable)
    ```
 
 2. **Connect Social Media Accounts**
    ```bash
-   # In the dashboard, go to Settings > Integrations
-   # Connect each platform using OAuth flows
-   # Test connections with sample posts
+   # Navigate to Integrations page (feature flag required)
+   # Click "Connect" for Meta (Facebook/Instagram)
+   # Click "Connect" for X (Twitter)
+   # View connection health and manage existing connections
+   # Test connections with draft content publishing
    ```
 
 3. **Configure AI Settings**
@@ -942,6 +975,7 @@ systemctl restart ai-social-media
 |---------|-----------|------------|------------|--------|
 | **X/Twitter API** | $0 (100 reads, 500 writes/mo) | $200/month (15K reads, 50K writes/mo) | $5,000/month (1M reads, 300K writes/mo) | [X API Pricing](https://docs.x.com/x-api) |
 | **OpenAI API** | Pay-as-you-go | ~$20-100/month* | ~$100-1000/month* | [OpenAI Pricing](https://platform.openai.com/pricing) |
+| **xAI API** | Pay-as-you-go | ~$10-50/month* | ~$50-500/month* | [xAI Pricing](https://x.ai/pricing) |
 | **Auth0** | Free (25K external users) | $0.10/user/month (B2C Essentials) | $0.24+/user/month (Professional) | [Auth0 Pricing](https://auth0.com/pricing) |
 | ** API** | Free (basic personal) | Contact  | Contact  | [ Developers](https://developers..com/) |
 | **Facebook/Instagram API** | Free | Free | Free (with business verification) | [Meta for Developers](https://developers.facebook.com/docs/graph-api) |
@@ -951,14 +985,15 @@ systemctl restart ai-social-media
 | **Redis Cache** | $0 (local development) | $15/month (managed Redis) | $50+/month (Production Redis) | [DigitalOcean Redis](https://www.digitalocean.com/pricing/managed-databases) |
 | **Total Estimated** | ~$0-20/month | ~$274-374/month** | ~$1,395+/month | |
 
-*OpenAI costs are usage-based and can vary significantly:
-- GPT-5 models: $0.02-0.08 per 1K tokens (varies by model)
-- GPT-5 Mini: $0.001-0.005 per 1K tokens
-- Text embeddings: $0.0001 per 1K tokens
+*AI API costs are usage-based and can vary significantly:
+- GPT-4o: $0.005-0.015 per 1K tokens (input/output)
+- GPT-4o-mini: $0.0001-0.0006 per 1K tokens
+- xAI Grok-2 Vision: $0.01-0.03 per image generation
+- Text embeddings: $0.00013 per 1K tokens
 - Costs depend heavily on usage volume and model selection
 
 **Budget-Friendly Setup**: 
-- Start with X Free tier + OpenAI GPT-5 Mini + local development = ~$20-50/month
+- Start with X Free tier + OpenAI GPT-4o-mini + local development = ~$20-50/month
 - Basic production setup with X Basic tier = ~$250-350/month
 
 **Note: X API pricing increased significantly in 2024. The Basic tier now costs $200/month (previously $100).
@@ -1096,8 +1131,9 @@ This software is protected under:
 
 ## 🙏 Acknowledgments
 
-- **OpenAI** for GPT-5 and GPT-5 Mini API and AI capabilities
-- **Auth0** for authentication services
+- **OpenAI** for GPT-4o and GPT-4o-mini API and AI capabilities
+- **xAI** for Grok-2 Vision image generation capabilities
+- **Custom JWT System** for secure authentication
 - **FastAPI** for the high-performance backend framework
 - **React** for the modern frontend framework
 - **All social media platforms** for providing developer APIs

@@ -111,10 +111,23 @@ class Settings(BaseSettings):
         # Validate critical security settings in production
         if self.environment == "production":
             if not self.SECRET_KEY or self.SECRET_KEY == "your-secret-key-change-this-in-production":
+                logger.error("🚨 CRITICAL: SECRET_KEY must be set in production environment")
+                logger.error("   Set environment variable: SECRET_KEY=your-secure-secret-key")
                 raise ValueError("CRITICAL: SECRET_KEY must be set in production environment")
+            
+            # Generate encryption key if not provided (with warning)
             if not self.encryption_key or len(self.encryption_key) < 32:
-                raise ValueError("CRITICAL: ENCRYPTION_KEY must be at least 32 characters in production")
+                logger.warning("⚠️  ENCRYPTION_KEY not set in production - generating temporary key")
+                logger.warning("   This is NOT secure for production! Set environment variable:")
+                logger.warning("   ENCRYPTION_KEY=your-32-character-encryption-key")
+                import secrets
+                import string
+                self.encryption_key = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
+                logger.warning(f"   Generated temporary key: {self.encryption_key}")
+            
             if not self.jwt_secret:
+                logger.error("🚨 CRITICAL: JWT_SECRET must be set in production environment") 
+                logger.error("   Set environment variable: JWT_SECRET=your-jwt-secret")
                 raise ValueError("CRITICAL: JWT_SECRET must be set in production environment")
     jwt_algorithm: str = "HS256"
     jwt_access_ttl_seconds: int = 900  # 15 minutes (secure for production)

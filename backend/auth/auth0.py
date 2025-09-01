@@ -14,13 +14,23 @@ class Auth0Verifier:
     """Auth0 JWT token verifier"""
     
     def __init__(self):
-        self.domain = settings.auth0_domain
-        self.audience = settings.auth0_audience
+        # Auth0 settings are optional - only initialize if configured
+        self.domain = getattr(settings, 'auth0_domain', None)
+        self.audience = getattr(settings, 'auth0_audience', None)
         self.algorithm = "RS256"
         self._jwks = None
+        
+        # If Auth0 not configured, this verifier will be disabled
+        self.enabled = bool(self.domain and self.audience)
     
     def get_jwks(self) -> Dict[str, Any]:
         """Get JSON Web Key Set from Auth0"""
+        if not self.enabled:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Auth0 authentication is not configured"
+            )
+        
         if self._jwks is None:
             try:
                 response = requests.get(f"https://{self.domain}/.well-known/jwks.json")
@@ -35,6 +45,12 @@ class Auth0Verifier:
     
     def get_rsa_key(self, token: str) -> Optional[Dict[str, Any]]:
         """Get RSA key for token verification"""
+        if not self.enabled:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Auth0 authentication is not configured"
+            )
+        
         try:
             unverified_header = jwt.get_unverified_header(token)
             jwks = self.get_jwks()
@@ -57,10 +73,10 @@ class Auth0Verifier:
     
     def verify_token(self, token: str) -> Dict[str, Any]:
         """Verify Auth0 JWT token and return payload"""
-        if not self.domain or not self.audience:
+        if not self.enabled:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Auth0 configuration is incomplete"
+                detail="Auth0 authentication is not configured"
             )
         
         rsa_key = self.get_rsa_key(token)

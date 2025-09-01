@@ -57,17 +57,25 @@ async def get_current_user(
         return AuthUser(user_id=user_id, email=email, username=username, auth_method="local")
     
     except HTTPException:
-        # Fallback to Auth0 for backward compatibility
+        # Fallback to Auth0 for backward compatibility (if configured)
         try:
-            payload = auth0_verifier.verify_token(token)
-            user_id = payload.get("sub")
-            email = payload.get("email")
-            username = payload.get("nickname") or payload.get("preferred_username") or email
-            
-            # Ensure user exists in local database
-            await sync_auth0_user(db, user_id, email, username)
-            
-            return AuthUser(user_id=user_id, email=email, username=username, auth_method="auth0")
+            if auth0_verifier.enabled:
+                payload = auth0_verifier.verify_token(token)
+                user_id = payload.get("sub")
+                email = payload.get("email")
+                username = payload.get("nickname") or payload.get("preferred_username") or email
+                
+                # Ensure user exists in local database
+                await sync_auth0_user(db, user_id, email, username)
+                
+                return AuthUser(user_id=user_id, email=email, username=username, auth_method="auth0")
+            else:
+                # Auth0 not configured, skip fallback
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid authentication token",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
         
         except HTTPException:
             raise HTTPException(

@@ -183,14 +183,18 @@ async def open_register(
         )
     
     # Set refresh token in HTTP-only cookie
+    # Use 'lax' for same-site protection while allowing navigation
+    # 'none' requires Secure context and may be blocked by browsers
+    samesite_mode = "lax" if settings.environment == "production" else "none"
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,  # HTTPS only in production
-        samesite="none",  # Allow cross-origin cookies (frontend ↔ api domains)
+        secure=settings.environment == "production",  # HTTPS only in production
+        samesite=samesite_mode,
         max_age=7 * 24 * 60 * 60,  # 7 days in seconds
-        path="/"
+        path="/",
+        domain=None  # Let browser handle domain matching
     )
     
     logger.info(f"New user registered: {new_user.email} (First user: {is_first_user})")
@@ -403,14 +407,18 @@ async def login(
     )
     
     # Set refresh token in HTTP-only cookie
+    # Use 'lax' for same-site protection while allowing navigation
+    # 'none' requires Secure context and may be blocked by browsers
+    samesite_mode = "lax" if settings.environment == "production" else "none"
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,  # HTTPS only in production
-        samesite="none",  # Allow cross-origin cookies (frontend ↔ api domains)
+        secure=settings.environment == "production",  # HTTPS only in production
+        samesite=samesite_mode,
         max_age=7 * 24 * 60 * 60,  # 7 days in seconds
-        path="/"
+        path="/",
+        domain=None  # Let browser handle domain matching
     )
     
     logger.info(f"User logged in: {user.email} (Verified: {user.email_verified})")

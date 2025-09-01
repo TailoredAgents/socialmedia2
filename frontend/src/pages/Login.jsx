@@ -37,17 +37,29 @@ const Login = () => {
       setIsSubmitting(true)
       const response = await login({ email, password })
       
-      // Check if email is verified
-      if (response && !response.email_verified) {
-        setShowEmailVerificationBanner(true)
+      // Check if login was successful
+      if (response && response.access_token) {
+        // Check if email is verified
+        if (!response.email_verified) {
+          setShowEmailVerificationBanner(true)
+        }
+        
+        // Force navigation after successful login
+        // The useEffect might not trigger if isAuthenticated doesn't update immediately
+        setTimeout(() => {
+          navigate(from, { replace: true })
+        }, 100)
       }
-      
-      // Navigation is handled by the useEffect above
     } catch (error) {
       // Error is handled by AuthContext and displayed below
       console.error('Login failed:', error)
-    } finally {
+      // Ensure form is re-enabled on error
       setIsSubmitting(false)
+    } finally {
+      // Only set to false if not navigating
+      if (!isAuthenticated) {
+        setIsSubmitting(false)
+      }
     }
   }
 

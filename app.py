@@ -116,8 +116,8 @@ if not security_middleware_success:
                 "https://socialmedia-frontend-pycc.onrender.com",
                 "https://socialmedia-api-wxip.onrender.com",
                 "https://www.lily-ai-socialmedia.com",
-                "https://lily-ai-socialmedia.com",
-                "http://localhost:3000"
+                "https://lily-ai-socialmedia.com"
+                # REMOVED localhost from production CORS - security risk
             ]
             logger.warning("No CORS environment variables found, using current production domains as fallback")
         

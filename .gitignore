@@ -111,7 +111,11 @@ dist/
 *.local
 
 # Environment variables - REMOVED FOR DEPLOYMENT
-# .env files are now tracked in git
+# Environment variables - NEVER commit these!
+.env
+.env.*
+!.env.example
+!.env.production.template
 
 # Database
 *.db

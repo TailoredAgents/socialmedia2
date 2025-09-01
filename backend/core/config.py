@@ -50,23 +50,23 @@ class Settings(BaseSettings):
     
     def get_database_url(self) -> str:
         """Get database URL - POSTGRESQL ONLY, NO SQLITE"""
-        # ALWAYS use PostgreSQL in production
-        if self.environment == "production" or os.getenv("RENDER"):
-            return "postgresql://socialmedia:BbsIYQtjBnhKwRL3F9kXbv1wrtsVxuTg@dpg-d2ln7eer433s739509lg-a/socialmedia_uq72?sslmode=require"
-        
         # Check for DATABASE_URL environment variable
         db_url = self.database_url or os.getenv("DATABASE_URL")
         
-        # NO SQLITE FALLBACK - PostgreSQL only!
+        # CRITICAL: No database URL configured
         if not db_url:
-            # Default to PostgreSQL even in development
-            logger.warning("No DATABASE_URL set, using hardcoded PostgreSQL URL")
-            return "postgresql://socialmedia:BbsIYQtjBnhKwRL3F9kXbv1wrtsVxuTg@dpg-d2ln7eer433s739509lg-a/socialmedia_uq72?sslmode=require"
+            error_msg = "CRITICAL: DATABASE_URL environment variable is not set. Application cannot start without database configuration."
+            logger.error(error_msg)
+            if self.environment == "production":
+                raise ValueError(error_msg)
+            # Only allow local PostgreSQL in development
+            return "postgresql://postgres:postgres@localhost:5432/socialmedia_dev"
         
         # Reject SQLite URLs completely
         if db_url.startswith("sqlite"):
-            logger.error("SQLite is not supported! Forcing PostgreSQL")
-            return "postgresql://socialmedia:BbsIYQtjBnhKwRL3F9kXbv1wrtsVxuTg@dpg-d2ln7eer433s739509lg-a/socialmedia_uq72?sslmode=require"
+            error_msg = "SQLite is not supported! Please configure PostgreSQL database."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         
         # Add SSL mode for PostgreSQL if not already present
         if db_url.startswith("postgresql://") and "sslmode" not in db_url:
@@ -101,9 +101,21 @@ class Settings(BaseSettings):
         return missing_fields
     
     # JWT (Updated with proper naming and production security)
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
-    encryption_key: str = os.getenv("ENCRYPTION_KEY", "your-32-byte-encryption-key-change-this")
-    jwt_secret: str = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")  # Use same as SECRET_KEY
+    # CRITICAL: These MUST be set in production environment
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "")
+    encryption_key: str = os.getenv("ENCRYPTION_KEY", "")
+    jwt_secret: str = os.getenv("JWT_SECRET", os.getenv("SECRET_KEY", ""))  # Fallback to SECRET_KEY
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Validate critical security settings in production
+        if self.environment == "production":
+            if not self.SECRET_KEY or self.SECRET_KEY == "your-secret-key-change-this-in-production":
+                raise ValueError("CRITICAL: SECRET_KEY must be set in production environment")
+            if not self.encryption_key or len(self.encryption_key) < 32:
+                raise ValueError("CRITICAL: ENCRYPTION_KEY must be at least 32 characters in production")
+            if not self.jwt_secret:
+                raise ValueError("CRITICAL: JWT_SECRET must be set in production environment")
     jwt_algorithm: str = "HS256"
     jwt_access_ttl_seconds: int = 900  # 15 minutes (secure for production)
     jwt_refresh_ttl_seconds: int = 604800  # 7 days (reduced from 14 for security)

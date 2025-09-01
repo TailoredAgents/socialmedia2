@@ -35,9 +35,10 @@ class ResearchScheduler:
     
     def __init__(self):
         """Initialize Research Scheduler"""
-        self.config_path = Path("data/research_config")
-        self.schedules_path = Path("data/research_schedules")
-        self.logs_path = Path("data/research_logs")
+        project_root = Path(__file__).parent.parent.parent
+        self.config_path = project_root / "data/research_config"
+        self.schedules_path = project_root / "data/research_schedules"
+        self.logs_path = project_root / "data/research_logs"
         
         # Create directories
         for path in [self.config_path, self.schedules_path, self.logs_path]:

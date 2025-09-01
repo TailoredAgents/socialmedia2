@@ -109,51 +109,73 @@ const LandingPage = () => {
 
   const pricingTiers = [
     {
-      name: "Free",
-      price: "$0",
-      period: "forever",
-      description: "Perfect for trying out Lily AI",
+      name: "Starter",
+      price: "$74",
+      period: "month",
+      annualPrice: "$59",
+      yearlyPrice: "$708",
+      description: "Ideal for solopreneurs or small teams starting with hands-off social management",
       features: [
-        "3 social media accounts",
-        "10 AI posts per month",
-        "Basic analytics",
-        "Email support"
+        "Up to 5 social profiles (X, Meta, LinkedIn, TikTok, YouTube, Threads)",
+        "Basic AI content generation (GPT-4o-mini, limited Grok-2 Vision)",
+        "Limited autopilot mode with daily automated posts",
+        "Social inbox monitoring (no AI responses)",
+        "Basic analytics with AI optimization recommendations",
+        "Content repurposing and recycling tools",
+        "Multi-language support (up to 10 languages)",
+        "Customizable dashboards and UI themes",
+        "Automated backups and recovery",
+        "1 user account"
       ],
-      cta: "Start Free",
-      popular: false
+      cta: "Start 14-Day Trial",
+      popular: false,
+      savings: "Save 20% with annual billing ($59/mo)"
     },
     {
-      name: "Professional",
-      price: "$49",
-      period: "month",
-      description: "For growing businesses and marketing teams",
+      name: "Pro",
+      price: "$186",
+      period: "month", 
+      annualPrice: "$149",
+      yearlyPrice: "$1,788",
+      description: "Perfect for growing SMBs and agencies needing scalable, autonomous features",
       features: [
-        "10 social media accounts",
-        "Unlimited AI posts",
-        "Full autopilot mode",
-        "Advanced analytics",
-        "Priority support",
-        "Custom AI training"
+        "Unlimited social profiles across all platforms",
+        "Full AI suite (GPT-4o, Grok-2 Vision, Synthesia/Runway ML videos)",
+        "Enhanced autopilot mode with auto-ad campaigns & trend forecasting",
+        "AI-powered social inbox responses and chatbots",
+        "Advanced analytics with competitor analysis & ROI tracking",
+        "CRM integrations (Salesforce, HubSpot, Shopify)",
+        "Third-party tool integrations (Zapier-like automation)",
+        "Mobile app for on-the-go management",
+        "Enhanced collaboration tools & approval workflows",
+        "Up to 5 users and 5 workspaces"
       ],
       cta: "Start 14-Day Trial",
       popular: true,
-      savings: "Save $120/year with annual billing"
+      savings: "Save 20% with annual billing ($149/mo)"
     },
     {
       name: "Enterprise",
-      price: "$299",
+      price: "$624",
       period: "month",
-      description: "For large organizations with custom needs",
+      annualPrice: "$499", 
+      yearlyPrice: "$5,988",
+      description: "Designed for high-scale operations with enterprise-grade security and customization",
       features: [
-        "Unlimited accounts",
-        "White-label option",
-        "Dedicated AI model",
-        "API access",
-        "Dedicated success manager",
-        "Custom integrations"
+        "All Pro features with unlimited users & workspaces",
+        "Complete autopilot with predictive analytics integration",
+        "Influencer & affiliate management integrations",
+        "Auto-scaling infrastructure for high-volume use",
+        "Advanced audit & compliance tools (CCPA/GDPR)",
+        "White-labeling and custom API access",
+        "Priority support with dedicated account manager",
+        "Custom training sessions included",
+        "Unlimited add-ons and integrations",
+        "Enterprise-grade security & customization"
       ],
       cta: "Contact Sales",
-      popular: false
+      popular: false,
+      savings: "Save 20% with annual billing ($499/mo)"
     }
   ]
 

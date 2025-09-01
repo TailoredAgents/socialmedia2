@@ -116,10 +116,11 @@ class DeepResearchAgent:
             "deep": {"sources": 100, "analysis_depth": "exhaustive"}
         }
         
-        # Knowledge base paths
-        self.knowledge_base_path = Path("data/knowledge_base")
-        self.research_cache_path = Path("data/research_cache")
-        self.intelligence_reports_path = Path("data/intelligence_reports")
+        # Knowledge base paths with absolute paths
+        project_root = Path(__file__).parent.parent.parent
+        self.knowledge_base_path = project_root / "data/knowledge_base"
+        self.research_cache_path = project_root / "data/research_cache"
+        self.intelligence_reports_path = project_root / "data/intelligence_reports"
         
         # Create directories
         for path in [self.knowledge_base_path, self.research_cache_path, self.intelligence_reports_path]:

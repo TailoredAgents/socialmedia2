@@ -186,6 +186,14 @@ class Settings(BaseSettings):
     meta_graph_version: str = Field(default="v18.0", env="META_GRAPH_VERSION")
     token_encryption_key: str = Field(default="", env="TOKEN_ENCRYPTION_KEY")
     
+    # Phase 8: Rate Limiting & Circuit Breaker Configuration
+    publish_bucket_capacity: int = Field(default=60, env="PUBLISH_BUCKET_CAPACITY")
+    publish_bucket_window_s: int = Field(default=60, env="PUBLISH_BUCKET_WINDOW_S")
+    meta_publish_max_rps: int = Field(default=1, env="META_PUBLISH_MAX_RPS")
+    x_publish_max_rps: int = Field(default=1, env="X_PUBLISH_MAX_RPS")
+    cb_fail_threshold: int = Field(default=5, env="CB_FAIL_THRESHOLD")
+    cb_cooldown_s: int = Field(default=120, env="CB_COOLDOWN_S")
+    
     # File Upload Configuration
     upload_dir: str = Field(default="uploads", env="UPLOAD_DIR")
     max_file_size: int = Field(default=10 * 1024 * 1024, env="MAX_FILE_SIZE")  # 10MB default

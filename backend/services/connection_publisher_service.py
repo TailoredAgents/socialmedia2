@@ -1,6 +1,7 @@
 """
-Connection-based publishing service for Phase 7
+Connection-based publishing service for Phase 7/8
 Publishes content using SocialConnection tokens instead of user tokens
+Updated for Phase 8: Celery integration and resilient publishing
 """
 import asyncio
 import hashlib
@@ -231,6 +232,53 @@ class ConnectionPublisherService:
         """Generate idempotency key for Redis/database deduplication"""
         time_key = scheduled_time.isoformat() if scheduled_time else "immediate"
         return f"content_schedule:{org_id}:{connection_id}:{content_hash}:{time_key}"
+    
+    def enqueue_publish_task(
+        self,
+        connection_id: str,
+        content: str,
+        media_urls: List[str],
+        content_hash: str,
+        scheduled_time: Optional[datetime] = None,
+        idempotency_key: Optional[str] = None,
+        delay_s: float = 0
+    ) -> str:
+        """
+        Enqueue a publish task for Phase 8 resilient publishing
+        
+        Args:
+            connection_id: UUID of the SocialConnection
+            content: Content to publish
+            media_urls: List of media URLs
+            content_hash: Content hash for idempotency
+            scheduled_time: When content was scheduled
+            idempotency_key: Unique key for this schedule
+            delay_s: Delay before executing task
+            
+        Returns:
+            Celery task ID
+        """
+        try:
+            from backend.tasks.publish_tasks import enqueue_publish_task
+            
+            task_id = enqueue_publish_task(
+                connection_id=connection_id,
+                content=content,
+                media_urls=media_urls,
+                content_hash=content_hash,
+                scheduled_time=scheduled_time,
+                idempotency_key=idempotency_key,
+                delay_s=delay_s
+            )
+            
+            logger.info(f"Enqueued publish task {task_id} for connection {connection_id}")
+            return task_id
+            
+        except ImportError:
+            # Celery not available - fall back to direct publishing
+            logger.warning("Celery not available, falling back to direct publishing")
+            # This would call the existing publish_to_connection method
+            raise NotImplementedError("Direct publishing fallback not implemented")
 
 
 # Singleton instance

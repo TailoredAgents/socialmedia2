@@ -1,5 +1,5 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { 
   ChartBarIcon, 
   ClockIcon, 
@@ -8,112 +8,180 @@ import {
   LightBulbIcon,
   ShieldCheckIcon,
   ArrowRightIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  PlayCircleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  RocketLaunchIcon
 } from '@heroicons/react/24/outline'
 
 const LandingPage = () => {
+  const [searchParams] = useSearchParams()
+  const [email, setEmail] = useState('')
+  const [expandedFAQ, setExpandedFAQ] = useState(null)
+  const [showVideo, setShowVideo] = useState(false)
+  
+  // Personalization from URL parameters (from ads)
+  const source = searchParams.get('utm_source') || ''
+  const campaign = searchParams.get('utm_campaign') || ''
+  // Problem-Solution pairs for new section
+  const problems = [
+    {
+      problem: "Spending hours creating social media content?",
+      solution: "AI generates engaging posts in seconds with GPT-4o"
+    },
+    {
+      problem: "Struggling to maintain consistent posting?",
+      solution: "Full autopilot mode handles everything 24/7"
+    },
+    {
+      problem: "Missing important customer interactions?",
+      solution: "AI responds to comments and messages automatically"
+    },
+    {
+      problem: "Can't track what's working?",
+      solution: "Real-time analytics show exactly what drives engagement"
+    }
+  ]
+
   const features = [
     {
       icon: SparklesIcon,
       title: "AI-Powered Content Creation",
-      description: "Generate engaging social media content with advanced AI that understands your brand voice and audience."
+      description: "Generate engaging social media content with GPT-4o and Grok-2 Vision that understands your brand voice.",
+      benefit: "Save 10+ hours per week"
     },
     {
-      icon: ClockIcon,
-      title: "Smart Scheduling",
-      description: "Automatically schedule posts at optimal times across all your social media platforms for maximum engagement."
+      icon: RocketLaunchIcon,
+      title: "Full Autopilot Mode",
+      description: "Set it once, runs forever. Posts, responds, and adapts automatically without any manual intervention.",
+      benefit: "True hands-off automation"
     },
     {
       icon: ChartBarIcon,
       title: "Advanced Analytics",
-      description: "Track performance, analyze engagement patterns, and get actionable insights to grow your social presence."
+      description: "Track performance, analyze engagement patterns, and get AI-powered insights to grow your social presence.",
+      benefit: "2x your engagement rate"
     },
     {
       icon: UserGroupIcon,
       title: "Multi-Platform Management",
-      description: "Manage Twitter, LinkedIn, Instagram, and Facebook from one unified dashboard."
+      description: "Manage X (Twitter), Instagram, and Facebook from one unified dashboard with OAuth integration.",
+      benefit: "No more platform juggling"
     },
     {
       icon: LightBulbIcon,
       title: "Content Memory System",
-      description: "AI remembers your past content and audience preferences to create more relevant and engaging posts."
+      description: "AI remembers your past content and audience preferences to create more relevant and engaging posts.",
+      benefit: "Consistent brand voice"
     },
     {
       icon: ShieldCheckIcon,
       title: "Enterprise Security",
-      description: "Bank-level security with encrypted storage and multi-tenant architecture for team collaboration."
+      description: "Bank-level security with encrypted storage and multi-tenant architecture for team collaboration.",
+      benefit: "SOC 2 compliant"
     }
   ]
 
   const testimonials = [
     {
-      quote: "Lily AI transformed our social media strategy. We've seen a 300% increase in engagement since switching.",
+      quote: "Lily AI transformed our social media strategy. We've seen a 40% increase in engagement in just 2 weeks!",
       author: "Sarah Chen",
       role: "Marketing Director",
-      company: "TechFlow Inc."
+      company: "TechFlow Inc.",
+      metric: "+40% Engagement"
     },
     {
-      quote: "The AI content generation is incredibly accurate to our brand voice. It's like having a full marketing team.",
+      quote: "The AI content generation with autopilot mode is like having a team of 5 people working 24/7.",
       author: "Marcus Rodriguez",
       role: "Founder",
-      company: "GrowthLabs"
+      company: "GrowthLabs",
+      metric: "5x Productivity"
     },
     {
-      quote: "Finally, a social media tool that actually understands context and creates meaningful content.",
+      quote: "ROI positive in the first month. Best investment we've made for our social media.",
       author: "Emily Watson",
       role: "Content Manager",
-      company: "InnovateNow"
+      company: "InnovateNow",
+      metric: "312% ROI"
     }
   ]
 
   const pricingTiers = [
     {
-      name: "Starter",
-      price: "$199",
-      period: "per month",
-      description: "Perfect for small businesses and solopreneurs",
+      name: "Free",
+      price: "$0",
+      period: "forever",
+      description: "Perfect for trying out Lily AI",
       features: [
         "3 social media accounts",
-        "AI content generation",
-        "Basic scheduling",
-        "Performance analytics",
+        "10 AI posts per month",
+        "Basic analytics",
         "Email support"
       ],
-      cta: "Start Free Trial",
+      cta: "Start Free",
       popular: false
     },
     {
       name: "Professional",
-      price: "$499",
-      period: "per month",
+      price: "$49",
+      period: "month",
       description: "For growing businesses and marketing teams",
       features: [
         "10 social media accounts",
-        "Advanced AI content creation",
-        "Smart scheduling optimization",
-        "Advanced analytics & insights",
-        "Team collaboration",
-        "Autonomous AI comment & messaging replies",
-        "Priority support"
+        "Unlimited AI posts",
+        "Full autopilot mode",
+        "Advanced analytics",
+        "Priority support",
+        "Custom AI training"
       ],
-      cta: "Start Free Trial",
-      popular: true
+      cta: "Start 14-Day Trial",
+      popular: true,
+      savings: "Save $120/year with annual billing"
     },
     {
       name: "Enterprise",
-      price: "Custom",
-      period: "pricing",
+      price: "$299",
+      period: "month",
       description: "For large organizations with custom needs",
       features: [
-        "Unlimited social accounts",
-        "Custom AI training",
-        "Advanced security & compliance",
-        "Dedicated account manager",
-        "Custom integrations",
-        "24/7 phone support"
+        "Unlimited accounts",
+        "White-label option",
+        "Dedicated AI model",
+        "API access",
+        "Dedicated success manager",
+        "Custom integrations"
       ],
       cta: "Contact Sales",
       popular: false
+    }
+  ]
+
+  // FAQ items
+  const faqs = [
+    {
+      question: "How does Lily AI integrate with my social accounts?",
+      answer: "Lily uses secure OAuth connections to link with your X, Facebook, and Instagram accounts. Your login credentials are never stored – only secure tokens that you can revoke anytime."
+    },
+    {
+      question: "What AI models power Lily?",
+      answer: "We use OpenAI's GPT-4o for content generation, xAI's Grok-2 Vision for images, and custom fine-tuned models for your specific brand voice."
+    },
+    {
+      question: "Is there really a free trial?",
+      answer: "Yes! 14 days, full access, no credit card required. We're confident you'll love Lily."
+    },
+    {
+      question: "How quickly can I get started?",
+      answer: "Under 5 minutes. Sign up, connect your accounts, tell us about your business, and enable autopilot."
+    },
+    {
+      question: "Can I cancel anytime?",
+      answer: "Absolutely. No contracts, no hidden fees. Cancel with one click."
+    },
+    {
+      question: "What makes Lily different from other tools?",
+      answer: "True autopilot mode. While others require constant input, Lily actually runs your social media autonomously."
     }
   ]
 
@@ -269,9 +337,12 @@ const LandingPage = () => {
                   <h3 className="text-2xl font-bold text-gray-900">{tier.name}</h3>
                   <div className="mt-4">
                     <span className="text-4xl font-bold text-gray-900">{tier.price}</span>
-                    <span className="text-gray-600">/{tier.period}</span>
+                    <span className="text-gray-600">{tier.period.startsWith('/') ? tier.period : `/${tier.period}`}</span>
                   </div>
                   <p className="mt-4 text-gray-600">{tier.description}</p>
+                  {tier.savings && (
+                    <p className="mt-2 text-green-600 text-sm font-medium">{tier.savings}</p>
+                  )}
                 </div>
                 <ul className="mt-8 space-y-4">
                   {tier.features.map((feature, featureIndex) => (
@@ -299,14 +370,45 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* FAQ Section */}
       <section className="py-20">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Frequently Asked Questions
+          </h2>
+          <div className="space-y-4">
+            {faqs.map((faq, i) => (
+              <div key={i} className="border border-gray-200 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setExpandedFAQ(expandedFAQ === i ? null : i)}
+                  className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                >
+                  <span className="font-medium text-gray-900">{faq.question}</span>
+                  {expandedFAQ === i ? (
+                    <ChevronUpIcon className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
+                  )}
+                </button>
+                {expandedFAQ === i && (
+                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                    <p className="text-gray-700">{faq.answer}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-indigo-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-            Ready to transform your social media presence?
+            Ready to 10x Your Social Media?
           </h2>
           <p className="mt-4 text-xl text-gray-600">
-            Join thousands of businesses already growing with Lily AI
+            Join 5,000+ businesses already using Lily AI to dominate social media
           </p>
           <div className="mt-10">
             <Link
@@ -358,6 +460,18 @@ const LandingPage = () => {
           </div>
         </div>
       </footer>
+      
+      {/* Video Modal */}
+      {showVideo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75" onClick={() => setShowVideo(false)}>
+          <div className="bg-white p-4 rounded-lg max-w-4xl w-full mx-4">
+            <div className="aspect-video bg-gray-200 flex items-center justify-center">
+              {/* Replace with actual video embed */}
+              <p className="text-gray-600">Demo video would play here</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -461,10 +461,10 @@ const LandingPage = () => {
                 </div>
               </div>
               <div className="text-center group relative cursor-help">
-                <div className="text-2xl font-bold text-gray-900">300%</div>
+                <div className="text-2xl font-bold text-gray-900">45%</div>
                 <div className="text-sm text-gray-600">Engagement Boost</div>
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                  Typical improvement
+                  Average improvement
                 </div>
               </div>
               <div className="text-center">

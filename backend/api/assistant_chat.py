@@ -17,7 +17,7 @@ from backend.core.database import get_db
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(prefix="/api", tags=["assistant_chat"])
 settings = get_settings()
 
 # Initialize OpenAI client

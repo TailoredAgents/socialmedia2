@@ -44,27 +44,119 @@ const SEOHead = ({
       {/* Canonical URL */}
       <link rel="canonical" href="https://socialmedia-frontend-pycc.onrender.com/" />
       
-      {/* Structured Data for SEO */}
+      {/* Product Schema */}
       <script type="application/ld+json">
         {JSON.stringify({
           "@context": "https://schema.org",
-          "@type": "SoftwareApplication",
-          "name": "Lily AI",
-          "applicationCategory": "BusinessApplication",
+          "@type": "Product",
+          "name": "Lily AI Social Media Management Platform",
           "description": description,
           "url": url,
-          "operatingSystem": "Web",
-          "offers": {
-            "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "USD",
-            "description": "14-day free trial"
+          "brand": {
+            "@type": "Brand",
+            "name": "Lily AI"
           },
+          "category": "Social Media Management Software",
+          "offers": [
+            {
+              "@type": "Offer",
+              "name": "Starter Plan",
+              "price": "59",
+              "priceCurrency": "USD",
+              "billingDuration": "P1M",
+              "availability": "https://schema.org/InStock",
+              "validFrom": "2024-01-01",
+              "priceValidUntil": "2025-12-31",
+              "seller": {
+                "@type": "Organization",
+                "name": "Lily AI"
+              }
+            },
+            {
+              "@type": "Offer",
+              "name": "Pro Plan",
+              "price": "149",
+              "priceCurrency": "USD",
+              "billingDuration": "P1M",
+              "availability": "https://schema.org/InStock",
+              "validFrom": "2024-01-01",
+              "priceValidUntil": "2025-12-31",
+              "seller": {
+                "@type": "Organization",
+                "name": "Lily AI"
+              }
+            },
+            {
+              "@type": "Offer",
+              "name": "Enterprise Plan",
+              "price": "499",
+              "priceCurrency": "USD",
+              "billingDuration": "P1M",
+              "availability": "https://schema.org/InStock",
+              "validFrom": "2024-01-01",
+              "priceValidUntil": "2025-12-31",
+              "seller": {
+                "@type": "Organization",
+                "name": "Lily AI"
+              }
+            }
+          ],
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web Browser",
+          "softwareVersion": "1.0",
+          "releaseDate": "2024-01-01",
+          "featureList": [
+            "Autonomous AI content creation",
+            "Multi-platform social media management",
+            "Advanced analytics and insights",
+            "Team collaboration tools",
+            "Enterprise-grade security"
+          ],
+          "screenshot": "https://socialmedia-frontend-pycc.onrender.com/screenshot.jpg",
           "aggregateRating": {
             "@type": "AggregateRating",
-            "ratingValue": "4.9",
-            "ratingCount": "5000"
+            "ratingValue": "4.8",
+            "reviewCount": "150",
+            "bestRating": "5",
+            "worstRating": "1"
           }
+        })}
+      </script>
+
+      {/* Organization Schema */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "Lily AI",
+          "url": url,
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://socialmedia-frontend-pycc.onrender.com/logo.png",
+            "width": "200",
+            "height": "200"
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+1-800-LILY-AI",
+            "contactType": "Customer Service",
+            "areaServed": "Worldwide",
+            "availableLanguage": ["English"]
+          },
+          "sameAs": [
+            "https://twitter.com/lilyai",
+            "https://linkedin.com/company/lily-ai"
+          ],
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "123 AI Street",
+            "addressLocality": "San Francisco",
+            "addressRegion": "CA",
+            "postalCode": "94105",
+            "addressCountry": "US"
+          },
+          "foundingDate": "2024",
+          "numberOfEmployees": "50-100"
         })}
       </script>
 

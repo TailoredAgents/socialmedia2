@@ -7,6 +7,7 @@ import { HelmetProvider } from 'react-helmet-async'
 import { AuthProvider } from './contexts/AuthContext'
 import { AdminAuthProvider } from './contexts/AdminAuthContext'
 import { WebSocketProvider } from './contexts/WebSocketContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 
 // Error handling
 import { ErrorBoundary } from './utils/errorReporter.jsx'
@@ -225,15 +226,17 @@ function App() {
     <ErrorBoundary>
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
-          <AdminAuthProvider>
-            <AuthProvider>
-              <WebSocketProvider>
-                <Router>
-                  <AppRoutes />
-                </Router>
-              </WebSocketProvider>
-            </AuthProvider>
-          </AdminAuthProvider>
+          <ThemeProvider>
+            <AdminAuthProvider>
+              <AuthProvider>
+                <WebSocketProvider>
+                  <Router>
+                    <AppRoutes />
+                  </Router>
+                </WebSocketProvider>
+              </AuthProvider>
+            </AdminAuthProvider>
+          </ThemeProvider>
         </QueryClientProvider>
       </HelmetProvider>
     </ErrorBoundary>

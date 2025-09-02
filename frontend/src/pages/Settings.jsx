@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useEnhancedApi } from '../hooks/useEnhancedApi'
 import { useNotifications } from '../hooks/useNotifications'
+import { useTheme } from '../contexts/ThemeContext'
 import { error as logError } from '../utils/logger.js'
 import SocialPlatformManager from '../components/SocialPlatforms/SocialPlatformManager'
 import ErrorLogs from '../components/ErrorLogs'
@@ -16,13 +17,17 @@ import {
   ExclamationTriangleIcon,
   ArrowPathIcon,
   MagnifyingGlassIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  SunIcon,
+  MoonIcon,
+  ComputerDesktopIcon
 } from '@heroicons/react/24/outline'
 
 export default function Settings() {
   const { user } = useAuth()
   const { api, connectionStatus, checkApiHealth, clearCache } = useEnhancedApi()
   const { showSuccess, showError } = useNotifications()
+  const { isDarkMode, setTheme, theme, systemTheme } = useTheme()
   
   const [isLoading, setIsLoading] = useState(false)
   const [isResearching, setIsResearching] = useState(false)
@@ -374,22 +379,99 @@ export default function Settings() {
         </div>
       </div>
 
+      {/* Theme Settings */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+            {isDarkMode ? (
+              <MoonIcon className="h-5 w-5 mr-2" />
+            ) : (
+              <SunIcon className="h-5 w-5 mr-2" />
+            )}
+            Theme Preferences
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            Customize the appearance of the application
+          </p>
+        </div>
+        <div className="p-6">
+          <div className="space-y-4">
+            <p className="text-sm font-medium text-gray-900 dark:text-white">Choose your preferred theme</p>
+            <div className="space-y-3">
+              {[
+                { 
+                  key: 'light', 
+                  name: 'Light Mode', 
+                  description: 'Clean and bright interface',
+                  icon: SunIcon 
+                },
+                { 
+                  key: 'dark', 
+                  name: 'Dark Mode', 
+                  description: 'Easy on the eyes in low light',
+                  icon: MoonIcon 
+                },
+                { 
+                  key: 'system', 
+                  name: 'System', 
+                  description: `Follow system preference (currently ${systemTheme})`,
+                  icon: ComputerDesktopIcon 
+                }
+              ].map((themeOption) => {
+                const Icon = themeOption.icon
+                const isSelected = theme === themeOption.key
+                
+                return (
+                  <button
+                    key={themeOption.key}
+                    onClick={() => {
+                      setTheme(themeOption.key)
+                      showSuccess(`Theme changed to ${themeOption.name}`)
+                    }}
+                    className={`relative flex items-center space-x-3 w-full text-left p-4 rounded-lg border-2 transition-colors ${
+                      isSelected 
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 dark:border-blue-400' 
+                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <Icon className={`h-6 w-6 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`} />
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <span className={`text-sm font-medium ${isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-white'}`}>
+                          {themeOption.name}
+                        </span>
+                        {isSelected && (
+                          <CheckCircleIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        )}
+                      </div>
+                      <span className={`text-xs ${isSelected ? 'text-blue-700 dark:text-blue-200' : 'text-gray-500 dark:text-gray-400'}`}>
+                        {themeOption.description}
+                      </span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Industry Context */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 flex items-center">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
             <CogIcon className="h-5 w-5 mr-2" />
             Industry Context for Lily
           </h3>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             Help Lily understand your business to create better, more targeted content
           </p>
         </div>
         <div className="p-6 space-y-6">
           {/* Company Research Section */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 mb-3">✨ Quick Setup with AI Research</h4>
-            <p className="text-sm text-blue-800 mb-4">
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-3">✨ Quick Setup with AI Research</h4>
+            <p className="text-sm text-blue-800 dark:text-blue-200 mb-4">
               Just enter your company name and let Lily research everything else for you!
             </p>
             

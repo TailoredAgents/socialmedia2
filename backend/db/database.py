@@ -81,7 +81,7 @@ def get_db() -> Generator[Session, None, None]:
             # This is an expected authentication error, don't log as database error
             raise
         
-        logger.error(f"Database session error: {str(e)}")
+        logging.getLogger(__name__).error(f"Database session error: {str(e)}")
         raise
     finally:
         db.close()
@@ -100,7 +100,7 @@ def get_db_connection_info():
             "database_url_scheme": database_url.split("://")[0] if "://" in database_url else "unknown"
         }
     except Exception as e:
-        logger.error(f"Error getting connection pool info: {str(e)}")
+        logging.getLogger(__name__).error(f"Error getting connection pool info: {str(e)}")
         return {"error": str(e)}
 
 def health_check_database():
@@ -120,7 +120,7 @@ def health_check_database():
                 "pool_info": pool_info
             }
     except Exception as e:
-        logger.error(f"Database health check failed: {str(e)}")
+        logging.getLogger(__name__).error(f"Database health check failed: {str(e)}")
         return {
             "status": "unhealthy",
             "error": str(e),

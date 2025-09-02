@@ -128,6 +128,13 @@ class ErrorReporter {
   }
 
   async flushErrorQueue() {
+    // Temporarily disabled to prevent 405 log spam
+    if (this.errorQueue.length > 0) {
+      console.log(`Suppressed ${this.errorQueue.length} error reports to prevent log spam`);
+      this.errorQueue = [];
+    }
+    return;
+    
     if (this.errorQueue.length === 0) return;
 
     // Circuit breaker - if we've failed too many times, stop trying

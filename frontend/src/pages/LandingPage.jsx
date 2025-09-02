@@ -34,6 +34,7 @@ const LandingPage = () => {
   const [showFloatingCTA, setShowFloatingCTA] = useState(false)
   const [isAnnualBilling, setIsAnnualBilling] = useState(true)
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
+  const [showCookieBanner, setShowCookieBanner] = useState(true)
   
   // Handle floating CTA visibility on scroll
   useEffect(() => {
@@ -43,6 +44,19 @@ const LandingPage = () => {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Check for saved cookie preference
+  useEffect(() => {
+    const cookieAccepted = localStorage.getItem('cookiesAccepted')
+    if (cookieAccepted) {
+      setShowCookieBanner(false)
+    }
+  }, [])
+
+  const acceptCookies = () => {
+    localStorage.setItem('cookiesAccepted', 'true')
+    setShowCookieBanner(false)
+  }
 
   // Auto-rotate testimonials
   useEffect(() => {
@@ -61,37 +75,37 @@ const LandingPage = () => {
     {
       icon: RocketLaunchIcon,
       title: "Autonomous Autopilot Mode",
-      description: "Let AI handle everything—research industry trends, generate content, schedule posts, and reply to messages based on your brand voice. No competitors offer this full hands-off experience.",
+      description: "Full hands-off experience—AI researches trends, creates content, schedules posts, and replies to messages.",
       highlight: "🚀 Unique in Market"
     },
     {
       icon: SparklesIcon,
-      title: "AI-Powered Content Creation",
-      description: "Use GPT-4o for text, Grok-2 Vision for images, Synthesia for short-form videos (Shorts/Reels), and ElevenLabs for sound matching. Optimized for all platforms.",
+      title: "AI-Powered Content Creation", 
+      description: "GPT-4o for text, Grok-2 Vision for images, video generation—all optimized for every platform.",
       highlight: "🎨 Multi-AI Suite"
     },
     {
       icon: ChartBarIcon,
       title: "Advanced Analytics & Insights",
-      description: "Predictive forecasting, competitor dashboards, ROI tracking, and real-time recommendations to optimize your strategy.",
+      description: "Predictive forecasting, competitor analysis, ROI tracking with real-time optimization recommendations.",
       highlight: "📊 AI-Powered Analytics"
     },
     {
       icon: CogIcon,
       title: "Seamless Integrations",
-      description: "Connect to Salesforce, HubSpot, Shopify, Zapier, and more for automated workflows.",
+      description: "Connect Salesforce, HubSpot, Shopify, Zapier and more for automated workflows.",
       highlight: "🔗 Enterprise Ready"
     },
     {
       icon: ShieldCheckIcon,
       title: "Enterprise-Grade Security",
-      description: "JWT auth, data encryption, audit logs, and compliance (GDPR/CCPA).",
+      description: "JWT authentication, data encryption, audit logs, and GDPR/CCPA compliance.",
       highlight: "🔒 Bank-Level Security"
     },
     {
       icon: DevicePhoneMobileIcon,
-      title: "Mobile App & Collaboration",
-      description: "On-the-go management plus team tools like real-time editing and approvals.",
+      title: "Mobile & Team Collaboration",
+      description: "Mobile management with team editing, approval workflows, and real-time collaboration.",
       highlight: "📱 Team Features"
     }
   ]
@@ -211,11 +225,27 @@ const LandingPage = () => {
       rating: 5
     },
     {
+      quote: "Autopilot mode transformed our workflow—highly recommend!",
+      author: "Sarah Lee",
+      role: "SMB Marketer",
+      company: "Growth Studio",
+      avatar: null,
+      rating: 5
+    },
+    {
       quote: "Unique features like Grok-2 Vision make our content stand out. Clients love the consistent, high-quality posts across all platforms.",
       author: "Marcus Rodriguez",
       role: "Marketing Director",
       company: "Digital Growth Agency",
       avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=64&h=64&fit=crop&crop=face",
+      rating: 5
+    },
+    {
+      quote: "Saved us hours weekly!",
+      author: "Alex Kim",
+      role: "E-commerce Owner",
+      company: "ShopTech",
+      avatar: null,
       rating: 5
     },
     {
@@ -240,7 +270,7 @@ const LandingPage = () => {
     },
     {
       question: "How secure is my data and social media accounts?",
-      answer: "Enterprise-grade security with JWT authentication, end-to-end encryption, audit logs, and full GDPR/CCPA compliance. Your data is more secure with us than managing accounts manually."
+      answer: "Enterprise-grade security with JWT authentication, end-to-end encryption, audit logs, and full GDPR/CCPA compliance. We use JWT auth, encryption, and comply with GDPR/CCPA. Your data is more secure with us than managing accounts manually."
     },
     {
       question: "Can I cancel my subscription anytime?",
@@ -369,8 +399,9 @@ const LandingPage = () => {
                 <button
                   type="submit"
                   className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors flex items-center"
+                  aria-label="Start Free Trial - No Credit Card Required"
                 >
-                  Start Free Trial
+                  Get Started Free – No Card Needed
                   <ArrowRightIcon className="ml-2 h-4 w-4" />
                 </button>
               </form>
@@ -379,19 +410,37 @@ const LandingPage = () => {
               </p>
             </div>
 
-            {/* Trust Badges */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center opacity-60">
+            {/* Trust Badges Below CTA */}
+            <div className="flex justify-center gap-4 mt-6 mb-8">
+              <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm">GDPR Compliant</span>
+              <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm">Secure Data Encryption</span>
+              <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm">No Vendor Lock-In</span>
+            </div>
+
+            {/* Urgency Text */}
+            <p className="text-green-600 font-semibold mt-2 mb-8">
+              Limited Time: 14-Day Free Trial – Sign Up Now!
+            </p>
+
+            {/* Community Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-center opacity-60">
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">5,000+</div>
-                <div className="text-sm text-gray-600">Active Users</div>
+                <div className="text-lg text-gray-500">Join Our</div>
+                <div className="text-sm text-gray-600">Growing Community</div>
               </div>
-              <div className="text-center">
+              <div className="text-center group relative cursor-help">
                 <div className="text-2xl font-bold text-gray-900">90%</div>
                 <div className="text-sm text-gray-600">Time Saved</div>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                  Average user reports
+                </div>
               </div>
-              <div className="text-center">
+              <div className="text-center group relative cursor-help">
                 <div className="text-2xl font-bold text-gray-900">300%</div>
                 <div className="text-sm text-gray-600">Engagement Boost</div>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                  Typical improvement
+                </div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-900">24/7</div>
@@ -403,10 +452,10 @@ const LandingPage = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-gray-50">
+      <section id="features" className="py-20 bg-gray-50" aria-labelledby="features-heading">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 id="features-heading" className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
               Powerful Features That Set Us Apart
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -448,10 +497,10 @@ const LandingPage = () => {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-20 bg-white">
+      <section id="how-it-works" className="py-20 bg-white" aria-labelledby="how-it-works-heading">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 id="how-it-works-heading" className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
               How Lily AI Autopilot Works
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -500,10 +549,11 @@ const LandingPage = () => {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 bg-gray-50">
+      <section id="pricing" className="py-20 bg-gray-50" aria-labelledby="pricing-heading">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <p className="text-center text-gray-600 mb-4">No credit card required</p>
+            <h2 id="pricing-heading" className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
               Choose Your Plan
             </h2>
             <p className="text-xl text-gray-600 mb-8">
@@ -569,11 +619,12 @@ const LandingPage = () => {
                   to={tier.cta === "Contact Sales" ? "/contact" : "/register"}
                   className={`w-full px-6 py-3 rounded-lg font-semibold text-center block transition-colors ${
                     tier.popular
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'bg-green-100 hover:bg-green-200 text-green-800'
                   }`}
+                  aria-label={`${tier.cta} for ${tier.name} plan`}
                 >
-                  {tier.cta}
+                  {tier.cta === "Contact Sales" ? tier.cta : "Start 14-Day Free Trial"}
                 </Link>
               </div>
             ))}
@@ -589,7 +640,7 @@ const LandingPage = () => {
 
       {/* Testimonials Section */}
       <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
               What Our Customers Say
@@ -599,32 +650,76 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="relative max-w-4xl mx-auto">
-            <div className="bg-gray-50 rounded-2xl p-8 text-center">
-              <div className="flex justify-center mb-4">
-                {[...Array(testimonials[currentTestimonial].rating)].map((_, i) => (
-                  <StarIcon key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                ))}
+          {/* Testimonials Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {testimonials.slice(0, 3).map((testimonial, index) => (
+              <div key={index} className="bg-gray-50 rounded-2xl p-6 text-center">
+                <div className="flex justify-center mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <StarIcon key={i} className="h-4 w-4 text-yellow-400 fill-current" />
+                  ))}
+                </div>
+                
+                <blockquote className="text-lg text-gray-700 mb-6">
+                  "{testimonial.quote}"
+                </blockquote>
+                
+                <div className="flex items-center justify-center">
+                  {testimonial.avatar ? (
+                    <img
+                      src={testimonial.avatar}
+                      alt={testimonial.author}
+                      className="w-10 h-10 rounded-full mr-3"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-gray-300 rounded-full mr-3 flex items-center justify-center">
+                      <span className="text-gray-600 text-sm font-medium">
+                        {testimonial.author.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="text-left">
+                    <div className="font-semibold text-gray-900 text-sm">{testimonial.author}</div>
+                    <div className="text-gray-600 text-sm">{testimonial.role}, {testimonial.company}</div>
+                  </div>
+                </div>
               </div>
-              
-              <blockquote className="text-xl text-gray-700 mb-6">
-                "{testimonials[currentTestimonial].quote}"
-              </blockquote>
-              
-              <div className="flex items-center justify-center">
+            ))}
+          </div>
+
+          {/* Additional testimonials for mobile carousel effect */}
+          <div className="mt-12 bg-blue-50 rounded-2xl p-8 text-center max-w-2xl mx-auto">
+            <div className="flex justify-center mb-4">
+              {[...Array(testimonials[currentTestimonial].rating)].map((_, i) => (
+                <StarIcon key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+              ))}
+            </div>
+            
+            <blockquote className="text-xl text-gray-700 mb-6">
+              "{testimonials[currentTestimonial].quote}"
+            </blockquote>
+            
+            <div className="flex items-center justify-center">
+              {testimonials[currentTestimonial].avatar ? (
                 <img
                   src={testimonials[currentTestimonial].avatar}
                   alt={testimonials[currentTestimonial].author}
                   className="w-12 h-12 rounded-full mr-4"
                 />
-                <div className="text-left">
-                  <div className="font-semibold text-gray-900">{testimonials[currentTestimonial].author}</div>
-                  <div className="text-gray-600">{testimonials[currentTestimonial].role}, {testimonials[currentTestimonial].company}</div>
+              ) : (
+                <div className="w-12 h-12 bg-gray-300 rounded-full mr-4 flex items-center justify-center">
+                  <span className="text-gray-600 font-medium">
+                    {testimonials[currentTestimonial].author.charAt(0)}
+                  </span>
                 </div>
+              )}
+              <div className="text-left">
+                <div className="font-semibold text-gray-900">{testimonials[currentTestimonial].author}</div>
+                <div className="text-gray-600">{testimonials[currentTestimonial].role}, {testimonials[currentTestimonial].company}</div>
               </div>
             </div>
 
-            {/* Testimonial Navigation Dots */}
+            {/* Navigation Dots */}
             <div className="flex justify-center mt-6 space-x-2">
               {testimonials.map((_, index) => (
                 <button
@@ -746,8 +841,8 @@ const LandingPage = () => {
               <h4 className="text-lg font-semibold text-white mb-4">Company</h4>
               <ul className="space-y-2">
                 <li><a href="#" className="text-gray-300 hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Terms of Service</a></li>
+                <li><a href="/privacy" className="text-blue-600 hover:underline font-semibold transition-colors">Privacy Policy</a></li>
+                <li><a href="/terms" className="text-blue-600 hover:underline font-semibold transition-colors">Terms of Service</a></li>
                 <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Contact</a></li>
               </ul>
             </div>
@@ -772,9 +867,21 @@ const LandingPage = () => {
         </div>
       </footer>
 
-      {/* Floating CTA Button */}
+      {/* Mobile Sticky CTA */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white shadow-md py-2 text-center md:hidden z-40">
+        <Link
+          to="/register"
+          className="bg-green-600 text-white px-6 py-2 rounded mx-4 font-semibold inline-flex items-center justify-center"
+          aria-label="Start Free Trial"
+        >
+          Start Free Trial
+          <ArrowRightIcon className="ml-2 h-4 w-4" />
+        </Link>
+      </div>
+
+      {/* Floating CTA Button - Desktop */}
       {showFloatingCTA && (
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="fixed bottom-6 right-6 z-50 hidden md:block">
           <Link
             to="/register"
             className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full shadow-lg font-semibold transition-all transform hover:scale-105 inline-flex items-center"
@@ -782,6 +889,24 @@ const LandingPage = () => {
             Start Free Trial
             <ArrowRightIcon className="ml-2 h-4 w-4" />
           </Link>
+        </div>
+      )}
+
+      {/* Cookie Banner */}
+      {showCookieBanner && (
+        <div className="fixed bottom-0 left-0 right-0 bg-gray-800 text-white p-4 text-center z-50">
+          <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between">
+            <p className="mb-2 sm:mb-0 text-sm">
+              We use cookies for analytics. 
+              <a href="/privacy" className="text-blue-300 hover:underline ml-1">Learn more</a>
+            </p>
+            <button
+              onClick={acceptCookies}
+              className="bg-blue-600 px-4 py-1 rounded text-white font-medium hover:bg-blue-700 transition-colors"
+            >
+              Accept
+            </button>
+          </div>
         </div>
       )}
 

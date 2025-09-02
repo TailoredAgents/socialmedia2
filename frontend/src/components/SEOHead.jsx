@@ -1,9 +1,9 @@
 import { Helmet } from 'react-helmet-async'
 
 const SEOHead = ({ 
-  title = "Lily AI: Autonomous AI Social Media Management for SMBs",
-  description = "Save 90% time with AI autopilot for content, scheduling, and engagement across platforms. GPT-4o, Grok-2 Vision powered. 14-day free trial.",
-  keywords = "AI social media management, autopilot social media, automated content creation, social media AI, SMB marketing automation",
+  title = "Lily AI - AI Social Media Autopilot for SMBs",
+  description = "Autonomous AI for social media: Research trends, create content, schedule posts, handle responses. Save 90% time for SMBs.",
+  keywords = "AI social media management, autopilot SaaS, SMB tools",
   url = "https://socialmedia-frontend-pycc.onrender.com",
   image = "https://socialmedia-frontend-pycc.onrender.com/og-image.jpg"
 }) => {
@@ -41,6 +41,9 @@ const SEOHead = ({
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://images.unsplash.com" />
       
+      {/* Canonical URL */}
+      <link rel="canonical" href="https://socialmedia-frontend-pycc.onrender.com/" />
+      
       {/* Structured Data for SEO */}
       <script type="application/ld+json">
         {JSON.stringify({
@@ -62,6 +65,48 @@ const SEOHead = ({
             "ratingValue": "4.9",
             "ratingCount": "5000"
           }
+        })}
+      </script>
+
+      {/* FAQ Structured Data */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What makes Lily AI different from other social media tools?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Lily AI is the only platform offering full autonomous autopilot mode—no human oversight needed. Our AI researches trends, creates content, schedules posts, and handles engagement completely on its own. Competitors require constant manual input."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Which social media platforms are supported?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "We support all major platforms: X (Twitter), Meta (Facebook & Instagram), LinkedIn, TikTok, YouTube, and Threads. More platforms are added regularly based on user demand."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How secure is my data and social media accounts?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Enterprise-grade security with JWT authentication, end-to-end encryption, audit logs, and full GDPR/CCPA compliance. Your data is more secure with us than managing accounts manually."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How does the 14-day free trial work?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Full access to all features for 14 days. If you love it (which you will), seamlessly upgrade to continue. Cancel anytime during trial with zero charges."
+              }
+            }
+          ]
         })}
       </script>
     </Helmet>

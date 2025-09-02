@@ -342,7 +342,7 @@ const LandingPage = () => {
           <div className="text-center">
             
             {/* Main Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-8">
               Revolutionize Your Social Media with{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
                 Lily AI's Autonomous Autopilot
@@ -350,14 +350,13 @@ const LandingPage = () => {
             </h1>
             
             {/* Subheadline */}
-            <h2 className="text-xl sm:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto">
+            <h2 className="text-xl sm:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto">
               AI-powered management that researches trends, creates engaging content, schedules posts, 
               and handles responses—all on autopilot. Save 90% time for SMBs.
             </h2>
-            
 
             {/* Email Capture & CTA */}
-            <div className="max-w-md mx-auto mb-8">
+            <div className="max-w-md mx-auto mb-12">
               <form onSubmit={handleEmailSubmit} className="flex gap-3">
                 <input
                   type="email"
@@ -379,7 +378,6 @@ const LandingPage = () => {
                 14-day free trial • Cancel anytime
               </p>
             </div>
-
 
             {/* Trust Badges */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center opacity-60">

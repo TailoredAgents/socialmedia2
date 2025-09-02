@@ -1,8 +1,7 @@
 """
 OpenAI Assistant Chat API endpoints for the landing page chat widget
 """
-from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 import openai
@@ -13,7 +12,6 @@ import time
 from datetime import datetime
 
 from backend.core.config import get_settings
-from backend.core.database import get_db
 
 logger = logging.getLogger(__name__)
 

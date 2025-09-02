@@ -31,7 +31,6 @@ const LandingPage = () => {
   const [expandedFAQ, setExpandedFAQ] = useState(null)
   const [showVideo, setShowVideo] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [showFloatingCTA, setShowFloatingCTA] = useState(false)
   const [isAnnualBilling, setIsAnnualBilling] = useState(true)
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
   const [showCookieBanner, setShowCookieBanner] = useState(true)
@@ -51,14 +50,6 @@ const LandingPage = () => {
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
   const chatEndRef = useRef(null)
   
-  // Handle floating CTA visibility on scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowFloatingCTA(window.scrollY > 800)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
 
   // Check for saved cookie preference
   useEffect(() => {
@@ -925,18 +916,6 @@ const LandingPage = () => {
         </Link>
       </div>
 
-      {/* Floating CTA Button - Desktop */}
-      {showFloatingCTA && (
-        <div className="fixed bottom-6 right-6 z-50 hidden md:block">
-          <Link
-            to="/register"
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full shadow-lg font-semibold transition-all transform hover:scale-105 inline-flex items-center"
-          >
-            Start Free Trial
-            <ArrowRightIcon className="ml-2 h-4 w-4" />
-          </Link>
-        </div>
-      )}
 
       {/* Enhanced Cookie Banner */}
       {showCookieBanner && !showCookiePreferences && (

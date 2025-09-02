@@ -12,8 +12,8 @@ import json
 import time
 from datetime import datetime
 
-from core.config import get_settings
-from core.database import get_db
+from backend.core.config import get_settings
+from backend.core.database import get_db
 
 logger = logging.getLogger(__name__)
 

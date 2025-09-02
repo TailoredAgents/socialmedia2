@@ -1354,23 +1354,6 @@ const LandingPage = () => {
         )}
       </div>
 
-      {/* Demo Scheduling Banner for Hesitant Prospects */}
-      <div className="fixed top-1/2 left-0 transform -translate-y-1/2 bg-white shadow-lg rounded-r-2xl p-4 border border-l-0 border-gray-200 z-30 max-w-xs hidden lg:block">
-        <div className="text-center">
-          <h3 className="font-semibold text-gray-900 mb-2 text-sm">Still have questions?</h3>
-          <p className="text-xs text-gray-600 mb-3">
-            See Lily AI in action with a personalized demo
-          </p>
-          <button
-            onClick={() => window.open('https://calendly.com/lily-ai/demo', '_blank')}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-3 rounded-lg transition-colors flex items-center justify-center"
-          >
-            <PlayCircleIcon className="h-4 w-4 mr-1" />
-            Book Demo
-          </button>
-          <p className="text-xs text-gray-500 mt-2">15-min call • No commitment</p>
-        </div>
-      </div>
 
       {/* Video Modal */}
       {showVideo && (

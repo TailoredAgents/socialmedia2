@@ -753,20 +753,6 @@ const LandingPage = () => {
             </p>
           </div>
 
-          {/* Customer Logos */}
-          <div className="mb-16">
-            <p className="text-center text-gray-600 mb-8">Trusted by growing businesses worldwide</p>
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-4 max-w-4xl mx-auto">
-              {customerLogos.map((logo, index) => (
-                <div key={index} className="flex flex-col items-center">
-                  <div className={`w-12 h-12 ${logo.color} rounded-lg flex items-center justify-center mb-2`}>
-                    <span className="text-white font-bold text-sm">{logo.initials}</span>
-                  </div>
-                  <span className="text-xs text-gray-500 text-center">{logo.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
 
           {/* Authentic Testimonials Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

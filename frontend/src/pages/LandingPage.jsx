@@ -248,7 +248,7 @@ const LandingPage = () => {
     },
     {
       question: "How does the 14-day free trial work?",
-      answer: "Full access to all features for 14 days. No credit card required to start. If you love it (which you will), seamlessly upgrade to continue. Cancel anytime during trial with zero charges."
+      answer: "Full access to all features for 14 days. If you love it (which you will), seamlessly upgrade to continue. Cancel anytime during trial with zero charges."
     },
     {
       question: "What AI models power Lily AI?",
@@ -340,11 +340,6 @@ const LandingPage = () => {
       <section className="pt-20 pb-16 bg-gradient-to-br from-blue-50 via-white to-indigo-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            {/* Urgency Banner */}
-            <div className="inline-flex items-center px-4 py-2 rounded-full bg-green-100 text-green-800 text-sm font-medium mb-6">
-              <BoltIcon className="h-4 w-4 mr-2" />
-              Limited Time: 14-Day Free Trial - No Credit Card Required
-            </div>
             
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
@@ -381,7 +376,7 @@ const LandingPage = () => {
                 </button>
               </form>
               <p className="text-sm text-gray-500 mt-2">
-                14-day free trial • No credit card required • Cancel anytime
+                14-day free trial • Cancel anytime
               </p>
             </div>
 
@@ -466,45 +461,24 @@ const LandingPage = () => {
             </p>
           </div>
 
-          {/* Desktop Timeline */}
-          <div className="hidden lg:block">
-            <div className="relative">
-              <div className="absolute left-1/2 transform -translate-x-px h-full w-0.5 bg-gray-300"></div>
-              {steps.map((step, index) => (
-                <div key={index} className={`relative flex items-center ${index % 2 === 0 ? 'justify-start' : 'justify-end'} mb-8`}>
-                  <div className={`w-5/12 ${index % 2 === 0 ? 'pr-8 text-right' : 'pl-8 text-left'}`}>
-                    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{step.title}</h3>
-                      <p className="text-gray-600">{step.description}</p>
-                    </div>
-                  </div>
-                  <div className="absolute left-1/2 transform -translate-x-1/2 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                    <step.icon className="h-6 w-6 text-white" />
-                  </div>
-                  <div className={`w-5/12 ${index % 2 === 0 ? 'pl-8' : 'pr-8'}`}>
-                    <div className={`text-6xl font-bold text-blue-100 ${index % 2 === 0 ? 'text-left' : 'text-right'}`}>
-                      {step.number}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Mobile Timeline */}
-          <div className="lg:hidden space-y-8">
+          {/* Clean Grid Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {steps.map((step, index) => (
-              <div key={index} className="flex items-start">
-                <div className="flex-shrink-0 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mr-4">
-                  <step.icon className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex-grow">
-                  <div className="flex items-center mb-2">
-                    <span className="text-2xl font-bold text-blue-600 mr-3">0{step.number}</span>
-                    <h3 className="text-lg font-semibold text-gray-900">{step.title}</h3>
+              <div key={index} className="text-center">
+                <div className="flex items-center justify-center mb-6">
+                  <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mr-4">
+                    <step.icon className="h-8 w-8 text-white" />
                   </div>
-                  <p className="text-gray-600">{step.description}</p>
+                  <div className="text-3xl font-bold text-blue-600">
+                    {step.number}
+                  </div>
                 </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  {step.title}
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  {step.description}
+                </p>
               </div>
             ))}
           </div>
@@ -535,7 +509,7 @@ const LandingPage = () => {
               Choose Your Plan
             </h2>
             <p className="text-xl text-gray-600 mb-8">
-              All plans come with a 14-day free trial. No credit card required.
+              All plans come with a 14-day free trial.
             </p>
             
             {/* Billing Toggle */}
@@ -731,7 +705,7 @@ const LandingPage = () => {
             </button>
           </div>
           <p className="mt-6 text-blue-200 text-sm">
-            No credit card required • Full access for 14 days • Cancel anytime
+            Full access for 14 days • Cancel anytime
           </p>
         </div>
       </section>

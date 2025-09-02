@@ -410,8 +410,8 @@ export default function CreatePost() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Create Post</h2>
-          <p className="text-sm text-gray-600">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Post</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Create engaging content with AI assistance and industry research
           </p>
         </div>
@@ -430,8 +430,8 @@ export default function CreatePost() {
         {/* Main Content Creation */}
         <div className="lg:col-span-2 space-y-6">
           {/* Platform Selection & Specific Instructions */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Post Configuration</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Post Configuration</h3>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

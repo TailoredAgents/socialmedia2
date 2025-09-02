@@ -130,7 +130,7 @@ function Layout({ children }) {
   }, [api, autopilotMode, loadingAutopilot, showSuccess, showError])
 
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Mobile sidebar */}
       <div className={`relative z-50 lg:hidden ${sidebarOpen ? '' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-900/80 dark:bg-black/80" onClick={handleSidebarClose} />
@@ -345,7 +345,7 @@ function Layout({ children }) {
           </div>
         </div>
 
-        <main id="main-content" className="py-8" role="main" aria-label="Main content">
+        <main id="main-content" className="py-8 bg-gray-50 dark:bg-gray-900" role="main" aria-label="Main content">
           <div className="px-4 sm:px-6 lg:px-8">
             {children}
           </div>

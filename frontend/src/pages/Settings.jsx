@@ -345,16 +345,16 @@ export default function Settings() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
-        <p className="text-sm text-gray-600">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           Configure your brand, preferences, and integrations
         </p>
       </div>
 
       {/* User Profile */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 flex items-center">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
             <UserIcon className="h-5 w-5 mr-2" />
             Profile
           </h3>

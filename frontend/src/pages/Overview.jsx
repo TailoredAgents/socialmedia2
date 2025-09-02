@@ -20,26 +20,26 @@ import { Link } from 'react-router-dom'
 
 const ContentCard = ({ title, count, icon: Icon, color = "blue", description, linkTo }) => {
   const colorClasses = {
-    blue: 'text-blue-600 bg-blue-100',
-    green: 'text-green-600 bg-green-100',
-    purple: 'text-purple-600 bg-purple-100',
-    orange: 'text-orange-600 bg-orange-100',
-    gray: 'text-gray-600 bg-gray-100'
+    blue: 'text-blue-600 bg-blue-100 dark:bg-blue-900 dark:text-blue-400',
+    green: 'text-green-600 bg-green-100 dark:bg-green-900 dark:text-green-400',
+    purple: 'text-purple-600 bg-purple-100 dark:bg-purple-900 dark:text-purple-400',
+    orange: 'text-orange-600 bg-orange-100 dark:bg-orange-900 dark:text-orange-400',
+    gray: 'text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-400'
   }
 
   return (
     <Link to={linkTo} className="group">
-      <div className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6 group-hover:border-blue-200 border border-transparent">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow p-6 group-hover:border-blue-200 dark:group-hover:border-blue-600 border border-transparent">
         <div className="flex items-center justify-between">
           <div>
             <div className={`inline-flex p-3 rounded-lg ${colorClasses[color]} mb-4`}>
               <Icon className="h-6 w-6" />
             </div>
-            <p className="text-2xl font-bold text-gray-900">{count}</p>
-            <p className="text-sm font-medium text-gray-600">{title}</p>
-            <p className="text-xs text-gray-500 mt-1">{description}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{count}</p>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{title}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{description}</p>
           </div>
-          <ArrowRightIcon className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+          <ArrowRightIcon className="h-5 w-5 text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
         </div>
       </div>
     </Link>
@@ -266,7 +266,7 @@ export default function Overview() {
 
       {/* Content Statistics */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Content Overview</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Content Overview</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <ContentCard
             title="Draft Content"
@@ -306,57 +306,57 @@ export default function Overview() {
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Upcoming Content */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Content</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Upcoming Content</h3>
           {upcomingContent && upcomingContent.length > 0 ? (
             <div className="space-y-3">
               {upcomingContent.slice(0, 5).map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">{item.title}</p>
-                    <p className="text-xs text-gray-500">{item.platform} • {new Date(item.scheduled_at).toLocaleDateString()}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.title}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{item.platform} • {new Date(item.scheduled_at).toLocaleDateString()}</p>
                   </div>
                   {item.image_url && <PhotoIcon className="h-4 w-4 text-gray-400 ml-2" />}
                 </div>
               ))}
-              <Link to="/calendar" className="block text-sm text-blue-600 hover:text-blue-700 mt-3">
+              <Link to="/calendar" className="block text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 mt-3">
                 View all scheduled →
               </Link>
             </div>
           ) : (
-            <p className="text-gray-500 text-sm">No scheduled content. Start by creating some posts!</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No scheduled content. Start by creating some posts!</p>
           )}
         </div>
 
         {/* Lily's Capabilities */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">What I Can Do For You</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">What I Can Do For You</h3>
           <div className="space-y-4">
             <div className="flex items-center">
               <CpuChipIcon className="h-5 w-5 text-purple-600 mr-3" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">Industry Research</p>
-                <p className="text-xs text-gray-500">I stay up-to-date with the latest trends in your industry</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Industry Research</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">I stay up-to-date with the latest trends in your industry</p>
               </div>
-              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Always On</span>
+              <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 px-2 py-1 rounded-full">Always On</span>
             </div>
             <div className="flex items-center">
               <SparklesIcon className="h-5 w-5 text-blue-600 mr-3" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">Content Creation</p>
-                <p className="text-xs text-gray-500">Professional posts tailored to your brand and audience</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Content Creation</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Professional posts tailored to your brand and audience</p>
               </div>
-              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Ready</span>
+              <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 px-2 py-1 rounded-full">Ready</span>
             </div>
             <div className="flex items-center">
               <PhotoIcon className="h-5 w-5 text-orange-600 mr-3" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">Visual Content</p>
-                <p className="text-xs text-gray-500">Eye-catching images to complement your posts</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Visual Content</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Eye-catching images to complement your posts</p>
               </div>
-              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Available</span>
+              <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 px-2 py-1 rounded-full">Available</span>
             </div>
-            <Link to="/create-post" className="block text-sm text-blue-600 hover:text-blue-700 mt-3">
+            <Link to="/create-post" className="block text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 mt-3">
               Let's get started together →
             </Link>
           </div>

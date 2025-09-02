@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { 
   ChartBarIcon, 
@@ -44,8 +44,12 @@ const LandingPage = () => {
   })
   const [showChatWidget, setShowChatWidget] = useState(false)
   const [chatMessages, setChatMessages] = useState([
-    { type: 'bot', message: "Hi! I'm here to help you learn more about Lily AI. What questions do you have?" }
+    { type: 'bot', message: "Hi! I'm Lily, your AI assistant! How can I help you learn more about our social media management platform today?" }
   ])
+  const [chatInput, setChatInput] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
+  const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
+  const chatEndRef = useRef(null)
   
   // Handle floating CTA visibility on scroll
   useEffect(() => {
@@ -63,6 +67,60 @@ const LandingPage = () => {
       setShowCookieBanner(false)
     }
   }, [])
+
+  // Auto-scroll chat to bottom when new messages arrive
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages])
+
+  // Handle sending chat messages to the assistant
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || isTyping) return
+    
+    const userMessage = chatInput.trim()
+    setChatInput('')
+    
+    // Add user message to chat
+    setChatMessages(prev => [...prev, { type: 'user', message: userMessage }])
+    setIsTyping(true)
+    
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/chat/assistant/message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          session_id: sessionId
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to get response')
+      }
+      
+      const data = await response.json()
+      
+      // Add bot response to chat
+      setChatMessages(prev => [...prev, { type: 'bot', message: data.message }])
+    } catch (error) {
+      console.error('Chat error:', error)
+      setChatMessages(prev => [...prev, { 
+        type: 'bot', 
+        message: "I apologize, but I'm having trouble connecting right now. Please try again later or email us at support@lily-ai.com" 
+      }])
+    } finally {
+      setIsTyping(false)
+    }
+  }
+
+  const handleChatKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      sendChatMessage()
+    }
+  }
 
   const acceptCookies = (type = 'all') => {
     const preferences = type === 'all' 
@@ -1059,8 +1117,8 @@ const LandingPage = () => {
               </button>
             </div>
             
-            <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
-              <div className="space-y-3">
+            <div className="flex-1 overflow-y-auto bg-gray-50">
+              <div className="p-4 space-y-3">
                 {chatMessages.map((msg, index) => (
                   <div key={index} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-xs px-4 py-2 rounded-2xl text-sm ${
@@ -1072,10 +1130,23 @@ const LandingPage = () => {
                     </div>
                   </div>
                 ))}
+                {isTyping && (
+                  <div className="flex justify-start">
+                    <div className="max-w-xs px-4 py-2 rounded-2xl text-sm bg-white border border-gray-200 text-gray-800">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
               </div>
               
-              {/* Quick Action Buttons */}
-              <div className="mt-4 space-y-2">
+              {/* Quick Action Buttons - Only show when no conversation started */}
+              {chatMessages.length <= 1 && (
+                <div className="px-4 pb-4 space-y-2">
                 <button
                   onClick={() => window.open('/register', '_blank')}
                   className="w-full text-left px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
@@ -1099,6 +1170,29 @@ const LandingPage = () => {
                   className="w-full text-left px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   💰 View Pricing
+                </button>
+                </div>
+              )}
+            </div>
+            
+            {/* Message Input Area */}
+            <div className="p-3 border-t border-gray-200">
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyPress={handleChatKeyPress}
+                  placeholder="Type your message..."
+                  disabled={isTyping}
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <button
+                  onClick={sendChatMessage}
+                  disabled={!chatInput.trim() || isTyping}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Send
                 </button>
               </div>
             </div>

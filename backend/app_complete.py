@@ -111,6 +111,14 @@ try:
 except ImportError as e:
     logger.warning(f"⚠️ Could not import webhooks router: {e}")
 
+# Include assistant chat router
+try:
+    from backend.api.assistant_chat import router as assistant_chat_router
+    app.include_router(assistant_chat_router, prefix="/api")
+    logger.info("✅ Assistant chat router included")
+except ImportError as e:
+    logger.warning(f"⚠️ Could not import assistant chat router: {e}")
+
 @app.get("/")
 async def root():
     """Root endpoint with production status"""

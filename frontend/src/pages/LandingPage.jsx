@@ -718,16 +718,6 @@ const LandingPage = () => {
             ))}
           </div>
 
-          {/* Link to More Reviews */}
-          <div className="text-center mt-8">
-            <a 
-              href="#case-studies" 
-              className="text-blue-600 hover:text-blue-700 font-medium text-sm inline-flex items-center"
-            >
-              Read full case studies and more reviews
-              <ArrowRightIcon className="ml-1 h-4 w-4" />
-            </a>
-          </div>
 
         </div>
       </section>

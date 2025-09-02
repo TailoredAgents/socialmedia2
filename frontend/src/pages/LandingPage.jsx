@@ -85,7 +85,7 @@ const LandingPage = () => {
     setIsTyping(true)
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/chat/assistant/message`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/chat/assistant/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

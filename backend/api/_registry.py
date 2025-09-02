@@ -31,6 +31,7 @@ from . import (
     system_logs,  # System logging and error tracking
     database_health,  # Database schema health checks
     partner_oauth,  # Partner OAuth for multi-tenant connections
+    assistant_chat,  # OpenAI Assistant chat for landing page
 )
 
 # All routers to be registered with the FastAPI app
@@ -64,4 +65,5 @@ ROUTERS = [
     system_logs.router,  # System logging and error tracking endpoints
     database_health.router,  # Database schema health monitoring
     partner_oauth.router,  # Partner OAuth for multi-tenant connections
+    assistant_chat.router,  # OpenAI Assistant chat for landing page
 ]

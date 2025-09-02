@@ -1,6 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { HelmetProvider } from 'react-helmet-async'
 
 // Context Providers
 import { AuthProvider } from './contexts/AuthContext'
@@ -222,17 +223,19 @@ function AppRoutes() {
 function App() {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <AdminAuthProvider>
-          <AuthProvider>
-            <WebSocketProvider>
-              <Router>
-                <AppRoutes />
-              </Router>
-            </WebSocketProvider>
-          </AuthProvider>
-        </AdminAuthProvider>
-      </QueryClientProvider>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <AdminAuthProvider>
+            <AuthProvider>
+              <WebSocketProvider>
+                <Router>
+                  <AppRoutes />
+                </Router>
+              </WebSocketProvider>
+            </AuthProvider>
+          </AdminAuthProvider>
+        </QueryClientProvider>
+      </HelmetProvider>
     </ErrorBoundary>
   )
 }

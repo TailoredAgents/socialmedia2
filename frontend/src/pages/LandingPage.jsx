@@ -47,7 +47,7 @@ const LandingPage = () => {
   // Auto-rotate testimonials
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
+      setCurrentTestimonial((prev) => (prev + 1) % 3) // Fixed number since we have 3 testimonials
     }, 5000)
     return () => clearInterval(timer)
   }, [])

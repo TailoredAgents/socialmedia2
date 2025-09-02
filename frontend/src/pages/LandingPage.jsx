@@ -360,21 +360,6 @@ const LandingPage = () => {
               and handles responses—all on autopilot. Save 90% time for SMBs.
             </h2>
             
-            {/* Key Benefits */}
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-10">
-              <div className="flex items-center text-gray-700">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                <span className="font-medium">Unique in the market: No human oversight needed</span>
-              </div>
-              <div className="flex items-center text-gray-700">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                <span className="font-medium">Powered by GPT-4o, Grok-2 Vision, and more</span>
-              </div>
-              <div className="flex items-center text-gray-700">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                <span className="font-medium">Supports X, Meta, LinkedIn, TikTok, YouTube, Threads</span>
-              </div>
-            </div>
 
             {/* Email Capture & CTA */}
             <div className="max-w-md mx-auto mb-8">
@@ -400,14 +385,6 @@ const LandingPage = () => {
               </p>
             </div>
 
-            {/* Demo Video Button */}
-            <button
-              onClick={() => setShowVideo(true)}
-              className="inline-flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors mb-12"
-            >
-              <PlayCircleIcon className="h-5 w-5 mr-2" />
-              Watch Autopilot Demo (30s)
-            </button>
 
             {/* Trust Badges */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center opacity-60">

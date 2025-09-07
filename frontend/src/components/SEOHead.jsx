@@ -1,9 +1,9 @@
 import { Helmet } from 'react-helmet-async'
 
 const SEOHead = ({ 
-  title = "Lily AI - AI Social Media Autopilot for SMBs",
-  description = "Autonomous AI for social media: Research trends, create content, schedule posts, handle responses. Save 90% time for SMBs.",
-  keywords = "AI social media management, autopilot SaaS, SMB tools",
+  title = "Lily AI for Pressure Washing - Book Jobs From Social Media",
+  description = "The only AI that posts, replies, and books pressure washing jobs while you're on site. Turn social media followers into paying customers automatically.",
+  keywords = "pressure washing social media, pressure washing marketing, soft wash marketing, exterior cleaning social media, pressure washing leads, book pressure washing jobs, AI for pressure washing",
   url = "https://socialmedia-frontend-pycc.onrender.com",
   image = "https://socialmedia-frontend-pycc.onrender.com/og-image.jpg"
 }) => {
@@ -49,14 +49,14 @@ const SEOHead = ({
         {JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Product",
-          "name": "Lily AI Social Media Management Platform",
+          "name": "Lily AI - Social Media Management for Pressure Washing Companies",
           "description": description,
           "url": url,
           "brand": {
             "@type": "Brand",
             "name": "Lily AI"
           },
-          "category": "Social Media Management Software",
+          "category": "Pressure Washing Marketing Software",
           "offers": [
             {
               "@type": "Offer",
@@ -106,11 +106,12 @@ const SEOHead = ({
           "softwareVersion": "1.0",
           "releaseDate": "2024-01-01",
           "featureList": [
-            "Autonomous AI content creation",
-            "Multi-platform social media management",
-            "Advanced analytics and insights",
-            "Team collaboration tools",
-            "Enterprise-grade security"
+            "Autonomous posting while you're on site",
+            "DM to booking conversion",
+            "Photo-based estimates",
+            "Handles soft wash vs pressure wash questions",
+            "Rain delay management",
+            "Integrates with Housecall Pro and Jobber"
           ],
           "screenshot": "https://socialmedia-frontend-pycc.onrender.com/screenshot.jpg",
           "aggregateRating": {

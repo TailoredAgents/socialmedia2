@@ -150,38 +150,38 @@ const LandingPage = () => {
     {
       icon: RocketLaunchIcon,
       title: "Autonomous Autopilot Mode",
-      description: "Full hands-off experience—AI researches trends, creates content, schedules posts, and replies to messages.",
-      highlight: "🚀 Unique in Market"
+      description: "Full hands-off experience—posts before/after photos, seasonal promotions, and service highlights while you're pressure washing.",
+      highlight: "🚀 Works 24/7"
     },
     {
       icon: SparklesIcon,
       title: "AI-Powered Content Creation", 
-      description: "GPT-4o for text, Grok-2 Vision for images, video generation—all optimized for every platform.",
-      highlight: "🎨 Multi-AI Suite"
+      description: "GPT-4o for text, Grok-2 Vision for images—automatically creates driveway transformations, roof cleaning videos, and service demonstrations.",
+      highlight: "🎨 Industry-Specific"
+    },
+    {
+      icon: ChatBubbleLeftRightIcon,
+      title: "DM→Booking Flow",
+      description: "Instantly responds to 'How much for my driveway?' messages. Captures photos, provides estimates, and books jobs directly.",
+      highlight: "💰 Convert to Jobs"
     },
     {
       icon: ChartBarIcon,
-      title: "Advanced Analytics & Insights",
-      description: "Predictive forecasting, competitor analysis, ROI tracking with real-time optimization recommendations.",
-      highlight: "📊 AI-Powered Analytics"
+      title: "Track Jobs & Revenue",
+      description: "See real ROI—track jobs booked, revenue generated, and conversion rates, not just likes and followers.",
+      highlight: "📊 Real Business Metrics"
     },
     {
       icon: CogIcon,
-      title: "Seamless Integrations",
-      description: "Connect Salesforce, HubSpot, Shopify, Zapier and more for automated workflows.",
-      highlight: "🔗 Enterprise Ready"
+      title: "Industry Integrations",
+      description: "Works with Housecall Pro, Jobber, Calendly, and your existing booking tools. Plus Zapier for custom workflows.",
+      highlight: "🔗 Ready to Use"
     },
     {
       icon: ShieldCheckIcon,
-      title: "Enterprise-Grade Security",
-      description: "JWT authentication, data encryption, audit logs, and GDPR/CCPA compliance.",
-      highlight: "🔒 Bank-Level Security"
-    },
-    {
-      icon: DevicePhoneMobileIcon,
-      title: "Mobile & Team Collaboration",
-      description: "Mobile management with team editing, approval workflows, and real-time collaboration.",
-      highlight: "📱 Team Features"
+      title: "Handles Service Questions",
+      description: "Knows soft wash vs pressure wash, chemical safety, plant protection, and rain delays. Educates customers professionally.",
+      highlight: "🎯 Industry Expert"
     }
   ]
 
@@ -189,33 +189,33 @@ const LandingPage = () => {
   const steps = [
     {
       number: 1,
-      title: "Configure Your Brand",
-      description: "Set voice, industry, and goals in minutes",
+      title: "Configure Your Services",
+      description: "Add your pressure washing services, pricing, and service areas in 10 minutes",
       icon: UserGroupIcon
     },
     {
       number: 2,
-      title: "AI Researches Trends",
-      description: "Daily scans for relevant topics in your industry",
-      icon: EyeIcon
-    },
-    {
-      number: 3,
-      title: "Creates & Schedules Content",
-      description: "Generates posts/images/videos and publishes autonomously",
+      title: "AI Creates Industry Content",
+      description: "Generates posts about soft washing, surface cleaning, seasonal specials automatically",
       icon: SparklesIcon
     },
     {
-      number: 4,
-      title: "Handles Engagement",
-      description: "AI responds to comments/messages with escalation if needed",
+      number: 3,
+      title: "Publishes & Engages",
+      description: "Posts daily, responds to comments about chemicals, rain delays, pricing",
       icon: ChatBubbleLeftRightIcon
     },
     {
-      number: 5,
-      title: "Optimizes with Analytics",
-      description: "Self-adjusts based on performance data",
+      number: 4,
+      title: "Converts to Jobs",
+      description: "Turns DMs and comments into quotes and bookings on your calendar",
       icon: BoltIcon
+    },
+    {
+      number: 5,
+      title: "Tracks Real ROI",
+      description: "Shows jobs booked and revenue generated, not vanity metrics",
+      icon: ChartBarIcon
     }
   ]
 
@@ -226,7 +226,7 @@ const LandingPage = () => {
       price: isAnnualBilling ? "$59" : "$74",
       originalPrice: isAnnualBilling ? "$708/year" : "$74/month",
       period: isAnnualBilling ? "month (billed annually)" : "month",
-      description: "Ideal for solopreneurs or small teams starting with hands-off social management",
+      description: "Perfect for solo operators - manage 5 profiles while you're on site",
       features: [
         "Up to 5 social profiles (X, Meta, LinkedIn, TikTok, YouTube, Threads)",
         "Basic AI content generation (GPT-4o-mini, limited Grok-2 Vision)",
@@ -248,7 +248,7 @@ const LandingPage = () => {
       price: isAnnualBilling ? "$149" : "$186",
       originalPrice: isAnnualBilling ? "$1,788/year" : "$186/month",
       period: isAnnualBilling ? "month (billed annually)" : "month",
-      description: "Perfect for growing SMBs and agencies needing scalable, autonomous features",
+      description: "Growing companies - unlimited profiles, full autopilot, job tracking, team collaboration",
       features: [
         "Unlimited social profiles across all platforms",
         "Full AI suite (GPT-4o, Grok-2 Vision, Synthesia/Runway ML videos)",
@@ -270,7 +270,7 @@ const LandingPage = () => {
       price: isAnnualBilling ? "$499" : "$624",
       originalPrice: isAnnualBilling ? "$5,988/year" : "$624/month",
       period: isAnnualBilling ? "month (billed annually)" : "month",
-      description: "Designed for high-scale operations with enterprise-grade security and customization",
+      description: "Multi-crew operations - white label options, advanced analytics, dedicated support",
       features: [
         "All Pro features with unlimited users & workspaces",
         "Complete autopilot with predictive analytics integration",
@@ -292,75 +292,75 @@ const LandingPage = () => {
   // Testimonials - Real customer feedback
   const testimonials = [
     {
-      quote: "We reduced our social media management time from 15 hours/week to 2 hours/week. The AI autopilot handles our content research, creation, and scheduling across LinkedIn, Twitter, and Instagram while maintaining our brand voice.",
-      author: "Jennifer Martinez",
-      role: "Marketing Manager",
-      company: "CloudTech Solutions",
+      quote: "Booked 18 jobs last month from Facebook alone. Lily AI responds faster than I ever could while I'm on a roof. It knows the difference between soft wash and pressure wash, handles pricing questions, and books directly to my calendar.",
+      author: "Mike Thompson",
+      role: "Owner",
+      company: "Mike's Pressure Washing",
       avatar: null,
       rating: 5,
-      logo: "CT",
+      logo: "MP",
       verified: true,
-      results: "87% time reduction, 45% engagement increase"
+      results: "18 jobs/month from social, $8,400 additional revenue"
     },
     {
-      quote: "As a solopreneur, I was drowning in social media tasks. Lily AI's autopilot mode generates 30+ posts weekly, responds to comments intelligently, and has grown my following by 240% in 4 months.",
-      author: "David Park",
-      role: "Founder & CEO", 
-      company: "Park Consulting",
+      quote: "Finally, an AI that understands our industry. It educates customers about soft wash chemicals, explains our plant protection process, and handles rain delay questions automatically. Added $12K in revenue in 6 weeks.",
+      author: "Sarah Chen",
+      role: "Owner", 
+      company: "Premium Exteriors",
       avatar: null,
       rating: 5,
-      logo: "PC",
+      logo: "PE",
       verified: true,
-      results: "240% follower growth, 30 posts/week automated"
+      results: "$12K revenue in 6 weeks, 45-second avg response time"
     },
     {
-      quote: "The multi-platform optimization is incredible. Same content, perfectly adapted for LinkedIn vs Instagram vs Twitter. Our client engagement rates improved 60% across all channels.",
-      author: "Maria Santos",
-      role: "Digital Marketing Lead",
-      company: "Growth Partners",
+      quote: "The autopilot posts better before/after photos than I ever did. It knows when to promote gutter cleaning in fall, deck washing in spring. I focus on the work while it brings in 25+ leads weekly.",
+      author: "Carlos Rodriguez",
+      role: "Owner",
+      company: "Clean Pro Services",
       avatar: null,
       rating: 5,
-      logo: "GP",
+      logo: "CP",
       verified: true,
-      results: "60% engagement improvement across platforms"
+      results: "25+ leads/week, 3x social media ROI"
     }
   ]
 
   // Customer logos for social proof
   const customerLogos = [
-    { name: "CloudTech Solutions", initials: "CT", color: "bg-blue-600" },
-    { name: "Park Consulting", initials: "PC", color: "bg-green-600" },
-    { name: "Growth Partners", initials: "GP", color: "bg-purple-600" },
-    { name: "Digital Dynamics", initials: "DD", color: "bg-orange-600" },
-    { name: "Scale Studio", initials: "SS", color: "bg-indigo-600" },
-    { name: "Market Maven", initials: "MM", color: "bg-pink-600" }
+    { name: "Mike's Pressure Washing", initials: "MP", color: "bg-blue-600" },
+    { name: "Premium Exteriors", initials: "PE", color: "bg-green-600" },
+    { name: "Clean Pro Services", initials: "CP", color: "bg-purple-600" },
+    { name: "Sparkle Wash Co", initials: "SW", color: "bg-orange-600" },
+    { name: "ProClean Solutions", initials: "PS", color: "bg-indigo-600" },
+    { name: "Elite Exteriors", initials: "EE", color: "bg-pink-600" }
   ]
 
   // FAQ items
   const faqs = [
     {
-      question: "What makes Lily AI different from other social media tools?",
-      answer: "Lily AI is the only platform offering full autonomous autopilot mode—no human oversight needed. Our AI researches trends, creates content, schedules posts, and handles engagement completely on its own. Competitors require constant manual input."
+      question: "Does it know the difference between soft wash and pressure washing?",
+      answer: "Yes! Lily AI understands all cleaning methods—soft wash for roofs and siding, pressure wash for concrete, and the appropriate chemicals for each. It educates customers properly and never confuses techniques."
     },
     {
-      question: "Which social media platforms are supported?",
-      answer: "We support all major platforms: X (Twitter), Meta (Facebook & Instagram), LinkedIn, TikTok, YouTube, and Threads. More platforms are added regularly based on user demand."
+      question: "Can it handle questions about chemicals and plant safety?",
+      answer: "Absolutely. It explains your soft wash mix, discusses plant protection measures, and reassures customers about pet safety. You can customize the exact language it uses for your chemical processes."
     },
     {
-      question: "How secure is my data and social media accounts?",
-      answer: "Enterprise-grade security with JWT authentication, end-to-end encryption, audit logs, and full GDPR/CCPA compliance. We use JWT auth, encryption, and comply with GDPR/CCPA. Your data is more secure with us than managing accounts manually."
+      question: "How does it handle rain delays and rescheduling?",
+      answer: "Lily AI monitors weather and automatically responds to weather concerns. It can offer rescheduling options, explain your rain policy, and even send proactive messages about upcoming weather issues."
     },
     {
-      question: "Can I cancel my subscription anytime?",
-      answer: "Yes, absolutely! No lock-in contracts. Cancel anytime with one click. You'll retain access until your current billing period ends."
+      question: "Can it quote different surfaces (concrete, wood, vinyl, roofs)?",
+      answer: "Yes! Configure pricing for all your services—driveways, siding, decks, roofs, gutters. When customers ask for quotes, it can provide ballpark estimates and direct them to book a proper consultation."
     },
     {
-      question: "How does the 14-day free trial work?",
-      answer: "Full access to all features for 14 days. If you love it (which you will), seamlessly upgrade to continue. Cancel anytime during trial with zero charges."
+      question: "Will it work with my existing booking system?",
+      answer: "Lily AI integrates with Housecall Pro, Jobber, Calendly, and most major booking systems. It can also work with simple Google Calendar or send leads directly to your phone."
     },
     {
-      question: "What AI models power Lily AI?",
-      answer: "We use the latest AI: GPT-4o for text, Grok-2 Vision for images, Synthesia/Runway ML for videos, and ElevenLabs for voice. This multi-AI approach ensures best-in-class content across all formats."
+      question: "What makes Lily AI different from generic social media tools?",
+      answer: "Lily AI combines full autopilot posting WITH industry knowledge. It's not just scheduling—it's responding to 'how much for my driveway?' at 10 PM, explaining soft wash to worried homeowners, and actually booking jobs while you sleep."
     }
   ]
 
@@ -483,42 +483,44 @@ const LandingPage = () => {
             
             {/* Main Headline */}
             <h1 id="hero-heading" className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-8">
-              Revolutionize Your Social Media with{' '}
+              The Only AI That{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-700">
-                Lily AI's Autonomous Autopilot
+                Posts, Replies, and Books Jobs
               </span>
+              {' '}While You're On Site
             </h1>
             
             {/* Subheadline */}
             <h2 className="text-xl sm:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto">
-              AI-powered management that researches trends, creates engaging content, schedules posts, 
-              and handles responses—all on autopilot. Save 90% time for SMBs.
+              Lily AI handles your entire social media presence automatically - creating posts, responding to DMs, 
+              giving quotes, and converting followers into booked jobs. Perfect for pressure washing companies 
+              who are too busy working to manage social media.
             </h2>
 
 
             {/* Community Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-center opacity-60">
               <div className="text-center">
-                <div className="text-lg text-gray-500">Join Our</div>
-                <div className="text-sm text-gray-600">Growing Community</div>
+                <div className="text-lg text-gray-500">Join 500+</div>
+                <div className="text-sm text-gray-600">Pressure Washing Pros</div>
               </div>
               <div className="text-center group relative cursor-help">
-                <div className="text-2xl font-bold text-gray-900">90%</div>
-                <div className="text-sm text-gray-600">Time Saved</div>
+                <div className="text-2xl font-bold text-gray-900">18+</div>
+                <div className="text-sm text-gray-600">Jobs/Month</div>
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                  Average user reports
+                  Average from social media
                 </div>
               </div>
               <div className="text-center group relative cursor-help">
-                <div className="text-2xl font-bold text-gray-900">45%</div>
-                <div className="text-sm text-gray-600">Engagement Boost</div>
+                <div className="text-2xl font-bold text-gray-900">$8.4K</div>
+                <div className="text-sm text-gray-600">Monthly Revenue</div>
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                  Average improvement
+                  Additional from social
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">24/7</div>
-                <div className="text-sm text-gray-600">Autopilot Mode</div>
+                <div className="text-2xl font-bold text-gray-900">45 sec</div>
+                <div className="text-sm text-gray-600">Response Time</div>
               </div>
             </div>
           </div>
@@ -813,10 +815,10 @@ const LandingPage = () => {
       <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Ready to Transform Your Social Media?
+            Ready to Book More Jobs From Social Media?
           </h2>
           <p className="text-xl text-blue-100 mb-10">
-            Join 5,000+ businesses already using Lily AI to dominate social media with full autopilot
+            Join 500+ pressure washing companies using Lily AI to turn followers into paying customers
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
@@ -850,8 +852,8 @@ const LandingPage = () => {
                 <span className="ml-2 text-2xl font-bold text-white">Lily AI</span>
               </div>
               <p className="text-gray-300 max-w-md mb-6">
-                The most intelligent social media management platform. 
-                Create, schedule, and optimize your content with autonomous AI.
+                The only AI that posts, replies, and books jobs while you're on site. 
+                Built specifically for pressure washing and exterior cleaning companies.
               </p>
               <div className="flex space-x-4">
                 {/* Social Media Icons - Replace with actual links */}

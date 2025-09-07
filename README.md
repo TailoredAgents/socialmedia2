@@ -1,8 +1,8 @@
-# AI Social Media Manager 🤖
+# Lily AI for Pressure Washing Companies 🚿🤖
 
-**Enterprise-Grade AI-Powered Social Media Management Platform**
+**The Only AI That Posts, Replies, and Books Jobs While You're On Site**
 
-*Transform your social media presence with intelligent automation and advanced analytics*
+*Built specifically for pressure washing and exterior cleaning companies to turn social media into a revenue-generating machine*
 
 ![Version](https://img.shields.io/badge/version-2.0-blue)
 ![Python](https://img.shields.io/badge/python-3.11+-green)
@@ -24,9 +24,9 @@
 
 ## 🌟 Overview
 
-AI Social Media Manager is a sophisticated, enterprise-grade platform that leverages artificial intelligence to automate social media content creation, publishing, and analytics across multiple platforms. Built with modern technologies and designed for scalability, it provides comprehensive social media management capabilities for businesses, marketers, and content creators.
+Lily AI is a specialized social media management platform designed exclusively for pressure washing and exterior cleaning companies. It combines powerful AI automation with industry-specific knowledge to handle your entire social media presence while you're on the job. Unlike generic tools, Lily AI understands soft wash vs pressure wash, handles chemical safety questions, manages rain delays, and most importantly - converts social media followers into booked jobs.
 
-**Current Status (August 2025)**: Recently converted from closed registration-key system to open SaaS authentication with custom JWT implementation. Users can now register freely without registration keys. Complete OAuth partner integration system with connection management, rate limiting, and resilient publishing pipeline is now live.
+**Current Status (September 2025)**: Specialized for pressure washing companies with industry-specific AI knowledge. Features DM-to-booking conversion, photo-based estimates, weather delay management, and integration with industry tools like Housecall Pro and Jobber. Complete OAuth partner integration system with connection management optimized for service-based businesses.
 
 ## 🌐 Production Deployment
 
@@ -37,20 +37,20 @@ AI Social Media Manager is a sophisticated, enterprise-grade platform that lever
 - **Redis**: Configured for caching and rate limiting
 - **Status**: Production-ready with OAuth partner integrations
 
-### 🚀 Key Features
+### 🚀 Key Features for Pressure Washing Companies
 
-- **🤖 AI-Powered Content Generation**: OpenAI GPT-4o and GPT-4o-mini with built-in web search and enhanced reasoning
-- **🎨 AI Image Generation**: xAI Grok-2 Vision model with streaming generation and platform optimization
-- **📱 Multi-Platform Support**: X/Twitter, Instagram, Facebook via OAuth Partner Integration
-- **🔗 Connection Management**: OAuth-based social media account connections with health monitoring
-- **⚡ Resilient Publishing**: Per-tenant rate limiting, circuit breakers, and connection-based publishing
-- **📊 Advanced Analytics**: Real-time performance tracking and insights
-- **🔍 Enhanced Semantic Memory**: text-embedding-3-large with 3072-dimensional vectors for superior search accuracy
-- **⚡ Automated Workflows**: Intelligent content scheduling with draft verification gates
-- **🎯 Goal Tracking**: Comprehensive goal management with progress monitoring
-- **🛡️ Custom JWT Security**: Open SaaS authentication with email verification and password reset
-- **📈 Performance Optimization**: Multi-tenant isolation, Redis caching, connection pooling
-- **🚩 Feature Flag System**: Controlled rollout of new features with environment-based configuration
+- **🏠 Industry-Specific Content**: Automatically posts before/after transformations, seasonal promotions, and service highlights
+- **💬 DM→Booking Flow**: Instantly responds to "How much for my driveway?" messages and converts them to bookings
+- **📸 Photo-to-Estimate**: Customers send photos, get instant ballpark quotes
+- **🧪 Service Knowledge**: Knows soft wash vs pressure wash, explains chemicals, handles plant safety concerns
+- **🌧️ Weather Management**: Handles rain delay questions and rescheduling automatically
+- **📅 Direct Booking**: Integrates with Housecall Pro, Jobber, Calendly, and your existing tools
+- **💰 Revenue Tracking**: Track actual jobs booked and revenue generated, not just vanity metrics
+- **🤖 24/7 Autopilot**: Posts, replies, and books jobs while you're on a roof or cleaning a driveway
+- **📱 Multi-Platform**: Manages Facebook, Instagram, X/Twitter, and more from one dashboard
+- **🎯 Local Targeting**: Optimizes content for your service areas and local market
+- **⚡ Fast Response**: Average 45-second response time to customer inquiries
+- **📊 Real ROI**: See exactly how much revenue social media is generating
 
 ---
 
@@ -94,24 +94,25 @@ AI Social Media Manager is a sophisticated, enterprise-grade platform that lever
 
 ---
 
-## 🤖 Autonomous Social Inbox System
+## 🚿 Pressure Washing Social Inbox System
 
-The platform features a comprehensive **AI-powered social interaction management system** that automatically handles comments and messages across social media platforms:
+The platform features a comprehensive **AI-powered social interaction management system** specifically designed for pressure washing companies:
 
-### 🔥 Core Capabilities
+### 🔥 Core Capabilities for Pressure Washing
 
-- **Intelligent Response Generation**: GPT-5 powered responses using company knowledge base and personality profiles
-- **Real-Time WebSocket Updates**: Live monitoring and instant notifications for new interactions
-- **Multi-Platform Support**: Handles comments and direct messages on Facebook, Instagram, and X/Twitter
-- **Smart Escalation**: Automatically escalates complex issues or sensitive topics to human oversight
+- **Industry Expert Responses**: AI trained on pressure washing knowledge - soft wash chemicals, plant protection, surface types
+- **Quote Generation**: Responds to "How much?" messages with photo-based estimates and booking links
+- **Weather Management**: Handles rain delay questions, explains drying times, offers rescheduling
+- **Safety Education**: Explains chemical processes, pet safety, and plant protection measures
+- **Service Differentiation**: Knows when to recommend pressure wash vs soft wash vs window cleaning
 
-### 🎯 Response Automation
+### 🎯 Pressure Washing Response Automation
 
-- **Personality-Driven Replies**: Configurable response personalities (professional, friendly, casual, etc.)
-- **Template Management**: Dynamic response templates with variable substitution
-- **Business Hours Integration**: Respects configured business hours and auto-response schedules
-- **Confidence Thresholds**: Only auto-responds when AI confidence exceeds configured thresholds
-- **Keyword Filtering**: Automatic escalation for predefined keywords (complaints, legal terms, etc.)
+- **Service-Specific Templates**: Pre-built responses for common questions (pricing, chemicals, timing)
+- **Seasonal Automation**: Automatically promotes spring cleaning, gutter cleaning, holiday prep
+- **Local Weather Integration**: Proactively addresses weather concerns and scheduling
+- **Confidence-Based Booking**: Only sends estimates when confident in surface identification
+- **Emergency Escalation**: Flags urgent issues (property damage, chemical accidents) for immediate attention
 
 ### 🚀 Technical Implementation
 
@@ -1125,7 +1126,7 @@ This software is protected under:
 3. **Deploy Quickly**: Get up and running with professional onboarding support
 4. **Scale Confidently**: Grow your social media operations with enterprise-grade infrastructure
 
-**Ready to transform your social media management? [Contact our sales team today!](mailto:sales@tailoredagents.com)**
+**Ready to book more pressure washing jobs from social media? [Start your 14-day free trial today!](mailto:sales@tailoredagents.com)**
 
 ---
 

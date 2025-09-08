@@ -4,8 +4,8 @@ const SEOHead = ({
   title = "Lily AI for Pressure Washing - Book Jobs From Social Media",
   description = "The only AI that posts, replies, and books pressure washing jobs while you're on site. Turn social media followers into paying customers automatically.",
   keywords = "pressure washing social media, pressure washing marketing, soft wash marketing, exterior cleaning social media, pressure washing leads, book pressure washing jobs, AI for pressure washing",
-  url = "https://socialmedia-frontend-pycc.onrender.com",
-  image = "https://socialmedia-frontend-pycc.onrender.com/og-image.jpg"
+  url = "https://lilymedia.ai",
+  image = "https://lilymedia.ai/og-image.jpg"
 }) => {
   return (
     <Helmet>
@@ -42,7 +42,7 @@ const SEOHead = ({
       <link rel="preconnect" href="https://images.unsplash.com" />
       
       {/* Canonical URL */}
-      <link rel="canonical" href="https://socialmedia-frontend-pycc.onrender.com/" />
+      <link rel="canonical" href="https://lilymedia.ai/" />
       
       {/* Product Schema */}
       <script type="application/ld+json">
@@ -113,7 +113,7 @@ const SEOHead = ({
             "Rain delay management",
             "Integrates with Housecall Pro and Jobber"
           ],
-          "screenshot": "https://socialmedia-frontend-pycc.onrender.com/screenshot.jpg",
+          "screenshot": "https://lilymedia.ai/screenshot.jpg",
           "aggregateRating": {
             "@type": "AggregateRating",
             "ratingValue": "4.8",
@@ -133,7 +133,7 @@ const SEOHead = ({
           "url": url,
           "logo": {
             "@type": "ImageObject",
-            "url": "https://socialmedia-frontend-pycc.onrender.com/logo.png",
+            "url": "https://lilymedia.ai/logo.png",
             "width": "200",
             "height": "200"
           },

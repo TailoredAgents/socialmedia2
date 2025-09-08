@@ -30,9 +30,9 @@ Lily AI is a specialized social media management platform designed exclusively f
 
 ## 🌐 Production Deployment
 
-### Live Instance (Render.com)
+### Live Instance
 - **Main API**: https://socialmedia-api-wxip.onrender.com (FastAPI backend)
-- **Frontend**: https://socialmedia-frontend-pycc.onrender.com (React app)
+- **Frontend**: https://lilymedia.ai (React app)
 - **Database**: PostgreSQL with pgvector extension
 - **Redis**: Configured for caching and rate limiting
 - **Status**: Production-ready with OAuth partner integrations

@@ -24,9 +24,9 @@
 - **Audit Logging**: Comprehensive connection management and publishing audit trails
 - **Feature Flags**: `VITE_FEATURE_PARTNER_OAUTH` gating system for controlled rollout
 
-## Current Production Deployment (Render.com) 🌐
+## Current Production Deployment 🌐
 - **Main API**: https://socialmedia-api-wxip.onrender.com (FastAPI backend)
-- **Frontend**: https://socialmedia-frontend-pycc.onrender.com (React app)
+- **Frontend**: https://lilymedia.ai (React app)
 - **Database**: PostgreSQL with pgvector extension
 - **Redis**: Configured for caching, rate limiting, and circuit breaker state
 - **Status**: Production-ready with OAuth partner integrations

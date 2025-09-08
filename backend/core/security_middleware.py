@@ -480,10 +480,10 @@ def get_cors_middleware_config(environment: str = "production"):
         if not allowed_origins:
             # Current production domains as defaults
             allowed_origins = [
-                "https://socialmedia-frontend-pycc.onrender.com",
+                "https://lilymedia.ai",
+                "https://www.lilymedia.ai",
                 "https://socialmedia-api-wxip.onrender.com",
-                "https://www.lily-ai-socialmedia.com",
-                "https://lily-ai-socialmedia.com",
+                "https://socialmedia-frontend-pycc.onrender.com",  # Legacy support
                 "https://localhost", 
                 "http://localhost"
             ]
